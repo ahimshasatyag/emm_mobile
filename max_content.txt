@@ -1,0 +1,68 @@
+Created At: 2026-06-23T02:30:53Z
+Completed At: 2026-06-23T02:30:53Z
+File Path: `file:///c:/Users/IMBA%20PC/Documents/React%20Native/emma/src/components/layouts/SideBarNavigator.tsx`
+Total Lines: 353
+Total Bytes: 15566
+Showing lines 1 to 353
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: import React, { useState } from 'react';
+2: import { View, Text, TouchableOpacity, ScrollView, LayoutAnimation, Platform, UIManager } from 'react-native';
+3: import { createDrawerNavigator, DrawerContentComponentProps } from '@react-navigation/drawer';
+4: import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, interpolate, Extrapolate } from 'react-native-reanimated';
+5: import {
+6:     ChevronDown, Home, LogOut, Shield, Users, Building2, Database, Tags,
+7:     Wrench, TrendingUp, ShoppingBag, CheckSquare, Warehouse, Calculator,
+8:     FolderTree, Archive, MessageCircle, UserCircle, FilePieChart, Hash, Settings as SettingsIcon
+9: } from 'lucide-react-native';
+10: 
+11: import { BottomBarNavigator } from './BottomBarNavigator';
+12: import { theme } from '../../theme/theme';
+13: import { useAppDispatch } from '../../hooks/useAppDispatch';
+14: import { logout as logoutAction } from '../../features/auth/store/authSlice';
+15: import { UserListScreen } from '../../features/users/screens/UserListScreen';
+16: import { UsersLogListScreen } from '../../features/userslog/screens/UsersLogListScreen';
+17: import { UsersLevelListScreen } from '../../features/userslevel/screens/UsersLevelListScreen';
+18: 
+19: const Drawer = createDrawerNavigator();
+20: 
+21: if (Platform.OS === 'android') {
+22:     if (UIManager.setLayoutAnimationEnabledExperimental) {
+23:         UIManager.setLayoutAnimationEnabledExperimental(true);
+24:     }
+25: }
+26: 
+27: const iconMap: Record<string, any> = {
+28:     Shield, Users, Building2, Database, Tags, Wr
+<truncated 13693 bytes>
+ext>
+324:                 </TouchableOpacity>
+325:             </View>
+326:         </View>
+327:     );
+328: }
+329: 
+330: export function SideBarNavigator() {
+331:     return (
+332:         <Drawer.Navigator
+333:             drawerContent={(props) => <CustomDrawerContent {...props} />}
+334:             screenOptions={{
+335:                 headerShown: false,
+336:                 drawerStyle: { width: '85%' }
+337:             }}
+338:         >
+339:             <Drawer.Screen name="MainTabs" component={BottomBarNavigator} />
+340:             <Drawer.Screen name="UserList" component={UserListScreen} />
+341:             <Drawer.Screen name="UsersLogList" component={UsersLogListScreen} />
+342:             <Drawer.Screen name="UsersLevelList" component={UsersLevelListScreen} />
+343:             <Drawer.Screen name="Counter" component={require('../../features/counter/screens/CounterListScreen').CounterListScreen} />
+344:             <Drawer.Screen name="SettingList" component={require('../../features/setting/screens/SettingListScreen').SettingListScreen} />
+345:             <Drawer.Screen name="InventoryCategoryList" component={require('../../features/inventorycategory/screens/InventoryCategoryListScreen').InventoryCategoryListScreen} />
+346:             <Drawer.Screen name="InventoryTypeList" component={require('../../features/inventorytype/screens/InventoryTypeListScreen').InventoryTypeListScreen} />
+347:             <Drawer.Screen name="ApprovalItemsList" component={require('../../features/approvalitems/screens/ApprovalItemsListScreen').ApprovalItemsListScreen} />
+348:             <Drawer.Screen name="ApprovalSchemeList" component={require('../../features/approvalscheme/screens/ApprovalSchemeListScreen').ApprovalSchemeListScreen} />
+349:             <Drawer.Screen name="EmployeeList" component={require('../../features/employee/screens/EmployeeListScreen').EmployeeListScreen} />
+350:         </Drawer.Navigator>
+351:     );
+352: }
+353: 
+The above content shows the entire, complete file contents of the requested file.
