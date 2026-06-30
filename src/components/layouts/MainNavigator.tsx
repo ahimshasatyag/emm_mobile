@@ -13,10 +13,10 @@ import { InventoryListScreen } from '../../features/inventory/screens/InventoryL
 import { InventoryFormScreen } from '../../features/inventory/screens/InventoryFormScreen';
 import { InventoryEditScreen } from '../../features/inventory/screens/InventoryEditScreen';
 import { ProductPriceAgentDetailScreen } from '../../features/productpriceagent/screens/ProductPriceAgentDetailScreen';
-import { BrosurScreen } from '../../features/brosur/screens/BrosurScreen';
-import { ProductPriceReqListScreen } from '../../features/productpricereq/screens/ProductPriceReqListScreen';
 import { ProductPriceReqFormScreen } from '../../features/productpricereq/screens/ProductPriceReqFormScreen';
 import { ProductPriceReqEditScreen } from '../../features/productpricereq/screens/ProductPriceReqEditScreen';
+import { CsrFormScreen } from '../../features/csr/screens/CsrFormScreen';
+import { CsrEditScreen } from '../../features/csr/screens/CsrEditScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -41,63 +41,63 @@ export function MainNavigator() {
             <Stack.Screen name="InventoryCategoryEdit" component={require('../../features/inventorycategory/screens/InventoryCategoryEditScreen').InventoryCategoryEditScreen} />
             <Stack.Screen name="InventoryTypeForm" component={require('../../features/inventorytype/screens/InventoryTypeFormScreen').InventoryTypeFormScreen} />
             <Stack.Screen name="InventoryTypeEdit" component={require('../../features/inventorytype/screens/InventoryTypeEditScreen').InventoryTypeEditScreen} />
-            <Stack.Screen 
-                name="ApprovalItemsForm" 
-                getComponent={() => require('../../features/approvalitems/screens/ApprovalItemsFormScreen').ApprovalItemsFormScreen} 
+            <Stack.Screen
+                name="ApprovalItemsForm"
+                getComponent={() => require('../../features/approvalitems/screens/ApprovalItemsFormScreen').ApprovalItemsFormScreen}
             />
-            <Stack.Screen 
-                name="ApprovalItemsEdit" 
-                getComponent={() => require('../../features/approvalitems/screens/ApprovalItemsEditScreen').ApprovalItemsEditScreen} 
+            <Stack.Screen
+                name="ApprovalItemsEdit"
+                getComponent={() => require('../../features/approvalitems/screens/ApprovalItemsEditScreen').ApprovalItemsEditScreen}
             />
 
             {/* Approval Scheme */}
-            <Stack.Screen 
-                name="ApprovalSchemeList" 
-                getComponent={() => require('../../features/approvalscheme/screens/ApprovalSchemeListScreen').ApprovalSchemeListScreen} 
+            <Stack.Screen
+                name="ApprovalSchemeList"
+                getComponent={() => require('../../features/approvalscheme/screens/ApprovalSchemeListScreen').ApprovalSchemeListScreen}
             />
-            <Stack.Screen 
-                name="ApprovalSchemeForm" 
-                getComponent={() => require('../../features/approvalscheme/screens/ApprovalSchemeFormScreen').ApprovalSchemeFormScreen} 
+            <Stack.Screen
+                name="ApprovalSchemeForm"
+                getComponent={() => require('../../features/approvalscheme/screens/ApprovalSchemeFormScreen').ApprovalSchemeFormScreen}
             />
-            <Stack.Screen 
-                name="ApprovalSchemeEdit" 
-                getComponent={() => require('../../features/approvalscheme/screens/ApprovalSchemeEditScreen').ApprovalSchemeEditScreen} 
+            <Stack.Screen
+                name="ApprovalSchemeEdit"
+                getComponent={() => require('../../features/approvalscheme/screens/ApprovalSchemeEditScreen').ApprovalSchemeEditScreen}
             />
 
             {/* Employee */}
-            <Stack.Screen 
-                name="EmployeeList" 
-                getComponent={() => require('../../features/employee/screens/EmployeeListScreen').EmployeeListScreen} 
+            <Stack.Screen
+                name="EmployeeList"
+                getComponent={() => require('../../features/employee/screens/EmployeeListScreen').EmployeeListScreen}
             />
-            <Stack.Screen 
-                name="EmployeeForm" 
-                getComponent={() => require('../../features/employee/screens/EmployeeFormScreen').EmployeeFormScreen} 
+            <Stack.Screen
+                name="EmployeeForm"
+                getComponent={() => require('../../features/employee/screens/EmployeeFormScreen').EmployeeFormScreen}
             />
-            <Stack.Screen 
-                name="EmployeeEdit" 
-                getComponent={() => require('../../features/employee/screens/EmployeeEditScreen').EmployeeEditScreen} 
+            <Stack.Screen
+                name="EmployeeEdit"
+                getComponent={() => require('../../features/employee/screens/EmployeeEditScreen').EmployeeEditScreen}
             />
 
             {/* Customers */}
-            <Stack.Screen 
-                name="CustomerList" 
-                getComponent={() => require('../../features/customers/screens/CustomerListScreen').CustomerListScreen} 
+            <Stack.Screen
+                name="CustomerList"
+                getComponent={() => require('../../features/customers/screens/CustomerListScreen').CustomerListScreen}
             />
-            <Stack.Screen 
-                name="CustomerForm" 
-                getComponent={() => require('../../features/customers/screens/CustomerFormScreen').CustomerFormScreen} 
+            <Stack.Screen
+                name="CustomerForm"
+                getComponent={() => require('../../features/customers/screens/CustomerFormScreen').CustomerFormScreen}
             />
-            <Stack.Screen 
-                name="CustomerEdit" 
-                getComponent={() => require('../../features/customers/screens/CustomerEditScreen').CustomerEditScreen} 
+            <Stack.Screen
+                name="CustomerEdit"
+                getComponent={() => require('../../features/customers/screens/CustomerEditScreen').CustomerEditScreen}
             />
-            <Stack.Screen 
-                name="CustomerContactForm" 
-                getComponent={() => require('../../features/customercontacts/screens/CustomerContactFormScreen').CustomerContactFormScreen} 
+            <Stack.Screen
+                name="CustomerContactForm"
+                getComponent={() => require('../../features/customercontacts/screens/CustomerContactFormScreen').CustomerContactFormScreen}
             />
-            <Stack.Screen 
-                name="CustomerContactEdit" 
-                getComponent={() => require('../../features/customercontacts/screens/CustomerContactEditScreen').CustomerContactEditScreen} 
+            <Stack.Screen
+                name="CustomerContactEdit"
+                getComponent={() => require('../../features/customercontacts/screens/CustomerContactEditScreen').CustomerContactEditScreen}
             />
             <Stack.Screen
                 name="ProductList"
@@ -188,25 +188,26 @@ export function MainNavigator() {
                 name="ProductPriceAgentDetailScreen"
                 component={ProductPriceAgentDetailScreen}
             />
-            {/* Brosur */}
+            {/* Product Price Requests */}
             <Stack.Screen
-                name="Brosur"
-                component={BrosurScreen}
-                options={{ headerShown: false }}
-            />
-            <Stack.Screen 
-                name="ProductPriceReqListScreen" 
-                component={ProductPriceReqListScreen}
-                options={{ headerShown: false }}
-            />
-            <Stack.Screen 
-                name="ProductPriceReqFormScreen" 
+                name="ProductPriceReqFormScreen"
                 component={ProductPriceReqFormScreen}
                 options={{ headerShown: false }}
             />
-            <Stack.Screen 
-                name="ProductPriceReqEditScreen" 
+            <Stack.Screen
+                name="ProductPriceReqEditScreen"
                 component={ProductPriceReqEditScreen}
+                options={{ headerShown: false }}
+            />
+            {/* CSR */}
+            <Stack.Screen 
+                name="CsrFormScreen" 
+                component={CsrFormScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+                name="CsrEditScreen" 
+                component={CsrEditScreen}
                 options={{ headerShown: false }}
             />
         </Stack.Navigator>

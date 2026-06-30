@@ -236,6 +236,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'ProductPriceMktList') return 'Product Price Marketing';
         if (route === 'ProductPriceAgentList') return 'Product Price Agent';
         if (route === 'ProductPriceReqListScreen') return 'Product Price Request';
+        if (route === 'Brosur') return 'Brosur';
+        if (route === 'CsrListScreen') return 'Customer Request (CSR)';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -329,6 +331,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('Brosur', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Product Price Request') {
                                     props.navigation.navigate('ProductPriceReqListScreen', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Customer Request (CSR)') {
+                                    props.navigation.navigate('CsrListScreen', { timestamp: Date.now() });
                                 }
                             }}
                         />
@@ -393,6 +397,21 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="ProductPriceAgentList"
                 component={require('../../features/productpriceagent/screens/ProductPriceAgentListScreen').ProductPriceAgentListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="Brosur"
+                component={require('../../features/brosur/screens/BrosurScreen').BrosurScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="ProductPriceReqListScreen"
+                component={require('../../features/productpricereq/screens/ProductPriceReqListScreen').ProductPriceReqListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="CsrListScreen"
+                component={require('../../features/csr/screens/CsrListScreen').CsrListScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>

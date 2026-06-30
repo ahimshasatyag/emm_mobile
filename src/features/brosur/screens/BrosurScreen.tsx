@@ -118,8 +118,6 @@ export function BrosurScreen() {
         <View className="flex-1 bg-gray-50">
             <HeaderNavigator 
                 title="BROSUR" 
-                showBackButton={true}
-                onBackPress={() => navigation.goBack()}
             />
 
             {/* Content Area */}
