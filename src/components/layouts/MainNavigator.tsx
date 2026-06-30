@@ -17,6 +17,8 @@ import { ProductPriceReqFormScreen } from '../../features/productpricereq/screen
 import { ProductPriceReqEditScreen } from '../../features/productpricereq/screens/ProductPriceReqEditScreen';
 import { CsrFormScreen } from '../../features/csr/screens/CsrFormScreen';
 import { CsrEditScreen } from '../../features/csr/screens/CsrEditScreen';
+import { CstListScreen } from '../../features/cst/screens/CstListScreen';
+import { CstEditScreen } from '../../features/cst/screens/CstEditScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -208,6 +210,17 @@ export function MainNavigator() {
             <Stack.Screen 
                 name="CsrEditScreen" 
                 component={CsrEditScreen}
+                options={{ headerShown: false }}
+            />
+            {/* CST */}
+            <Stack.Screen 
+                name="CstListScreen" 
+                component={CstListScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+                name="CstEditScreen" 
+                component={CstEditScreen}
                 options={{ headerShown: false }}
             />
         </Stack.Navigator>

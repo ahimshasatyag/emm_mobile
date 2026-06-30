@@ -238,6 +238,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'ProductPriceReqListScreen') return 'Product Price Request';
         if (route === 'Brosur') return 'Brosur';
         if (route === 'CsrListScreen') return 'Customer Request (CSR)';
+        if (route === 'CstListScreen') return 'Suport Ticket (CST)';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -333,6 +334,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('ProductPriceReqListScreen', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Customer Request (CSR)') {
                                     props.navigation.navigate('CsrListScreen', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Suport Ticket (CST)') {
+                                    props.navigation.navigate('CstListScreen', { timestamp: Date.now() });
                                 }
                             }}
                         />
@@ -412,6 +415,11 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="CsrListScreen"
                 component={require('../../features/csr/screens/CsrListScreen').CsrListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="CstListScreen"
+                component={require('../../features/cst/screens/CstListScreen').CstListScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>
