@@ -24,6 +24,9 @@ import { LktEditScreen } from '../../features/lkt/screens/LktEditScreen';
 import { LktFormScreen } from '../../features/lkt/screens/LktFormScreen';
 import { RealisasiFormScreen } from '../../features/lkt/screens/RealisasiFormScreen';
 import { RealisasiEditScreen } from '../../features/lkt/screens/RealisasiEditScreen';
+import { LogbookProductListScreen } from '../../features/logbookproduct/screens/LogbookProductListScreen';
+import { LogbookProductFormScreen } from '../../features/logbookproduct/screens/LogbookProductFormScreen';
+import { LogbookProductEditScreen } from '../../features/logbookproduct/screens/LogbookProductEditScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -254,6 +257,10 @@ export function MainNavigator() {
                 component={RealisasiEditScreen}
                 options={{ headerShown: false }}
             />
+            {/* Logbook Product */}
+            <Stack.Screen name="LogbookProductListScreen" component={LogbookProductListScreen} />
+            <Stack.Screen name="LogbookProductFormScreen" component={LogbookProductFormScreen} />
+            <Stack.Screen name="LogbookProductEditScreen" component={LogbookProductEditScreen} />
         </Stack.Navigator>
     );
 }

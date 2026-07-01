@@ -29,6 +29,7 @@ import productPriceReqReducer from '../features/productpricereq/stores/productPr
 import csrReducer from '../features/csr/stores/csrSlice';
 import cstReducer from '../features/cst/stores/cstSlice';
 import lktReducer from '../features/lkt/stores/lktSlice';
+import logbookproductReducer from '../features/logbookproduct/stores/logbookproductSlice';
 
 // import attendanceReducer from '../features/attendance/store/attendanceSlice';
 // import customerReducer from '../features/customer/store/customerSlice';
@@ -75,6 +76,7 @@ export const store = configureStore({
     csr: csrReducer,
     cst: cstReducer,
     lkt: lktReducer,
+    logbookproduct: logbookproductReducer,
     // attendance: attendanceReducer,
     // customer: customerReducer,
     // product: productsReducer,
