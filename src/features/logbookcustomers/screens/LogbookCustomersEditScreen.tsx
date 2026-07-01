@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TextInput, Alert, RefreshControl } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Save, Edit3, Trash2, X } from 'lucide-react-native';
@@ -8,27 +8,27 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Button } from '../../../components/ui/button';
 import { theme } from '../../../theme/theme';
+import { fetchLogbookCustomerDetail, clearCurrent } from '../stores/logbookcustomersSlice';
 import { RootState, AppDispatch } from '../../../stores';
-import { fetchLogbookProductDetail, clearCurrent } from '../stores/logbookproductSlice';
-import { LogbookProductEditSkeleton } from '../skeleton/LogbookProductEditSkeleton';
-import { useLogbookProductForm } from '../hooks/useLogbookProductForm';
-import { logbookProductApi } from '../api/logbookProductApi';
-import { dummyProductsDropdown, dummyKerusakanDropdown } from '../data/dummyProducts';
+import { LogbookCustomersEditSkeleton } from '../skeleton/LogbookCustomersEditSkeleton';
+import { useLogbookCustomersForm } from '../hooks/useLogbookCustomersForm';
+import { logbookCustomersApi } from '../api/logbookCustomersApi';
+import { dummyCustomersDropdown } from '../data/dummyCustomers';
 
-export function LogbookProductEditScreen() {
+export function LogbookCustomersEditScreen() {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
     const dispatch = useDispatch<AppDispatch>();
     
     const { id } = route.params || {};
-    const { current, isLoading } = useSelector((state: RootState) => state.logbookproduct || { current: null, isLoading: false });
-
+    const { current, isLoading } = useSelector((state: RootState) => state.logbookcustomers || { current: null, isLoading: false });
+    
     const [isEditing, setIsEditing] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
     // Form Hook
-    const { formData, updateField, validate } = useLogbookProductForm(current || undefined);
+    const { formData, updateField, validate } = useLogbookCustomersForm(current || undefined);
 
     useEffect(() => {
         if (id) {
@@ -39,8 +39,7 @@ export function LogbookProductEditScreen() {
 
     useEffect(() => {
         if (current) {
-            updateField('id_product', current.id_product);
-            updateField('id_type_kerusakan', current.id_type_kerusakan);
+            updateField('id_customers', current.id_customers);
             updateField('masalah', current.masalah);
             updateField('solusi', current.solusi);
             updateField('catatan', current.catatan);
@@ -49,7 +48,7 @@ export function LogbookProductEditScreen() {
     }, [current]);
 
     const loadData = async () => {
-        await dispatch(fetchLogbookProductDetail(id));
+        await dispatch(fetchLogbookCustomerDetail(id));
     };
 
     const handleRefresh = async () => {
@@ -67,7 +66,7 @@ export function LogbookProductEditScreen() {
         
         setIsSaving(true);
         try {
-            await logbookProductApi.update(id, formData);
+            await logbookCustomersApi.update(id, formData);
             Alert.alert("Sukses", "Data berhasil diupdate!", [
                 { text: "OK", onPress: () => setIsEditing(false) }
             ]);
@@ -90,7 +89,7 @@ export function LogbookProductEditScreen() {
                     style: "destructive",
                     onPress: async () => {
                         try {
-                            await logbookProductApi.delete(id);
+                            await logbookCustomersApi.delete(id);
                             Alert.alert("Dihapus!", "Data berhasil dihapus");
                             navigation.goBack();
                         } catch (e) {
@@ -105,7 +104,7 @@ export function LogbookProductEditScreen() {
     return (
         <View className="flex-1 bg-gray-50">
             <HeaderNavigator 
-                title={isLoading || isRefreshing ? "MEMUAT DATA..." : (isEditing ? "EDIT LOGBOOK PRODUCT" : "DETAIL LOGBOOK PRODUCT")}
+                title={isLoading || isRefreshing ? "MEMUAT DATA..." : (isEditing ? "EDIT LOGBOOK CUSTOMERS" : "DETAIL LOGBOOK CUSTOMERS")}
                 showBackButton={true}
                 onBackPress={() => {
                     if (isEditing) {
@@ -127,38 +126,21 @@ export function LogbookProductEditScreen() {
                     }
                 >
                     {(isLoading || isRefreshing) ? (
-                        <LogbookProductEditSkeleton />
+                        <LogbookCustomersEditSkeleton />
                     ) : (
                         <View className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
                             
                             <View className="mb-5">
-                                <Text className="text-xs font-bold text-gray-700 mb-2">Product Name <Text className="text-red-500">*</Text></Text>
+                                <Text className="text-xs font-bold text-gray-700 mb-2">Customer <Text className="text-red-500">*</Text></Text>
                                 <View className={`border border-gray-300 rounded-lg justify-center h-[42px] ${isEditing ? 'bg-white' : 'bg-gray-100'}`}>
                                     <Dropdown
                                         style={{ paddingHorizontal: 12 }}
-                                        data={dummyProductsDropdown}
+                                        data={dummyCustomersDropdown}
                                         labelField="label"
                                         valueField="value"
-                                        placeholder="Select Product"
-                                        value={formData.id_product}
-                                        onChange={(item) => updateField('id_product', item.value)}
-                                        selectedTextStyle={{ color: '#1F2937', fontSize: 14 }}
-                                        disable={!isEditing}
-                                    />
-                                </View>
-                            </View>
-
-                            <View className="mb-5">
-                                <Text className="text-xs font-bold text-gray-700 mb-2">Tipe Kerusakan <Text className="text-red-500">*</Text></Text>
-                                <View className={`border border-gray-300 rounded-lg justify-center h-[42px] ${isEditing ? 'bg-white' : 'bg-gray-100'}`}>
-                                    <Dropdown
-                                        style={{ paddingHorizontal: 12 }}
-                                        data={dummyKerusakanDropdown}
-                                        labelField="label"
-                                        valueField="value"
-                                        placeholder="Select Tipe Kerusakan"
-                                        value={formData.id_type_kerusakan}
-                                        onChange={(item) => updateField('id_type_kerusakan', item.value)}
+                                        placeholder="Select Customer"
+                                        value={formData.id_customers}
+                                        onChange={(item) => updateField('id_customers', item.value)}
                                         selectedTextStyle={{ color: '#1F2937', fontSize: 14 }}
                                         disable={!isEditing}
                                     />

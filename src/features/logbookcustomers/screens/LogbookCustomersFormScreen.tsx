@@ -7,16 +7,14 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Button } from '../../../components/ui/button';
 import { theme } from '../../../theme/theme';
-import { useLogbookProductForm } from '../hooks/useLogbookProductForm';
-import { logbookProductApi } from '../api/logbookProductApi';
-import { dummyProductsDropdown, dummyKerusakanDropdown } from '../data/dummyProducts';
-import { LogbookProductFormSkeleton } from '../skeleton/LogbookProductFormSkeleton';
+import { useLogbookCustomersForm } from '../hooks/useLogbookCustomersForm';
+import { logbookCustomersApi } from '../api/logbookCustomersApi';
+import { dummyCustomersDropdown } from '../data/dummyCustomers';
+import { LogbookCustomersFormSkeleton } from '../skeleton/LogbookCustomersFormSkeleton';
 
-export function LogbookProductFormScreen() {
+export function LogbookCustomersFormScreen() {
     const navigation = useNavigation<any>();
-    
-    // Form State
-    const { formData, updateField, validate } = useLogbookProductForm();
+    const { formData, updateField, validate } = useLogbookCustomersForm();
     const [isSaving, setIsSaving] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isInitializing, setIsInitializing] = useState(true);
@@ -49,7 +47,7 @@ export function LogbookProductFormScreen() {
         
         setIsSaving(true);
         try {
-            await logbookProductApi.create(formData);
+            await logbookCustomersApi.create(formData);
             Alert.alert("Sukses", "Data berhasil disimpan!", [
                 { text: "OK", onPress: () => navigation.goBack() }
             ]);
@@ -63,7 +61,7 @@ export function LogbookProductFormScreen() {
     return (
         <View className="flex-1 bg-gray-50">
             <HeaderNavigator 
-                title={(isInitializing || isRefreshing) ? "MEMUAT DATA..." : "TAMBAH LOGBOOK PRODUCT"}
+                title={(isInitializing || isRefreshing) ? "MEMUAT DATA..." : "TAMBAH LOGBOOK CUSTOMERS"}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
                 disableAnimation={true}
@@ -80,37 +78,21 @@ export function LogbookProductFormScreen() {
                     }
                 >
                     {(isInitializing || isRefreshing) ? (
-                        <LogbookProductFormSkeleton />
+                        <LogbookCustomersFormSkeleton />
                     ) : (
                         <View className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
                         
                         <View className="mb-5">
-                            <Text className="text-xs font-bold text-gray-700 mb-2">Product Name <Text className="text-red-500">*</Text></Text>
+                            <Text className="text-xs font-bold text-gray-700 mb-2">Customer <Text className="text-red-500">*</Text></Text>
                             <View className="border border-gray-300 rounded-lg justify-center h-[42px] bg-white">
                                 <Dropdown
                                     style={{ paddingHorizontal: 12 }}
-                                    data={dummyProductsDropdown}
+                                    data={dummyCustomersDropdown}
                                     labelField="label"
                                     valueField="value"
-                                    placeholder="Select Product"
-                                    value={formData.id_product}
-                                    onChange={(item) => updateField('id_product', item.value)}
-                                    selectedTextStyle={{ color: '#1F2937', fontSize: 14 }}
-                                />
-                            </View>
-                        </View>
-
-                        <View className="mb-5">
-                            <Text className="text-xs font-bold text-gray-700 mb-2">Tipe Kerusakan <Text className="text-red-500">*</Text></Text>
-                            <View className="border border-gray-300 rounded-lg justify-center h-[42px] bg-white">
-                                <Dropdown
-                                    style={{ paddingHorizontal: 12 }}
-                                    data={dummyKerusakanDropdown}
-                                    labelField="label"
-                                    valueField="value"
-                                    placeholder="Select Tipe Kerusakan"
-                                    value={formData.id_type_kerusakan}
-                                    onChange={(item) => updateField('id_type_kerusakan', item.value)}
+                                    placeholder="Select Customer"
+                                    value={formData.id_customers}
+                                    onChange={(item) => updateField('id_customers', item.value)}
                                     selectedTextStyle={{ color: '#1F2937', fontSize: 14 }}
                                 />
                             </View>

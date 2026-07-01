@@ -15,7 +15,7 @@ import { EmptyState } from '../../../components/shared/EmptyState';
 export function LktListScreen() {
     const navigation = useNavigation<any>();
     const { items, isLoading, filter, loadLkts, updateFilter } = useLkt();
-    
+
     const [isInitializing, setIsInitializing] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [startDate, setStartDate] = useState('');
@@ -82,8 +82,8 @@ export function LktListScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator 
-                title="LEMBAR KERJA TEKNISI" 
+            <HeaderNavigator
+                title="LEMBAR KERJA TEKNISI"
             />
 
             <View className="px-6 pt-5 pb-4">
@@ -102,7 +102,7 @@ export function LktListScreen() {
                 <View className="flex-row justify-between mb-3">
                     <View className="flex-1 mr-2">
                         <Text className="text-xs text-gray-500 mb-1">Dari Tanggal</Text>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             className="bg-white flex-row items-center px-3 h-10 rounded-lg border border-gray-200 shadow-sm"
                             onPress={() => setShowStartDatePicker(true)}
                         >
@@ -130,7 +130,7 @@ export function LktListScreen() {
                     </View>
                     <View className="flex-1 ml-2">
                         <Text className="text-xs text-gray-500 mb-1">Sampai Tanggal</Text>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             className="bg-white flex-row items-center px-3 h-10 rounded-lg border border-gray-200 shadow-sm"
                             onPress={() => setShowEndDatePicker(true)}
                         >
@@ -157,7 +157,7 @@ export function LktListScreen() {
                         )}
                     </View>
                 </View>
-                
+
                 {/* Status, All Checkbox, and Filter Button */}
                 <View className="flex-row items-center justify-between z-10">
                     <View className="flex-1 mr-3 border border-gray-200 rounded-lg bg-white overflow-hidden">
@@ -182,7 +182,7 @@ export function LktListScreen() {
                         />
                     </View>
 
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         className="flex-row items-center mr-3"
                         onPress={() => setIsAll(!isAll)}
                     >
@@ -190,7 +190,7 @@ export function LktListScreen() {
                         <Text className="text-sm font-medium text-gray-700 ml-1.5">All</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         className="px-4 py-2.5 rounded-lg items-center justify-center"
                         style={{ backgroundColor: theme.colors.primary }}
                         onPress={handleApplyFilter}

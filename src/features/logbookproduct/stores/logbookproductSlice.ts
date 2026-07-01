@@ -1,37 +1,7 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { LogbookProduct, LogbookProductState } from '../types/logbookproduct.types';
-
-// Dummy initial data mimicking PHP DB
-const DUMMY_DATA: LogbookProduct[] = [
-    {
-        id_log_book: 'LB-202507-001',
-        id_product: '1',
-        nm_product: 'Mesin Kopi Espresso',
-        code_product: 'PRD-001',
-        id_type_kerusakan: '1',
-        nm_type_kerusakan: 'Mekanik',
-        date_log_book: '2025-07-18',
-        masalah: 'Air tidak mau keluar dari portafilter',
-        solusi: 'Pembersihan saluran air dan penggantian seal',
-        catatan: 'Perlu maintenance rutin tiap bulan',
-        username: 'Agung',
-        date_entry: '2025-07-18 10:00:00'
-    },
-    {
-        id_log_book: 'LB-202507-002',
-        id_product: '2',
-        nm_product: 'Mesin Grinder',
-        code_product: 'PRD-002',
-        id_type_kerusakan: '2',
-        nm_type_kerusakan: 'Elektrik',
-        date_log_book: '2025-07-19',
-        masalah: 'Motor grinder tidak berputar',
-        solusi: 'Ganti kapasitor motor',
-        catatan: 'Cek tegangan listrik outlet',
-        username: 'Agung',
-        date_entry: '2025-07-19 14:30:00'
-    }
-];
+import { logbookProductApi } from '../api/logbookProductApi';
+import { dummyLogbookProducts } from '../data/dummyProducts';
 
 const initialState: LogbookProductState = {
     list: [],
@@ -43,10 +13,10 @@ const initialState: LogbookProductState = {
 export const fetchLogbookProducts = createAsyncThunk(
     'logbookproduct/fetchList',
     async () => {
-        // Simulate API call
+        // In real implementation: return await logbookProductApi.getAll();
         return new Promise<LogbookProduct[]>((resolve) => {
             setTimeout(() => {
-                resolve(DUMMY_DATA);
+                resolve(dummyLogbookProducts);
             }, 800);
         });
     }
@@ -55,10 +25,10 @@ export const fetchLogbookProducts = createAsyncThunk(
 export const fetchLogbookProductDetail = createAsyncThunk(
     'logbookproduct/fetchDetail',
     async (id: string) => {
-        // Simulate API call
+        // In real implementation: return await logbookProductApi.getById(id);
         return new Promise<LogbookProduct | null>((resolve) => {
             setTimeout(() => {
-                const found = DUMMY_DATA.find(item => item.id_log_book === id);
+                const found = dummyLogbookProducts.find(item => item.id_log_book === id);
                 resolve(found || null);
             }, 500);
         });

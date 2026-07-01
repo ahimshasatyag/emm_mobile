@@ -28,6 +28,10 @@ import { LogbookProductListScreen } from '../../features/logbookproduct/screens/
 import { LogbookProductFormScreen } from '../../features/logbookproduct/screens/LogbookProductFormScreen';
 import { LogbookProductEditScreen } from '../../features/logbookproduct/screens/LogbookProductEditScreen';
 
+import { LogbookCustomersListScreen } from '../../features/logbookcustomers/screens/LogbookCustomersListScreen';
+import { LogbookCustomersFormScreen } from '../../features/logbookcustomers/screens/LogbookCustomersFormScreen';
+import { LogbookCustomersEditScreen } from '../../features/logbookcustomers/screens/LogbookCustomersEditScreen';
+
 const Stack = createNativeStackNavigator();
 
 export function MainNavigator() {
@@ -261,6 +265,11 @@ export function MainNavigator() {
             <Stack.Screen name="LogbookProductListScreen" component={LogbookProductListScreen} />
             <Stack.Screen name="LogbookProductFormScreen" component={LogbookProductFormScreen} />
             <Stack.Screen name="LogbookProductEditScreen" component={LogbookProductEditScreen} />
+
+            {/* Logbook Customers */}
+            <Stack.Screen name="LogbookCustomersListScreen" component={LogbookCustomersListScreen} />
+            <Stack.Screen name="LogbookCustomersFormScreen" component={LogbookCustomersFormScreen} />
+            <Stack.Screen name="LogbookCustomersEditScreen" component={LogbookCustomersEditScreen} />
         </Stack.Navigator>
     );
 }

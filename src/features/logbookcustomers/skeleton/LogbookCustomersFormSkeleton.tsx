@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
-export function LogbookProductFormSkeleton() {
+export function LogbookCustomersFormSkeleton() {
     return (
         <Animated.View
             entering={FadeIn.duration(400)}
@@ -12,10 +12,6 @@ export function LogbookProductFormSkeleton() {
             <View className="space-y-4">
                 <View>
                     <View className="h-4 w-1/4 bg-gray-200 rounded animate-pulse mb-2" />
-                    <View className="h-12 w-full bg-gray-100 rounded-lg animate-pulse" />
-                </View>
-                <View>
-                    <View className="h-4 w-1/3 bg-gray-200 rounded animate-pulse mb-2" />
                     <View className="h-12 w-full bg-gray-100 rounded-lg animate-pulse" />
                 </View>
                 <View>

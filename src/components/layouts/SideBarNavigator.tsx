@@ -241,6 +241,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'CstListScreen') return 'Suport Ticket (CST)';
         if (route === 'LktListScreen') return 'Lembar Kerja Teknisi (LKT)';
         if (route === 'LogbookProductListScreen') return 'Log Book Product';
+        if (route === 'LogbookCustomersListScreen') return 'Log Book Customers';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -342,6 +343,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('LktListScreen', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Log Book Product') {
                                     props.navigation.navigate('LogbookProductListScreen', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Log Book Customers') {
+                                    props.navigation.navigate('LogbookCustomersListScreen', { timestamp: Date.now() });
                                 }
                             }}
                         />
@@ -436,6 +439,11 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="LogbookProductListScreen"
                 component={require('../../features/logbookproduct/screens/LogbookProductListScreen').LogbookProductListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="LogbookCustomersListScreen"
+                component={require('../../features/logbookcustomers/screens/LogbookCustomersListScreen').LogbookCustomersListScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>
