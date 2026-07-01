@@ -239,6 +239,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'Brosur') return 'Brosur';
         if (route === 'CsrListScreen') return 'Customer Request (CSR)';
         if (route === 'CstListScreen') return 'Suport Ticket (CST)';
+        if (route === 'LktListScreen') return 'Lembar Kerja Teknisi (LKT)';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -336,6 +337,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('CsrListScreen', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Suport Ticket (CST)') {
                                     props.navigation.navigate('CstListScreen', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Lembar Kerja Teknisi (LKT)') {
+                                    props.navigation.navigate('LktListScreen', { timestamp: Date.now() });
                                 }
                             }}
                         />
@@ -420,6 +423,11 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="CstListScreen"
                 component={require('../../features/cst/screens/CstListScreen').CstListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="LktListScreen"
+                component={require('../../features/lkt/screens/LktListScreen').LktListScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>

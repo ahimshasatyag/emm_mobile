@@ -12,9 +12,10 @@ interface HeaderNavigatorProps {
     title?: string;
     showBackButton?: boolean;
     onBackPress?: () => void;
+    disableAnimation?: boolean;
 }
 
-export function HeaderNavigator({ isLoading = false, title = 'Eka Maju Mesinindo', showBackButton = false, onBackPress }: HeaderNavigatorProps) {
+export function HeaderNavigator({ isLoading = false, title = 'Eka Maju Mesinindo', showBackButton = false, onBackPress, disableAnimation = false }: HeaderNavigatorProps) {
     const navigation = useNavigation<DrawerNavigationProp<any>>();
     const insets = useSafeAreaInsets();
 
@@ -45,7 +46,7 @@ export function HeaderNavigator({ isLoading = false, title = 'Eka Maju Mesinindo
 
     return (
         <Animated.View
-            entering={FadeInDown.duration(600).springify()}
+            {...(disableAnimation ? {} : { entering: FadeInDown.duration(600).springify() })}
             className="bg-white"
             style={{
                 paddingTop: insets.top > 0 ? insets.top + 10 : 20,

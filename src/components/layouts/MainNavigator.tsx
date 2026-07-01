@@ -19,6 +19,11 @@ import { CsrFormScreen } from '../../features/csr/screens/CsrFormScreen';
 import { CsrEditScreen } from '../../features/csr/screens/CsrEditScreen';
 import { CstListScreen } from '../../features/cst/screens/CstListScreen';
 import { CstEditScreen } from '../../features/cst/screens/CstEditScreen';
+import { LktListScreen } from '../../features/lkt/screens/LktListScreen';
+import { LktEditScreen } from '../../features/lkt/screens/LktEditScreen';
+import { LktFormScreen } from '../../features/lkt/screens/LktFormScreen';
+import { RealisasiFormScreen } from '../../features/lkt/screens/RealisasiFormScreen';
+import { RealisasiEditScreen } from '../../features/lkt/screens/RealisasiEditScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -221,6 +226,32 @@ export function MainNavigator() {
             <Stack.Screen 
                 name="CstEditScreen" 
                 component={CstEditScreen}
+                options={{ headerShown: false }}
+            />
+            {/* LKT */}
+            <Stack.Screen 
+                name="LktListScreen" 
+                component={LktListScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+                name="LktEditScreen" 
+                component={LktEditScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+                name="LktFormScreen" 
+                component={LktFormScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+                name="RealisasiForm" 
+                component={RealisasiFormScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+                name="RealisasiEdit" 
+                component={RealisasiEditScreen}
                 options={{ headerShown: false }}
             />
         </Stack.Navigator>

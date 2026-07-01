@@ -319,7 +319,7 @@ export function CstEditScreen() {
                                         <TouchableOpacity
                                             className="flex-row items-center px-4 py-2.5 rounded-lg"
                                             style={{ backgroundColor: theme.colors.primary }}
-                                            onPress={() => Alert.alert('Info', 'Fitur Add LKT belum tersedia')}
+                                            onPress={() => navigation.navigate('LktFormScreen', { cstCode: currentCst.cst_code })}
                                         >
                                             <Plus color="#fff" size={18} />
                                             <Text className="text-white text-xs font-bold ml-1.5">Add New LKT</Text>
