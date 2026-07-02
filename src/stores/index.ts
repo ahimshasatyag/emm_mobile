@@ -31,6 +31,7 @@ import cstReducer from '../features/cst/stores/cstSlice';
 import lktReducer from '../features/lkt/stores/lktSlice';
 import logbookproductReducer from '../features/logbookproduct/stores/logbookproductSlice';
 import logbookcustomersReducer from '../features/logbookcustomers/stores/logbookcustomersSlice';
+import cekserialnumberReducer from '../features/cekserialnumber/stores/cekserialnumberSlice';
 
 // import attendanceReducer from '../features/attendance/store/attendanceSlice';
 // import customerReducer from '../features/customer/store/customerSlice';
@@ -79,6 +80,7 @@ export const store = configureStore({
     lkt: lktReducer,
     logbookproduct: logbookproductReducer,
     logbookcustomers: logbookcustomersReducer,
+    cekserialnumber: cekserialnumberReducer,
     // attendance: attendanceReducer,
     // customer: customerReducer,
     // product: productsReducer,

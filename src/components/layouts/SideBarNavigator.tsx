@@ -242,6 +242,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'LktListScreen') return 'Lembar Kerja Teknisi (LKT)';
         if (route === 'LogbookProductListScreen') return 'Log Book Product';
         if (route === 'LogbookCustomersListScreen') return 'Log Book Customers';
+        if (route === 'CekSerialNumberScreen') return 'Cek Serial Number';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -345,6 +346,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('LogbookProductListScreen', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Log Book Customers') {
                                     props.navigation.navigate('LogbookCustomersListScreen', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Cek Serial Number') {
+                                    props.navigation.navigate('CekSerialNumberScreen', { timestamp: Date.now() });
                                 }
                             }}
                         />
@@ -444,6 +447,11 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="LogbookCustomersListScreen"
                 component={require('../../features/logbookcustomers/screens/LogbookCustomersListScreen').LogbookCustomersListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="CekSerialNumberScreen"
+                component={require('../../features/cekserialnumber/screens/CekSerialNumberScreen').CekSerialNumberScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>

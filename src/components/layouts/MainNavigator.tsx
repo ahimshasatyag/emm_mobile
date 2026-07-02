@@ -31,6 +31,7 @@ import { LogbookProductEditScreen } from '../../features/logbookproduct/screens/
 import { LogbookCustomersListScreen } from '../../features/logbookcustomers/screens/LogbookCustomersListScreen';
 import { LogbookCustomersFormScreen } from '../../features/logbookcustomers/screens/LogbookCustomersFormScreen';
 import { LogbookCustomersEditScreen } from '../../features/logbookcustomers/screens/LogbookCustomersEditScreen';
+import { CekSerialNumberScreen } from '../../features/cekserialnumber/screens/CekSerialNumberScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -46,6 +47,7 @@ export function MainNavigator() {
             <Stack.Screen name="InventoryList" component={InventoryListScreen} />
             <Stack.Screen name="InventoryForm" component={InventoryFormScreen} />
             <Stack.Screen name="InventoryEdit" component={InventoryEditScreen} />
+            <Stack.Screen name="CekSerialNumber" component={CekSerialNumberScreen} />
             <Stack.Screen name="UsersLevelForm" component={require('../../features/userslevel/screens/UsersLevelFormScreen').UsersLevelFormScreen} />
             <Stack.Screen name="UsersLevelEdit" component={require('../../features/userslevel/screens/UsersLevelEditScreen').UsersLevelEditScreen} />
             <Stack.Screen name="CounterEdit" component={require('../../features/counter/screens/CounterEditScreen').CounterEditScreen} />
