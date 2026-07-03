@@ -296,6 +296,20 @@ export function MainNavigator() {
                 name="SOEdit"
                 getComponent={() => require('../../features/so/screens/SOEditScreen').SOEditScreen}
             />
+
+            {/* Survey */}
+            <Stack.Screen
+                name="SurveyList"
+                getComponent={() => require('../../features/survey/screens/SurveyListScreen').SurveyListScreen}
+            />
+            <Stack.Screen
+                name="SurveyForm"
+                getComponent={() => require('../../features/survey/screens/SurveyFormScreen').SurveyFormScreen}
+            />
+            <Stack.Screen
+                name="SurveyEdit"
+                getComponent={() => require('../../features/survey/screens/SurveyEditScreen').SurveyEditScreen}
+            />
         </Stack.Navigator>
     );
 }
