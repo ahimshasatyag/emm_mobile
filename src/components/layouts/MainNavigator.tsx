@@ -272,6 +272,20 @@ export function MainNavigator() {
             <Stack.Screen name="LogbookCustomersListScreen" component={LogbookCustomersListScreen} />
             <Stack.Screen name="LogbookCustomersFormScreen" component={LogbookCustomersFormScreen} />
             <Stack.Screen name="LogbookCustomersEditScreen" component={LogbookCustomersEditScreen} />
+
+            {/* Quotations */}
+            <Stack.Screen
+                name="QuotationList"
+                getComponent={() => require('../../features/quotations/screens/QuotationListScreen').QuotationListScreen}
+            />
+            <Stack.Screen
+                name="QuotationForm"
+                getComponent={() => require('../../features/quotations/screens/QuotationFormScreen').QuotationFormScreen}
+            />
+            <Stack.Screen
+                name="QuotationEdit"
+                getComponent={() => require('../../features/quotations/screens/QuotationEditScreen').QuotationEditScreen}
+            />
         </Stack.Navigator>
     );
 }
