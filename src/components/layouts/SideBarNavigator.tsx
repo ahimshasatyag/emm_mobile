@@ -244,6 +244,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'LogbookCustomersListScreen') return 'Log Book Customers';
         if (route === 'CekSerialNumberScreen') return 'Cek Serial Number';
         if (route === 'QuotationList') return 'Quotations';
+        if (route === 'SOList') return 'Sales Order';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -351,6 +352,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('CekSerialNumberScreen', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Quotations') {
                                     props.navigation.navigate('QuotationList', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Sales Order') {
+                                    props.navigation.navigate('SOList', { timestamp: Date.now() });
                                 }
                             }}
                         />
@@ -460,6 +463,11 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="QuotationList"
                 component={require('../../features/quotations/screens/QuotationListScreen').QuotationListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="SOList"
+                component={require('../../features/so/screens/SOListScreen').SOListScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>

@@ -286,6 +286,16 @@ export function MainNavigator() {
                 name="QuotationEdit"
                 getComponent={() => require('../../features/quotations/screens/QuotationEditScreen').QuotationEditScreen}
             />
+
+            {/* Sales Orders */}
+            <Stack.Screen
+                name="SOList"
+                getComponent={() => require('../../features/so/screens/SOListScreen').SOListScreen}
+            />
+            <Stack.Screen
+                name="SOEdit"
+                getComponent={() => require('../../features/so/screens/SOEditScreen').SOEditScreen}
+            />
         </Stack.Navigator>
     );
 }
