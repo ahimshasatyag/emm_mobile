@@ -35,6 +35,7 @@ import cekserialnumberReducer from '../features/cekserialnumber/stores/cekserial
 import soReducer from '../features/so/stores/soSlice';
 import surveyReducer from '../features/survey/stores/surveySlice';
 import salescontractReducer from '../features/salescontract/stores/salescontractSlice';
+import salesreturReducer from '../features/salesretur/stores/salesreturSlice';
 
 // import attendanceReducer from '../features/attendance/store/attendanceSlice';
 // import customerReducer from '../features/customer/store/customerSlice';
@@ -87,6 +88,7 @@ export const store = configureStore({
     so: soReducer,
     survey: surveyReducer,
     salescontract: salescontractReducer,
+    salesretur: salesreturReducer,
     // attendance: attendanceReducer,
     // customer: customerReducer,
     // product: productsReducer,

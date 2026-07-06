@@ -248,6 +248,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'SurveyList') return 'Survey';
         if (route === 'SalesContractList') return 'Sales Contract';
         if (route === 'SalesContractListSO') return 'List SO';
+        if (route === 'SalesReturList') return 'Sales Retur';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -363,6 +364,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('SalesContractListSO', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Survey') {
                                     props.navigation.navigate('SurveyList', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Sales Retur') {
+                                    props.navigation.navigate('SalesReturList', { timestamp: Date.now() });
                                 }
                             }}
                         />
@@ -492,6 +495,11 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="SalesContractListSO"
                 component={require('../../features/salescontract/screens/SalesContractListSOScreen').SalesContractListSOScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="SalesReturList"
+                component={require('../../features/salesretur/screens/SalesReturListScreen').SalesReturListScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>

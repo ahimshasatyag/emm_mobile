@@ -299,6 +299,16 @@ export function MainNavigator() {
                 getComponent={() => require('../../features/salescontract/screens/SalesContractEditScreen').SalesContractEditScreen}
             />
 
+            {/* Sales Retur */}
+            <Stack.Screen
+                name="SalesReturForm"
+                getComponent={() => require('../../features/salesretur/screens/SalesReturFormScreen').SalesReturFormScreen}
+            />
+            <Stack.Screen
+                name="SalesReturEdit"
+                getComponent={() => require('../../features/salesretur/screens/SalesReturEditScreen').SalesReturEditScreen}
+            />
+
             {/* Survey */}
             <Stack.Screen
                 name="SurveyForm"
