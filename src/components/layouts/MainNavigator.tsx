@@ -275,10 +275,6 @@ export function MainNavigator() {
 
             {/* Quotations */}
             <Stack.Screen
-                name="QuotationList"
-                getComponent={() => require('../../features/quotations/screens/QuotationListScreen').QuotationListScreen}
-            />
-            <Stack.Screen
                 name="QuotationForm"
                 getComponent={() => require('../../features/quotations/screens/QuotationFormScreen').QuotationFormScreen}
             />
@@ -289,19 +285,21 @@ export function MainNavigator() {
 
             {/* Sales Orders */}
             <Stack.Screen
-                name="SOList"
-                getComponent={() => require('../../features/so/screens/SOListScreen').SOListScreen}
-            />
-            <Stack.Screen
                 name="SOEdit"
                 getComponent={() => require('../../features/so/screens/SOEditScreen').SOEditScreen}
             />
 
-            {/* Survey */}
+            {/* Sales Contract */}
             <Stack.Screen
-                name="SurveyList"
-                getComponent={() => require('../../features/survey/screens/SurveyListScreen').SurveyListScreen}
+                name="SalesContractForm"
+                getComponent={() => require('../../features/salescontract/screens/SalesContractFormScreen').SalesContractFormScreen}
             />
+            <Stack.Screen
+                name="SalesContractEdit"
+                getComponent={() => require('../../features/salescontract/screens/SalesContractEditScreen').SalesContractEditScreen}
+            />
+
+            {/* Survey */}
             <Stack.Screen
                 name="SurveyForm"
                 getComponent={() => require('../../features/survey/screens/SurveyFormScreen').SurveyFormScreen}

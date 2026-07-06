@@ -246,6 +246,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'QuotationList') return 'Quotations';
         if (route === 'SOList') return 'Sales Order';
         if (route === 'SurveyList') return 'Survey';
+        if (route === 'SalesContractList') return 'Sales Contract';
+        if (route === 'SalesContractListSO') return 'List SO';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -355,6 +357,10 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('QuotationList', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Sales Order') {
                                     props.navigation.navigate('SOList', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Sales Contract') {
+                                    props.navigation.navigate('SalesContractList', { timestamp: Date.now() });
+                                } else if (subMenuName === 'List SO') {
+                                    props.navigation.navigate('SalesContractListSO', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Survey') {
                                     props.navigation.navigate('SurveyList', { timestamp: Date.now() });
                                 }
@@ -476,6 +482,16 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="SurveyList"
                 component={require('../../features/survey/screens/SurveyListScreen').SurveyListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="SalesContractList"
+                component={require('../../features/salescontract/screens/SalesContractListScreen').SalesContractListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="SalesContractListSO"
+                component={require('../../features/salescontract/screens/SalesContractListSOScreen').SalesContractListSOScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>

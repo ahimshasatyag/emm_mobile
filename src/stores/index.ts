@@ -34,6 +34,7 @@ import logbookcustomersReducer from '../features/logbookcustomers/stores/logbook
 import cekserialnumberReducer from '../features/cekserialnumber/stores/cekserialnumberSlice';
 import soReducer from '../features/so/stores/soSlice';
 import surveyReducer from '../features/survey/stores/surveySlice';
+import salescontractReducer from '../features/salescontract/stores/salescontractSlice';
 
 // import attendanceReducer from '../features/attendance/store/attendanceSlice';
 // import customerReducer from '../features/customer/store/customerSlice';
@@ -85,6 +86,7 @@ export const store = configureStore({
     cekserialnumber: cekserialnumberReducer,
     so: soReducer,
     survey: surveyReducer,
+    salescontract: salescontractReducer,
     // attendance: attendanceReducer,
     // customer: customerReducer,
     // product: productsReducer,
