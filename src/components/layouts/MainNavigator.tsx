@@ -32,6 +32,8 @@ import { LogbookCustomersListScreen } from '../../features/logbookcustomers/scre
 import { LogbookCustomersFormScreen } from '../../features/logbookcustomers/screens/LogbookCustomersFormScreen';
 import { LogbookCustomersEditScreen } from '../../features/logbookcustomers/screens/LogbookCustomersEditScreen';
 import { CekSerialNumberScreen } from '../../features/cekserialnumber/screens/CekSerialNumberScreen';
+import { ListSOScreen } from '../../features/listso/screens/ListSOScreen';
+import { ListSODetailScreen } from '../../features/listso/screens/ListSODetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -50,6 +52,12 @@ export function MainNavigator() {
             <Stack.Screen name="CekSerialNumber" component={CekSerialNumberScreen} />
             <Stack.Screen name="UsersLevelForm" component={require('../../features/userslevel/screens/UsersLevelFormScreen').UsersLevelFormScreen} />
             <Stack.Screen name="UsersLevelEdit" component={require('../../features/userslevel/screens/UsersLevelEditScreen').UsersLevelEditScreen} />
+            <Stack.Screen name="SalesReturListScreen" component={require('../../features/salesretur/screens/SalesReturListScreen').SalesReturListScreen} />
+            <Stack.Screen name="SalesReturFormScreen" component={require('../../features/salesretur/screens/SalesReturFormScreen').SalesReturFormScreen} />
+            <Stack.Screen name="SalesReturEditScreen" component={require('../../features/salesretur/screens/SalesReturEditScreen').SalesReturEditScreen} />
+
+            <Stack.Screen name="ListSOScreen" component={ListSOScreen} />
+            <Stack.Screen name="ListSODetailScreen" component={ListSODetailScreen} />
             <Stack.Screen name="CounterEdit" component={require('../../features/counter/screens/CounterEditScreen').CounterEditScreen} />
             <Stack.Screen name="SettingForm" component={require('../../features/setting/screens/SettingFormScreen').SettingFormScreen} />
             <Stack.Screen name="SettingEdit" component={require('../../features/setting/screens/SettingEditScreen').SettingEditScreen} />

@@ -247,7 +247,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'SOList') return 'Sales Order';
         if (route === 'SurveyList') return 'Survey';
         if (route === 'SalesContractList') return 'Sales Contract';
-        if (route === 'SalesContractListSO') return 'List SO';
+        if (route === 'ListSOScreen') return 'List SO';
         if (route === 'SalesReturList') return 'Sales Retur';
         return null;
     };
@@ -361,7 +361,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                 } else if (subMenuName === 'Sales Contract') {
                                     props.navigation.navigate('SalesContractList', { timestamp: Date.now() });
                                 } else if (subMenuName === 'List SO') {
-                                    props.navigation.navigate('SalesContractListSO', { timestamp: Date.now() });
+                                    props.navigation.navigate('ListSOScreen', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Survey') {
                                     props.navigation.navigate('SurveyList', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Sales Retur') {
@@ -500,6 +500,11 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="SalesReturList"
                 component={require('../../features/salesretur/screens/SalesReturListScreen').SalesReturListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="ListSOScreen"
+                component={require('../../features/listso/screens/ListSOScreen').ListSOScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>
