@@ -250,6 +250,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'ListSOScreen') return 'List SO';
         if (route === 'LeadsScreen') return 'LEADS';
         if (route === 'SalesReturList') return 'Sales Retur';
+        if (route === 'SuppliersListScreen') return 'Suppliers';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -371,6 +372,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('SurveyList', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Sales Retur') {
                                     props.navigation.navigate('SalesReturList', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Suppliers') {
+                                    props.navigation.navigate('SuppliersListScreen', { timestamp: Date.now() });
                                 }
                             }}
                         />

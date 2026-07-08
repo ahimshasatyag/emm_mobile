@@ -37,6 +37,9 @@ import { ListSOScreen } from '../../features/listso/screens/ListSOScreen';
 import { ListSODetailScreen } from '../../features/listso/screens/ListSODetailScreen';
 import { LeadsScreen } from '../../features/leads/screens/LeadsScreen';
 import { LeadsEditScreen } from '../../features/leads/screens/LeadsEditScreen';
+import { SuppliersListScreen } from '../../features/suppliers/screens/SuppliersListScreen';
+import { SuppliersFormScreen } from '../../features/suppliers/screens/SuppliersFormScreen';
+import { SuppliersEditScreen } from '../../features/suppliers/screens/SuppliersEditScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -68,6 +71,9 @@ export function MainNavigator() {
             <Stack.Screen name="ListSODetailScreen" component={ListSODetailScreen} />
             <Stack.Screen name="LeadsScreen" component={LeadsScreen} />
             <Stack.Screen name="LeadsEditScreen" component={LeadsEditScreen} />
+            <Stack.Screen name="SuppliersListScreen" component={SuppliersListScreen} />
+            <Stack.Screen name="SuppliersFormScreen" component={SuppliersFormScreen} />
+            <Stack.Screen name="SuppliersEditScreen" component={SuppliersEditScreen} />
             <Stack.Screen name="LeadsFormScreen" component={require('../../features/leads/screens/LeadsFormScreen').LeadsFormScreen} />
             <Stack.Screen name="CounterEdit" component={require('../../features/counter/screens/CounterEditScreen').CounterEditScreen} />
             <Stack.Screen name="SettingForm" component={require('../../features/setting/screens/SettingFormScreen').SettingFormScreen} />

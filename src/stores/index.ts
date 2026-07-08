@@ -46,6 +46,7 @@ import listsoReducer from '../features/listso/stores/listsoSlice';
 // import RequestFormReducer from '../features/requestForm/store/requestFormSlice';
 import leadsReducer from '../features/leads/stores/leadsSlice';
 import purchaserequisitionsReducer from '../features/purchaserequisitions/stores/purchaserequisitionsSlice';
+import suppliersReducer from '../features/suppliers/stores/suppliersSlice';
 // import dashboardReducer from '../features/dashboard/store/dashboardSlice';
 // import profileReducer from '../features/profile/store/profileSlice';
 // import activityLogReducer from '../features/activityLog/store/activityLogSlice';
@@ -100,6 +101,7 @@ export const store = configureStore({
     // requestForm: RequestFormReducer,
     leads: leadsReducer,
     purchaserequisitions: purchaserequisitionsReducer,
+    suppliers: suppliersReducer,
     // dashboard: dashboardReducer,
     // profile: profileReducer,
     // activityLog: activityLogReducer,
