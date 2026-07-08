@@ -323,6 +323,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('CustomerContactList');
                                 } else if (subMenuName === 'Product') {
                                     props.navigation.navigate('ProductList');
+                                } else if (subMenuName === 'Purchase Requisitions') {
+                                    props.navigation.navigate('PurchaseRequisitionListScreen');
                                 } else if (subMenuName === 'Category') {
                                     props.navigation.navigate('ProductCategoryList');
                                 } else if (subMenuName === 'Sub Category') {

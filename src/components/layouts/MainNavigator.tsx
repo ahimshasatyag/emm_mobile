@@ -5,8 +5,6 @@ import { UserFormScreen } from '../../features/users/screens/UserFormScreen';
 import { UserEditScreen } from '../../features/users/screens/UserEditScreen';
 import { ProductBrandFormScreen } from '../../features/productbrand/screens/ProductBrandFormScreen';
 import { ProductBrandEditScreen } from '../../features/productbrand/screens/ProductBrandEditScreen';
-
-import { ProductUnitListScreen } from '../../features/productunit/screens/ProductUnitListScreen';
 import { ProductUnitFormScreen } from '../../features/productunit/screens/ProductUnitFormScreen';
 import { ProductUnitEditScreen } from '../../features/productunit/screens/ProductUnitEditScreen';
 import { InventoryListScreen } from '../../features/inventory/screens/InventoryListScreen';
@@ -17,6 +15,10 @@ import { ProductPriceReqFormScreen } from '../../features/productpricereq/screen
 import { ProductPriceReqEditScreen } from '../../features/productpricereq/screens/ProductPriceReqEditScreen';
 import { CsrFormScreen } from '../../features/csr/screens/CsrFormScreen';
 import { CsrEditScreen } from '../../features/csr/screens/CsrEditScreen';
+import { PurchaseRequisitionListScreen } from '../../features/purchaserequisitions/screens/PurchaseRequisitionListScreen';
+import { PurchaseRequisitionFormScreen } from '../../features/purchaserequisitions/screens/PurchaseRequisitionFormScreen';
+import { PurchaseRequisitionEditScreen } from '../../features/purchaserequisitions/screens/PurchaseRequisitionEditScreen';
+import { PurchaseRequisitionListPRScreen } from '../../features/purchaserequisitions/screens/PurchaseRequisitionListPRScreen';
 import { CstListScreen } from '../../features/cst/screens/CstListScreen';
 import { CstEditScreen } from '../../features/cst/screens/CstEditScreen';
 import { LktListScreen } from '../../features/lkt/screens/LktListScreen';
@@ -27,7 +29,6 @@ import { RealisasiEditScreen } from '../../features/lkt/screens/RealisasiEditScr
 import { LogbookProductListScreen } from '../../features/logbookproduct/screens/LogbookProductListScreen';
 import { LogbookProductFormScreen } from '../../features/logbookproduct/screens/LogbookProductFormScreen';
 import { LogbookProductEditScreen } from '../../features/logbookproduct/screens/LogbookProductEditScreen';
-
 import { LogbookCustomersListScreen } from '../../features/logbookcustomers/screens/LogbookCustomersListScreen';
 import { LogbookCustomersFormScreen } from '../../features/logbookcustomers/screens/LogbookCustomersFormScreen';
 import { LogbookCustomersEditScreen } from '../../features/logbookcustomers/screens/LogbookCustomersEditScreen';
@@ -57,6 +58,11 @@ export function MainNavigator() {
             <Stack.Screen name="SalesReturListScreen" component={require('../../features/salesretur/screens/SalesReturListScreen').SalesReturListScreen} />
             <Stack.Screen name="SalesReturFormScreen" component={require('../../features/salesretur/screens/SalesReturFormScreen').SalesReturFormScreen} />
             <Stack.Screen name="SalesReturEditScreen" component={require('../../features/salesretur/screens/SalesReturEditScreen').SalesReturEditScreen} />
+
+            <Stack.Screen name="PurchaseRequisitionListScreen" component={PurchaseRequisitionListScreen} />
+            <Stack.Screen name="PurchaseRequisitionFormScreen" component={PurchaseRequisitionFormScreen} />
+            <Stack.Screen name="PurchaseRequisitionEditScreen" component={PurchaseRequisitionEditScreen} />
+            <Stack.Screen name="PurchaseRequisitionListPRScreen" component={PurchaseRequisitionListPRScreen} />
 
             <Stack.Screen name="ListSOScreen" component={ListSOScreen} />
             <Stack.Screen name="ListSODetailScreen" component={ListSODetailScreen} />
