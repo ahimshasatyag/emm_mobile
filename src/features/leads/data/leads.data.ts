@@ -29,7 +29,7 @@ export const DUMMY_LEADS_LIST: LeadsItem[] = [
         id: 'L-202310-005',
         code_leads: 'LD-202310-005',
         nm_customers: 'CV. KARYA BERSAMA',
-        status: 'FAIL',
+        status: 'ONGOING',
     }
 ];
 
