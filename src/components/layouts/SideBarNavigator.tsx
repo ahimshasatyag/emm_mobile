@@ -248,6 +248,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'SurveyList') return 'Survey';
         if (route === 'SalesContractList') return 'Sales Contract';
         if (route === 'ListSOScreen') return 'List SO';
+        if (route === 'LeadsScreen') return 'LEADS';
         if (route === 'SalesReturList') return 'Sales Retur';
         return null;
     };
@@ -362,6 +363,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('SalesContractList', { timestamp: Date.now() });
                                 } else if (subMenuName === 'List SO') {
                                     props.navigation.navigate('ListSOScreen', { timestamp: Date.now() });
+                                } else if (subMenuName === 'LEADS') {
+                                    props.navigation.navigate('LeadsScreen', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Survey') {
                                     props.navigation.navigate('SurveyList', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Sales Retur') {
@@ -505,6 +508,11 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="ListSOScreen"
                 component={require('../../features/listso/screens/ListSOScreen').ListSOScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="LeadsScreen"
+                component={require('../../features/leads/screens/LeadsScreen').LeadsScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>

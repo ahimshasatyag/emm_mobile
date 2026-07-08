@@ -34,6 +34,8 @@ import { LogbookCustomersEditScreen } from '../../features/logbookcustomers/scre
 import { CekSerialNumberScreen } from '../../features/cekserialnumber/screens/CekSerialNumberScreen';
 import { ListSOScreen } from '../../features/listso/screens/ListSOScreen';
 import { ListSODetailScreen } from '../../features/listso/screens/ListSODetailScreen';
+import { LeadsScreen } from '../../features/leads/screens/LeadsScreen';
+import { LeadsEditScreen } from '../../features/leads/screens/LeadsEditScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -58,6 +60,9 @@ export function MainNavigator() {
 
             <Stack.Screen name="ListSOScreen" component={ListSOScreen} />
             <Stack.Screen name="ListSODetailScreen" component={ListSODetailScreen} />
+            <Stack.Screen name="LeadsScreen" component={LeadsScreen} />
+            <Stack.Screen name="LeadsEditScreen" component={LeadsEditScreen} />
+            <Stack.Screen name="LeadsFormScreen" component={require('../../features/leads/screens/LeadsFormScreen').LeadsFormScreen} />
             <Stack.Screen name="CounterEdit" component={require('../../features/counter/screens/CounterEditScreen').CounterEditScreen} />
             <Stack.Screen name="SettingForm" component={require('../../features/setting/screens/SettingFormScreen').SettingFormScreen} />
             <Stack.Screen name="SettingEdit" component={require('../../features/setting/screens/SettingEditScreen').SettingEditScreen} />
@@ -224,50 +229,50 @@ export function MainNavigator() {
                 options={{ headerShown: false }}
             />
             {/* CSR */}
-            <Stack.Screen 
-                name="CsrFormScreen" 
+            <Stack.Screen
+                name="CsrFormScreen"
                 component={CsrFormScreen}
                 options={{ headerShown: false }}
             />
-            <Stack.Screen 
-                name="CsrEditScreen" 
+            <Stack.Screen
+                name="CsrEditScreen"
                 component={CsrEditScreen}
                 options={{ headerShown: false }}
             />
             {/* CST */}
-            <Stack.Screen 
-                name="CstListScreen" 
+            <Stack.Screen
+                name="CstListScreen"
                 component={CstListScreen}
                 options={{ headerShown: false }}
             />
-            <Stack.Screen 
-                name="CstEditScreen" 
+            <Stack.Screen
+                name="CstEditScreen"
                 component={CstEditScreen}
                 options={{ headerShown: false }}
             />
             {/* LKT */}
-            <Stack.Screen 
-                name="LktListScreen" 
+            <Stack.Screen
+                name="LktListScreen"
                 component={LktListScreen}
                 options={{ headerShown: false }}
             />
-            <Stack.Screen 
-                name="LktEditScreen" 
+            <Stack.Screen
+                name="LktEditScreen"
                 component={LktEditScreen}
                 options={{ headerShown: false }}
             />
-            <Stack.Screen 
-                name="LktFormScreen" 
+            <Stack.Screen
+                name="LktFormScreen"
                 component={LktFormScreen}
                 options={{ headerShown: false }}
             />
-            <Stack.Screen 
-                name="RealisasiForm" 
+            <Stack.Screen
+                name="RealisasiForm"
                 component={RealisasiFormScreen}
                 options={{ headerShown: false }}
             />
-            <Stack.Screen 
-                name="RealisasiEdit" 
+            <Stack.Screen
+                name="RealisasiEdit"
                 component={RealisasiEditScreen}
                 options={{ headerShown: false }}
             />
