@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, RefreshControl, TextInput } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
@@ -15,14 +15,22 @@ import { ButtonAdd } from '../../../components/ui/buttonAdd';
 
 export function LeadsScreen() {
     const navigation = useNavigation<any>();
+    const route = useRoute<any>();
     const { items, isLoadingList, error, searchQuery, setSearchQuery, loadList } = useLeads();
 
     const [isInitializing, setIsInitializing] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [statusFilter, setStatusFilter] = useState('ALL STATUS');
 
+    // Reset status filter
+    React.useEffect(() => {
+        if (route.params?.timestamp) {
+            setStatusFilter('ALL STATUS');
+        }
+    }, [route.params?.timestamp]);
+
     const statusOptions = [
-        { label: 'ALL STATUS', value: 'ALL' },
+        { label: 'ALL STATUS', value: 'ALL STATUS' },
         { label: 'ONGOING', value: 'ONGOING' },
         { label: 'OPEN', value: 'OPEN' },
         { label: 'SUCCESS', value: 'SUCCESS' },
@@ -30,7 +38,7 @@ export function LeadsScreen() {
     ];
 
     const displayItems = useMemo(() => {
-        if (statusFilter === 'ALL') return items;
+        if (statusFilter === 'ALL STATUS') return items;
         return items.filter((item: any) => item.status?.toUpperCase() === statusFilter);
     }, [items, statusFilter]);
 

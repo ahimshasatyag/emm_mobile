@@ -251,6 +251,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'LeadsScreen') return 'LEADS';
         if (route === 'SalesReturList') return 'Sales Retur';
         if (route === 'SuppliersListScreen') return 'Suppliers';
+        if (route === 'PurchaseRequisitionListScreen') return 'Purchase Requisitions';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -518,6 +519,16 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="LeadsScreen"
                 component={require('../../features/leads/screens/LeadsScreen').LeadsScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="PurchaseRequisitionListScreen"
+                component={require('../../features/purchaserequisitions/screens/PurchaseRequisitionListScreen').PurchaseRequisitionListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="SuppliersListScreen"
+                component={require('../../features/suppliers/screens/SuppliersListScreen').SuppliersListScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>

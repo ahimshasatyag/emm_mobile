@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, RefreshControl, TouchableOpacity, TextInput, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { ListSOCard } from '../components/ListSOCard';
 import { ListSOSkeleton, ListSOSummaryTableRowSkeleton } from '../skeleton/ListSOSkeleton';
@@ -34,12 +34,40 @@ export function ListSOScreen() {
     const [customerText, setCustomerText] = useState(filters.id_customers || '');
     const [productText, setProductText] = useState(filters.id_product || '');
 
-    useEffect(() => {
-        loadList();
-    }, [loadList]);
+    const [isInitializing, setIsInitializing] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
-    const onRefresh = useCallback(() => {
-        loadList();
+    useFocusEffect(
+        useCallback(() => {
+            let isActive = true;
+            const initialize = async () => {
+                setIsInitializing(true);
+                try {
+                    await Promise.all([
+                        loadList(),
+                        new Promise(resolve => setTimeout(resolve, 800))
+                    ]);
+                } catch (error) {
+                    // console.error("Failed to load:", error);
+                } finally {
+                    if (isActive) setIsInitializing(false);
+                }
+            };
+            initialize();
+            return () => {
+                isActive = false;
+                setIsInitializing(true);
+            };
+        }, [loadList])
+    );
+
+    const onRefresh = useCallback(async () => {
+        setIsRefreshing(true);
+        try {
+            await loadList();
+        } finally {
+            setIsRefreshing(false);
+        }
     }, [loadList]);
 
     const handleSearch = () => {
@@ -183,7 +211,7 @@ export function ListSOScreen() {
                 <View className="rounded-xl mt-4 border border-gray-200 overflow-hidden bg-white shadow-sm">
                     {/* Section 1: Bulan Ini */}
                     {renderHeaderRow('Bulan Ini')}
-                    {isLoadingList ? (
+                    {isLoadingList || isInitializing ? (
                         <ListSOSummaryTableRowSkeleton section="bln" />
                     ) : (
                         <>
@@ -196,7 +224,7 @@ export function ListSOScreen() {
 
                     {/* Section 2: Year to Date */}
                     {renderHeaderRow('Year to Date')}
-                    {isLoadingList ? (
+                    {isLoadingList || isInitializing ? (
                         <ListSOSummaryTableRowSkeleton section="ytd" />
                     ) : (
                         <>
@@ -226,7 +254,7 @@ export function ListSOScreen() {
                     keyExtractor={(i) => i.id}
                     refreshControl={
                         <RefreshControl
-                            refreshing={isLoadingList}
+                            refreshing={isRefreshing}
                             onRefresh={onRefresh}
                             colors={[theme.colors.primary]}
                         />
@@ -257,7 +285,7 @@ export function ListSOScreen() {
                                 </View>
 
                                 {/* Table Body */}
-                                {isLoadingList ? (
+                                {isLoadingList || isInitializing ? (
                                     <ListSOSkeleton />
                                 ) : items.length > 0 ? items.map((item, index) => (
                                     <ListSOCard
