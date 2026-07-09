@@ -40,6 +40,9 @@ import { LeadsEditScreen } from '../../features/leads/screens/LeadsEditScreen';
 import { SuppliersListScreen } from '../../features/suppliers/screens/SuppliersListScreen';
 import { SuppliersFormScreen } from '../../features/suppliers/screens/SuppliersFormScreen';
 import { SuppliersEditScreen } from '../../features/suppliers/screens/SuppliersEditScreen';
+import { QuotationsAPListScreen } from '../../features/quotationsap/screens/QuotationsAPListScreen';
+import { QuotationsAPFormScreen } from '../../features/quotationsap/screens/QuotationsAPFormScreen';
+import { QuotationsAPEditScreen } from '../../features/quotationsap/screens/QuotationsAPEditScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -74,6 +77,9 @@ export function MainNavigator() {
             <Stack.Screen name="SuppliersListScreen" component={SuppliersListScreen} />
             <Stack.Screen name="SuppliersFormScreen" component={SuppliersFormScreen} />
             <Stack.Screen name="SuppliersEditScreen" component={SuppliersEditScreen} />
+            <Stack.Screen name="QuotationsAPListScreen" component={QuotationsAPListScreen} />
+            <Stack.Screen name="QuotationsAPFormScreen" component={QuotationsAPFormScreen} />
+            <Stack.Screen name="QuotationsAPEditScreen" component={QuotationsAPEditScreen} />
             <Stack.Screen name="LeadsFormScreen" component={require('../../features/leads/screens/LeadsFormScreen').LeadsFormScreen} />
             <Stack.Screen name="CounterEdit" component={require('../../features/counter/screens/CounterEditScreen').CounterEditScreen} />
             <Stack.Screen name="SettingForm" component={require('../../features/setting/screens/SettingFormScreen').SettingFormScreen} />

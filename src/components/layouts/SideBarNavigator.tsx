@@ -252,6 +252,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'SalesReturList') return 'Sales Retur';
         if (route === 'SuppliersListScreen') return 'Suppliers';
         if (route === 'PurchaseRequisitionListScreen') return 'Purchase Requisitions';
+        if (route === 'QuotationsAPListScreen') return 'Quotations AP';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -375,6 +376,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('SalesReturList', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Suppliers') {
                                     props.navigation.navigate('SuppliersListScreen', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Quotations AP') {
+                                    props.navigation.navigate('QuotationsAPListScreen', { timestamp: Date.now() });
                                 }
                             }}
                         />
@@ -529,6 +532,11 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="SuppliersListScreen"
                 component={require('../../features/suppliers/screens/SuppliersListScreen').SuppliersListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="QuotationsAPListScreen"
+                component={require('../../features/quotationsap/screens/QuotationsAPListScreen').QuotationsAPListScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>
