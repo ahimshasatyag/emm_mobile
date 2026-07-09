@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, RefreshControl, Image } from 'react-native';
+import { View, Text, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, RefreshControl, Image, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
@@ -7,11 +7,12 @@ import { ContactTable } from '../components/ContactTable';
 import { Button } from '../../../components/ui/button';
 import { SuppliersFormSkeleton } from '../skeleton/SuppliersFormSkeleton';
 import { PreviewGambar } from '../components/PreviewGambar';
+import { ContactModal } from '../components/ContactModal';
 import { SupplierContact } from '../types/suppliers.types';
 import { theme } from '../../../theme/theme';
 import { Dropdown } from 'react-native-element-dropdown';
 import * as DocumentPicker from 'expo-document-picker';
-import { Plus, UploadCloud } from 'lucide-react-native';
+import { Plus, UploadCloud, Save } from 'lucide-react-native';
 
 export function SuppliersFormScreen() {
     const navigation = useNavigation();
@@ -32,18 +33,32 @@ export function SuppliersFormScreen() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [previewVisible, setPreviewVisible] = useState(false);
 
+    const [contactModalVisible, setContactModalVisible] = useState(false);
+    const [editingContactIndex, setEditingContactIndex] = useState<number | null>(null);
+
     const onRefresh = useCallback(() => {
         setIsRefreshing(true);
         setTimeout(() => setIsRefreshing(false), 1000);
     }, []);
 
     const handleAddContact = () => {
-        setContacts([...contacts, {
-            nm_suppliers_contact: '',
-            suppliers_contact_posisi: '',
-            suppliers_contact_phone: '',
-            suppliers_contact_email: ''
-        }]);
+        setEditingContactIndex(null);
+        setContactModalVisible(true);
+    };
+
+    const handleEditContact = (index: number) => {
+        setEditingContactIndex(index);
+        setContactModalVisible(true);
+    };
+
+    const handleSaveContact = (contact: SupplierContact) => {
+        if (editingContactIndex !== null) {
+            const newContacts = [...contacts];
+            newContacts[editingContactIndex] = contact;
+            setContacts(newContacts);
+        } else {
+            setContacts([...contacts, contact]);
+        }
     };
 
     const handlePickLogo = async () => {
@@ -57,10 +72,6 @@ export function SuppliersFormScreen() {
         } catch (error) {
             Alert.alert('Error', 'Gagal memilih logo');
         }
-    };
-
-    const handleEditContact = (index: number) => {
-        Alert.alert('Info', 'Fitur edit contact detail akan segera hadir');
     };
 
     const handleDeleteContact = (index: number) => {
@@ -138,9 +149,10 @@ export function SuppliersFormScreen() {
                                 value={formData.suppliers_address}
                                 onChangeText={t => setFormData(prev => ({ ...prev, suppliers_address: t }))}
                                 placeholder="Alamat Perusahaan"
-                                multiline
-                                numberOfLines={3}
-                                style={{ textAlignVertical: 'top' }}
+                                multiline={true}
+                                numberOfLines={4}
+                                textAlignVertical="top"
+                                style={{ minHeight: 100 }}
                             />
 
                             <View className="flex-row justify-between mb-4">
@@ -170,16 +182,21 @@ export function SuppliersFormScreen() {
                             <View className="flex-row justify-between mb-4">
                                 <View className="flex-1 mr-2">
                                     <Text className="text-sm font-bold text-gray-700 mb-2">Logo</Text>
-                                    <TouchableOpacity 
-                                        className="bg-gray-50 h-12 rounded-xl border border-gray-200 justify-center items-center overflow-hidden flex-row"
+                                    <TouchableOpacity
+                                        className="bg-gray-50 px-3 h-12 rounded-xl border border-gray-200 justify-center items-center flex-row"
                                         onPress={() => formData.suppliers_logo ? setPreviewVisible(true) : handlePickLogo()}
                                     >
                                         {formData.suppliers_logo ? (
-                                            <Image source={{ uri: formData.suppliers_logo }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                                            <>
+                                                <UploadCloud size={16} color="#3b82f6" style={{ marginRight: 8 }} />
+                                                <Text className="text-blue-500 text-xs flex-1" numberOfLines={1}>
+                                                    {formData.suppliers_logo.split('/').pop() || 'Lihat Logo'}
+                                                </Text>
+                                            </>
                                         ) : (
                                             <>
                                                 <UploadCloud size={16} color="#6b7280" style={{ marginRight: 8 }} />
-                                                <Text className="text-gray-500 text-xs" numberOfLines={1}>Pilih Logo</Text>
+                                                <Text className="text-gray-500 text-xs flex-1" numberOfLines={1}>Pilih Logo</Text>
                                             </>
                                         )}
                                     </TouchableOpacity>
@@ -203,15 +220,6 @@ export function SuppliersFormScreen() {
                                 </View>
                             </View>
 
-                            <Text className="text-sm font-bold text-gray-700 mb-2">Email</Text>
-                            <TextInput
-                                className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 text-gray-900 mb-4"
-                                value={formData.suppliers_email}
-                                onChangeText={t => setFormData(prev => ({ ...prev, suppliers_email: t }))}
-                                placeholder="Email Perusahaan"
-                                keyboardType="email-address"
-                            />
-
                             <View className="flex-row justify-between mb-4">
                                 <View className="flex-1 mr-2">
                                     <Text className="text-sm font-bold text-gray-700 mb-2">Telepon</Text>
@@ -224,7 +232,7 @@ export function SuppliersFormScreen() {
                                     />
                                 </View>
                                 <View className="flex-1 ml-2">
-                                    <Text className="text-sm font-bold text-gray-700 mb-2">Mobile / HP</Text>
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Phone</Text>
                                     <TextInput
                                         className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 text-gray-900"
                                         value={formData.suppliers_mobile}
@@ -235,10 +243,19 @@ export function SuppliersFormScreen() {
                                 </View>
                             </View>
 
+                            <Text className="text-sm font-bold text-gray-700 mb-2">Email</Text>
+                            <TextInput
+                                className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 text-gray-900 mb-4"
+                                value={formData.suppliers_email}
+                                onChangeText={t => setFormData(prev => ({ ...prev, suppliers_email: t }))}
+                                placeholder="Email Perusahaan"
+                                keyboardType="email-address"
+                            />
+
                             <View className="h-px bg-gray-200 my-4" />
 
                             <View className="flex-row justify-between items-center mb-4">
-                                <Text className="font-bold text-gray-800">Daftar Kontak (PIC)</Text>
+                                <Text className="font-bold text-gray-800">Daftar Kontak</Text>
                                 <TouchableOpacity
                                     onPress={handleAddContact}
                                     className="flex-row items-center px-3 py-1.5 rounded-lg"
@@ -264,21 +281,34 @@ export function SuppliersFormScreen() {
                                 className="w-full h-14 rounded-2xl flex-row items-center justify-center"
                                 style={{ elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
                             >
-                                <Text className="text-white font-bold text-lg">
-                                    {isSaving ? 'Menyimpan...' : 'Simpan Supplier'}
-                                </Text>
+                                {isSaving ? (
+                                    <ActivityIndicator color="white" />
+                                ) : (
+                                    <>
+                                        <Save color="white" size={20} className="mr-2" />
+                                        <Text className="text-white font-bold text-lg">Simpan Supplier</Text>
+                                    </>
+                                )}
                             </Button>
                         </Animated.View>
                     </Animated.View>
                 )}
             </ScrollView>
 
-            <PreviewGambar 
+            <PreviewGambar
                 visible={previewVisible}
                 imageUrl={formData.suppliers_logo}
                 onClose={() => setPreviewVisible(false)}
                 onChange={handlePickLogo}
                 onRemove={() => setFormData(prev => ({ ...prev, suppliers_logo: null }))}
+            />
+
+            <ContactModal
+                visible={contactModalVisible}
+                onClose={() => setContactModalVisible(false)}
+                onSubmit={handleSaveContact}
+                onDelete={editingContactIndex !== null ? () => handleDeleteContact(editingContactIndex) : undefined}
+                initialData={editingContactIndex !== null ? contacts[editingContactIndex] : null}
             />
         </KeyboardAvoidingView>
     );

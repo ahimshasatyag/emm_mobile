@@ -1,17 +1,18 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, RefreshControl, Image } from 'react-native';
+import { View, Text, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, RefreshControl, Image, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { ContactTable } from '../components/ContactTable';
 import { Button } from '../../../components/ui/button';
-import { SuppliersFormSkeleton } from '../skeleton/SuppliersFormSkeleton';
+import { SuppliersEditSkeleton } from '../skeleton/SuppliersEditSkeleton';
 import { PreviewGambar } from '../components/PreviewGambar';
+import { ContactModal } from '../components/ContactModal';
 import { SupplierContact } from '../types/suppliers.types';
 import { theme } from '../../../theme/theme';
 import { Dropdown } from 'react-native-element-dropdown';
 import * as DocumentPicker from 'expo-document-picker';
-import { Plus, UploadCloud } from 'lucide-react-native';
+import { Plus, UploadCloud, X, Save, Pencil } from 'lucide-react-native';
 import { getSupplierById } from '../api/suppliers.api';
 
 export function SuppliersEditScreen() {
@@ -33,11 +34,20 @@ export function SuppliersEditScreen() {
     const [contacts, setContacts] = useState<SupplierContact[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [isLoadingDetail, setIsLoadingDetail] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [previewVisible, setPreviewVisible] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
 
-    const loadDetail = useCallback(async (supplierId: string) => {
-        setIsLoadingDetail(true);
+    const [contactModalVisible, setContactModalVisible] = useState(false);
+    const [editingContactIndex, setEditingContactIndex] = useState<number | null>(null);
+
+    const loadDetail = useCallback(async (supplierId: string, mode: 'initial' | 'refresh' | 'silent' = 'initial') => {
+        if (mode === 'initial') {
+            setIsLoadingDetail(true);
+        } else if (mode === 'refresh') {
+            setIsRefreshing(true);
+        }
+        
         try {
             const data = await getSupplierById(supplierId);
             if (data) {
@@ -56,7 +66,11 @@ export function SuppliersEditScreen() {
         } catch (error) {
             Alert.alert('Error', 'Gagal memuat detail supplier');
         } finally {
-            setIsLoadingDetail(false);
+            if (mode === 'initial') {
+                setIsLoadingDetail(false);
+            } else if (mode === 'refresh') {
+                setIsRefreshing(false);
+            }
         }
     }, []);
 
@@ -67,12 +81,24 @@ export function SuppliersEditScreen() {
     }, [id, loadDetail]);
 
     const handleAddContact = () => {
-        setContacts([...contacts, {
-            nm_suppliers_contact: '',
-            suppliers_contact_posisi: '',
-            suppliers_contact_phone: '',
-            suppliers_contact_email: ''
-        }]);
+        if (!isEditMode) return;
+        setEditingContactIndex(null);
+        setContactModalVisible(true);
+    };
+
+    const handleEditContact = (index: number) => {
+        setEditingContactIndex(index);
+        setContactModalVisible(true);
+    };
+
+    const handleSaveContact = (contact: SupplierContact) => {
+        if (editingContactIndex !== null) {
+            const newContacts = [...contacts];
+            newContacts[editingContactIndex] = contact;
+            setContacts(newContacts);
+        } else {
+            setContacts([...contacts, contact]);
+        }
     };
 
     const handlePickLogo = async () => {
@@ -87,11 +113,6 @@ export function SuppliersEditScreen() {
         } catch (error) {
             Alert.alert('Error', 'Gagal memilih logo');
         }
-    };
-
-    const handleEditContact = (index: number) => {
-        if (!isEditMode) return;
-        Alert.alert('Info', 'Fitur edit contact detail akan segera hadir');
     };
 
     const handleDeleteContact = (index: number) => {
@@ -144,7 +165,7 @@ export function SuppliersEditScreen() {
             className="flex-1 bg-gray-50"
         >
             <HeaderNavigator
-                title={isLoadingDetail ? 'MEMUAT DATA...' : isEditMode ? 'EDIT SUPPLIER' : `DETAIL ${formData.nm_suppliers || 'SUPPLIER'}`}
+                title={isLoadingDetail ? 'MEMUAT DATA...' : isEditMode ? `EDIT ${formData.nm_suppliers}` : `DETAIL ${formData.nm_suppliers}`}
                 showBackButton={true}
             />
 
@@ -153,12 +174,12 @@ export function SuppliersEditScreen() {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 100 }}
                 refreshControl={
-                    <RefreshControl refreshing={isLoadingDetail} onRefresh={() => id && loadDetail(id)} colors={[theme.colors.primary]} />
+                    <RefreshControl refreshing={isRefreshing} onRefresh={() => id && loadDetail(id, 'refresh')} colors={[theme.colors.primary]} />
                 }
             >
-                {isLoadingDetail ? (
+                {isLoadingDetail || isRefreshing ? (
                     <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
-                        <SuppliersFormSkeleton />
+                        <SuppliersEditSkeleton />
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)} className="p-4">
@@ -179,9 +200,10 @@ export function SuppliersEditScreen() {
                                 value={formData.suppliers_address}
                                 onChangeText={t => setFormData(prev => ({ ...prev, suppliers_address: t }))}
                                 placeholder="Alamat Perusahaan"
-                                multiline
-                                numberOfLines={3}
-                                style={{ textAlignVertical: 'top' }}
+                                multiline={true}
+                                numberOfLines={4}
+                                textAlignVertical="top"
+                                style={{ minHeight: 100 }}
                                 editable={isEditMode}
                             />
 
@@ -214,17 +236,22 @@ export function SuppliersEditScreen() {
                             <View className="flex-row justify-between mb-4">
                                 <View className="flex-1 mr-2">
                                     <Text className="text-sm font-bold text-gray-700 mb-2">Logo</Text>
-                                    <TouchableOpacity 
-                                        className={`h-12 rounded-xl border justify-center items-center overflow-hidden flex-row ${!isEditMode ? 'bg-gray-100 border-gray-200' : 'bg-gray-50 border-gray-200'}`}
+                                    <TouchableOpacity
+                                        className={`px-3 h-12 rounded-xl border justify-center items-center flex-row ${!isEditMode ? 'bg-gray-100 border-gray-200' : 'bg-gray-50 border-gray-200'}`}
                                         onPress={() => formData.suppliers_logo ? setPreviewVisible(true) : handlePickLogo()}
                                         disabled={!isEditMode && !formData.suppliers_logo}
                                     >
                                         {formData.suppliers_logo ? (
-                                            <Image source={{ uri: formData.suppliers_logo }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                                            <>
+                                                <UploadCloud size={16} color="#3b82f6" style={{ marginRight: 8 }} />
+                                                <Text className="text-blue-500 text-xs flex-1" numberOfLines={1}>
+                                                    {formData.suppliers_logo.split('/').pop() || 'Lihat Logo'}
+                                                </Text>
+                                            </>
                                         ) : (
                                             <>
                                                 <UploadCloud size={16} color="#6b7280" style={{ marginRight: 8 }} />
-                                                <Text className="text-gray-500 text-xs" numberOfLines={1}>Pilih Logo</Text>
+                                                <Text className="text-gray-500 text-xs flex-1" numberOfLines={1}>Pilih Logo</Text>
                                             </>
                                         )}
                                     </TouchableOpacity>
@@ -249,16 +276,6 @@ export function SuppliersEditScreen() {
                                 </View>
                             </View>
 
-                            <Text className="text-sm font-bold text-gray-700 mb-2">Email</Text>
-                            <TextInput
-                                className={`px-4 py-3 rounded-xl border mb-4 ${!isEditMode ? 'bg-gray-100 border-gray-200 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
-                                value={formData.suppliers_email}
-                                onChangeText={t => setFormData(prev => ({ ...prev, suppliers_email: t }))}
-                                placeholder="Email Perusahaan"
-                                keyboardType="email-address"
-                                editable={isEditMode}
-                            />
-
                             <View className="flex-row justify-between mb-4">
                                 <View className="flex-1 mr-2">
                                     <Text className="text-sm font-bold text-gray-700 mb-2">Telepon</Text>
@@ -272,7 +289,7 @@ export function SuppliersEditScreen() {
                                     />
                                 </View>
                                 <View className="flex-1 ml-2">
-                                    <Text className="text-sm font-bold text-gray-700 mb-2">Mobile / HP</Text>
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Phone</Text>
                                     <TextInput
                                         className={`px-4 py-3 rounded-xl border ${!isEditMode ? 'bg-gray-100 border-gray-200 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
                                         value={formData.suppliers_mobile}
@@ -284,10 +301,20 @@ export function SuppliersEditScreen() {
                                 </View>
                             </View>
 
+                            <Text className="text-sm font-bold text-gray-700 mb-2">Email</Text>
+                            <TextInput
+                                className={`px-4 py-3 rounded-xl border mb-4 ${!isEditMode ? 'bg-gray-100 border-gray-200 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
+                                value={formData.suppliers_email}
+                                onChangeText={t => setFormData(prev => ({ ...prev, suppliers_email: t }))}
+                                placeholder="Email Perusahaan"
+                                keyboardType="email-address"
+                                editable={isEditMode}
+                            />
+
                             <View className="h-px bg-gray-200 my-4" />
 
                             <View className="flex-row justify-between items-center mb-4">
-                                <Text className="font-bold text-gray-800">Daftar Kontak (PIC)</Text>
+                                <Text className="font-bold text-gray-800">Daftar Kontak</Text>
                                 {isEditMode && (
                                     <TouchableOpacity
                                         onPress={handleAddContact}
@@ -309,27 +336,68 @@ export function SuppliersEditScreen() {
                         </View>
 
                         <Animated.View entering={FadeInUp.delay(100)}>
-                            <Button
-                                onPress={handleSubmit}
-                                disabled={isSaving}
-                                className="w-full h-14 rounded-2xl flex-row items-center justify-center"
-                                style={{ elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
-                            >
-                                <Text className="text-white font-bold text-lg">
-                                    {isSaving ? 'Menyimpan...' : isEditMode ? 'Simpan Perubahan' : 'Edit Supplier'}
-                                </Text>
-                            </Button>
+                            {isEditMode ? (
+                                <View className="flex-row gap-4">
+                                    <Button
+                                        variant="outline"
+                                        onPress={() => {
+                                            setIsEditMode(false);
+                                            if (id) loadDetail(id, 'silent');
+                                        }}
+                                        disabled={isSaving}
+                                        className="flex-1 h-14 rounded-xl flex-row items-center justify-center"
+                                    >
+                                        <X color={theme.colors.primary} size={20} className="mr-2" />
+                                        <Text className="font-bold text-lg" style={{ color: theme.colors.primary }}>Batal</Text>
+                                    </Button>
+
+                                    <Button
+                                        onPress={handleSubmit}
+                                        disabled={isSaving}
+                                        className="flex-1 h-14 rounded-2xl flex-row items-center justify-center"
+                                        style={{ elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
+                                    >
+                                        {isSaving ? (
+                                            <ActivityIndicator color="white" />
+                                        ) : (
+                                            <>
+                                                <Save color="white" size={20} className="mr-2" />
+                                                <Text className="text-white font-bold text-lg">Simpan</Text>
+                                            </>
+                                        )}
+                                    </Button>
+                                </View>
+                            ) : (
+                                <View className="flex-row gap-4">
+                                    <Button
+                                        onPress={() => setIsEditMode(true)}
+                                        className="flex-1 h-14 rounded-2xl flex-row items-center justify-center bg-gray-800"
+                                    >
+                                        <Pencil color="white" size={20} className="mr-2" />
+                                        <Text className="text-white font-bold text-lg">Edit</Text>
+                                    </Button>
+                                </View>
+                            )}
                         </Animated.View>
                     </Animated.View>
                 )}
             </ScrollView>
 
-            <PreviewGambar 
+            <PreviewGambar
                 visible={previewVisible}
                 imageUrl={formData.suppliers_logo}
                 onClose={() => setPreviewVisible(false)}
                 onChange={isEditMode ? handlePickLogo : undefined}
                 onRemove={isEditMode ? () => setFormData(prev => ({ ...prev, suppliers_logo: null })) : undefined}
+            />
+
+            <ContactModal
+                visible={contactModalVisible}
+                onClose={() => setContactModalVisible(false)}
+                onSubmit={handleSaveContact}
+                onDelete={editingContactIndex !== null ? () => handleDeleteContact(editingContactIndex) : undefined}
+                initialData={editingContactIndex !== null ? contacts[editingContactIndex] : null}
+                isReadOnly={!isEditMode}
             />
         </KeyboardAvoidingView>
     );

@@ -42,7 +42,6 @@ export function PreviewGambar({ visible, imageUrl, onClose, onChange, onRemove }
                             <TouchableOpacity 
                                 className="bg-white/20 px-6 py-3 rounded-xl flex-row items-center"
                                 onPress={() => {
-                                    onClose();
                                     onChange();
                                 }}
                             >

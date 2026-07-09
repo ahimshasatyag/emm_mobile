@@ -34,10 +34,6 @@ export function SuppliersFormSkeleton() {
                             <View className="bg-gray-100 h-12 w-full rounded-xl" />
                         </View>
                     </View>
-                    <View className="mb-4">
-                        <View className="bg-gray-200 h-4 w-32 rounded mb-2" />
-                        <View className="bg-gray-100 h-12 w-full rounded-xl" />
-                    </View>
                     <View className="flex-row justify-between mb-4">
                         <View className="flex-1 mr-2">
                             <View className="bg-gray-200 h-4 w-20 rounded mb-2" />
@@ -47,6 +43,10 @@ export function SuppliersFormSkeleton() {
                             <View className="bg-gray-200 h-4 w-20 rounded mb-2" />
                             <View className="bg-gray-100 h-12 w-full rounded-xl" />
                         </View>
+                    </View>
+                    <View className="mb-4">
+                        <View className="bg-gray-200 h-4 w-32 rounded mb-2" />
+                        <View className="bg-gray-100 h-12 w-full rounded-xl" />
                     </View>
 
                     <View className="h-px bg-gray-200 my-4" />

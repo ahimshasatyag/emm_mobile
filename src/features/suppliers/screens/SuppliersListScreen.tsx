@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { View, TextInput, FlatList, RefreshControl } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { theme } from '../../../theme/theme';
 import { Search, Building2 } from 'lucide-react-native';
@@ -18,13 +18,29 @@ export function SuppliersListScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [isInitializing, setIsInitializing] = useState(true);
 
-    useEffect(() => {
-        const init = async () => {
-            await loadSuppliers();
-            setIsInitializing(false);
-        };
-        init();
-    }, [loadSuppliers]);
+    useFocusEffect(
+        useCallback(() => {
+            let isActive = true;
+            const initialize = async () => {
+                setIsInitializing(true);
+                try {
+                    await Promise.all([
+                        loadSuppliers(),
+                        new Promise(resolve => setTimeout(resolve, 800))
+                    ]);
+                } catch (error) {
+                    // console.error("Failed to load:", error);
+                } finally {
+                    if (isActive) setIsInitializing(false);
+                }
+            };
+            initialize();
+            return () => {
+                isActive = false;
+                setIsInitializing(true);
+            };
+        }, [loadSuppliers])
+    );
 
     const filteredData = useMemo(() => {
         if (!searchQuery) return suppliers;
@@ -46,7 +62,7 @@ export function SuppliersListScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator title={isRefreshing ? "MEMUAT DATA..." : "SUPPLIERS"} />
+            <HeaderNavigator title="SUPPLIERS" />
 
             <View className="px-4 py-3">
                 <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4 py-3.5 shadow-sm">
@@ -63,7 +79,7 @@ export function SuppliersListScreen() {
 
             <View className="flex-1">
                 <FlatList
-                    data={isRefreshing ? [] : filteredData}
+                    data={(isLoading || isInitializing || isRefreshing) ? [] : filteredData}
                     keyExtractor={(item) => item.id_suppliers}
                     contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
                     showsVerticalScrollIndicator={false}
