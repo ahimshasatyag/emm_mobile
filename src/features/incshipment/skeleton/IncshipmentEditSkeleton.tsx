@@ -35,7 +35,10 @@ export function IncshipmentEditSkeleton() {
             </View>
 
             {/* Main Card combining Header Info and Details Table */}
-            <View className="bg-white rounded-3xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+            <View 
+                className="bg-white rounded-3xl border border-gray-100 mb-6 overflow-hidden"
+                style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 15 }}
+            >
                 {/* Header Info */}
                 <View className="p-6 border-b border-gray-100">
                     <View className="flex-row justify-between mb-4 pb-4 border-b border-gray-100">
