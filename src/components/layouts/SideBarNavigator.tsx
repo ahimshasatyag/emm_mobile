@@ -254,6 +254,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'PurchaseRequisitionListScreen') return 'Purchase Requisitions';
         if (route === 'QuotationsAPListScreen') return 'Quotations AP';
         if (route === 'PoListScreen') return 'PO';
+        if (route === 'IncshipmentListScreen') return 'Incoming Shipments';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -381,6 +382,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('QuotationsAPListScreen', { timestamp: Date.now() });
                                 } else if (subMenuName === 'PO') {
                                     props.navigation.navigate('PoListScreen', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Incoming Shipments') {
+                                    props.navigation.navigate('IncshipmentListScreen', { timestamp: Date.now() });
                                 }
                             }}
                         />
@@ -545,6 +548,11 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="PoListScreen"
                 component={require('../../features/po/screens/PoListScreen').PoListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="IncshipmentListScreen"
+                component={require('../../features/incshipment/screens/IncshipmentListScreen').IncshipmentListScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>

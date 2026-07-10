@@ -50,7 +50,8 @@ import suppliersReducer from '../features/suppliers/stores/suppliersSlice';
 import quotationsapReducer from '../features/quotationsap/stores/quotationsapSlice';
 import poReducer from '../features/po/stores/poSlice';
 
-// import dashboardReducer from '../features/dashboard/store/dashboardSlice';
+// import dashboardReducer from '../features/dashboard/stores/dashboardSlice';
+import incshipmentReducer from '../features/incshipment/stores/incshipmentSlice';
 // import profileReducer from '../features/profile/store/profileSlice';
 // import activityLogReducer from '../features/activityLog/store/activityLogSlice';
 // import activityLeadsReducer from '../features/activityLeads/store/activityLeadsSlice';
@@ -107,6 +108,7 @@ export const store = configureStore({
     suppliers: suppliersReducer,
     quotationsap: quotationsapReducer,
     po: poReducer,
+    incshipment: incshipmentReducer,
     // dashboard: dashboardReducer,
     // profile: profileReducer,
     // activityLog: activityLogReducer,
