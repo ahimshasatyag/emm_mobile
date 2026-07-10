@@ -273,7 +273,7 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
                     </ScrollView>
 
                     {/* Footer / Action Buttons */}
-                    {!isReadOnly ? (
+                    {!isReadOnly && (
                         <View className="pt-4 border-t border-gray-100 flex-row gap-3">
                             {initialData && onDelete && (
                                 <TouchableOpacity
@@ -293,15 +293,6 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
                             >
                                 <Save color="#fff" size={20} className="mr-2" />
                                 <Text className="text-white font-bold text-lg">Simpan Barang</Text>
-                            </TouchableOpacity>
-                        </View>
-                    ) : (
-                        <View className="pt-4 border-t border-gray-100">
-                            <TouchableOpacity
-                                onPress={onDismiss}
-                                className="bg-blue-600 p-4 rounded-2xl items-center justify-center"
-                            >
-                                <Text className="text-white font-bold text-lg">Tutup</Text>
                             </TouchableOpacity>
                         </View>
                     )}

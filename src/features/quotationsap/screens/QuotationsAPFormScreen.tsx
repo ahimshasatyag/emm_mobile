@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
+import { Dropdown } from 'react-native-element-dropdown';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { FileText, Save, X, ChevronDown, Calendar, Plus } from 'lucide-react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { theme } from '../../../theme/theme';
+import { QuotationsAPFormSkeleton } from '../skeleton/QuotationsAPFormSkeleton';
 import { PurchaseOrderTable } from '../components/PurchaseOrderTable';
 import { IncshipmentInvoiceTable } from '../components/IncshipmentInvoiceTable';
 import { PurchaseOrderModal } from '../components/PurchaseOrderModal';
@@ -17,10 +20,35 @@ const DUMMY_PRODUCTS = [
     { id_product: 'P003', code_product: 'BRG-003', nm_product: 'Keyboard Keychron K2', deskripsi: 'Mechanical Keyboard 84 keys', satuan: 'Pcs', price: 1200000 },
 ];
 
+const DUMMY_SUPPLIERS = [
+    { label: 'PT Supplier A', value: 'S001' },
+    { label: 'CV Supplier B', value: 'S002' },
+];
+
+const DUMMY_CURRENCIES = [
+    { label: 'IDR - Rupiah', value: 'IDR' },
+    { label: 'USD - US Dollar', value: 'USD' },
+];
+
+const DUMMY_WAREHOUSES = [
+    { label: 'Gudang Utama', value: 'W001' },
+    { label: 'Gudang Cabang', value: 'W002' },
+];
+
 export function QuotationsAPFormScreen() {
     const navigation = useNavigation<any>();
     const [activeTab, setActiveTab] = useState<'po' | 'incoming'>('po');
     const [poDetails, setPoDetails] = useState<any[]>([]);
+    
+    // Form states
+    const [supplier, setSupplier] = useState<string | null>(null);
+    const [currency, setCurrency] = useState<string | null>(null);
+    const [warehouse, setWarehouse] = useState<string | null>(null);
+    const [orderDate, setOrderDate] = useState<Date>(new Date());
+    const [showOrderDatePicker, setShowOrderDatePicker] = useState(false);
+    
+    // Loading state for refresh control and skeleton
+    const [isLoading, setIsLoading] = useState(false);
 
     // Modal states
     const [modalVisible, setModalVisible] = useState(false);
@@ -67,19 +95,55 @@ export function QuotationsAPFormScreen() {
         navigation.goBack();
     };
 
+    const handleRefresh = () => {
+        setIsLoading(true);
+        // Simulate network request
+        setTimeout(() => {
+            setIsLoading(false);
+        }, 1500);
+    };
+
+    useEffect(() => {
+        handleRefresh();
+    }, []);
+
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator title="TAMBAH QUOTATION AP" />
+            <HeaderNavigator 
+                title={isLoading ? "MEMUAT DATA..." : "TAMBAH QUOTATION AP"} 
+                showBackButton 
+                onBackPress={() => navigation.goBack()} 
+            />
 
-            <ScrollView className="flex-1 px-4 pt-4">
-                <Animated.View entering={FadeInUp.duration(400)} className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
-                    <View className="p-4 space-y-4">
+            <ScrollView 
+                className="flex-1 px-4 pt-4"
+                refreshControl={
+                    <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
+                }
+            >
+                {isLoading ? (
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                        <QuotationsAPFormSkeleton />
+                    </Animated.View>
+                ) : (
+                    <Animated.View key="content" entering={FadeIn.duration(600)}>
+                        <Animated.View entering={FadeInUp.duration(400)} className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+                            <View className="p-4 space-y-4">
                         <View>
                             <Text className="text-sm font-bold text-gray-700 mb-2">Supplier <Text className="text-red-500">*</Text></Text>
-                            <TouchableOpacity className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 mb-4 flex-row justify-between items-center">
-                                <Text className="text-gray-500">Pilih Supplier...</Text>
-                                <ChevronDown size={20} color="#9CA3AF" />
-                            </TouchableOpacity>
+                            <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
+                                <Dropdown
+                                    style={{ height: 48, paddingHorizontal: 16 }}
+                                    data={DUMMY_SUPPLIERS}
+                                    labelField="label"
+                                    valueField="value"
+                                    search
+                                    searchPlaceholder="Cari supplier..."
+                                    placeholder="Pilih Supplier"
+                                    value={supplier}
+                                    onChange={item => setSupplier(item.value)}
+                                />
+                            </View>
                         </View>
 
                         <View>
@@ -93,26 +157,60 @@ export function QuotationsAPFormScreen() {
 
                         <View>
                             <Text className="text-sm font-bold text-gray-700 mb-2">Mata Uang <Text className="text-red-500">*</Text></Text>
-                            <TouchableOpacity className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 mb-4 flex-row justify-between items-center">
-                                <Text className="text-gray-500">Pilih Mata Uang...</Text>
-                                <ChevronDown size={20} color="#9CA3AF" />
-                            </TouchableOpacity>
+                            <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
+                                <Dropdown
+                                    style={{ height: 48, paddingHorizontal: 16 }}
+                                    data={DUMMY_CURRENCIES}
+                                    labelField="label"
+                                    valueField="value"
+                                    search
+                                    searchPlaceholder="Cari mata uang..."
+                                    placeholder="Pilih Mata Uang"
+                                    value={currency}
+                                    onChange={item => setCurrency(item.value)}
+                                />
+                            </View>
                         </View>
 
                         <View>
                             <Text className="text-sm font-bold text-gray-700 mb-2">Order Date <Text className="text-red-500">*</Text></Text>
-                            <TouchableOpacity className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 mb-4 flex-row justify-between items-center">
-                                <Text className="text-gray-500">Pilih Tanggal...</Text>
+                            <TouchableOpacity 
+                                onPress={() => setShowOrderDatePicker(true)}
+                                className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 mb-4 flex-row justify-between items-center"
+                            >
+                                <Text className="text-gray-700">{orderDate.toISOString().split('T')[0]}</Text>
                                 <Calendar size={20} color="#9CA3AF" />
                             </TouchableOpacity>
+                            {showOrderDatePicker && (
+                                <DateTimePicker
+                                    value={orderDate}
+                                    mode="date"
+                                    display="default"
+                                    onChange={(event, selectedDate) => {
+                                        setShowOrderDatePicker(false);
+                                        if (selectedDate) {
+                                            setOrderDate(selectedDate);
+                                        }
+                                    }}
+                                />
+                            )}
                         </View>
 
                         <View>
                             <Text className="text-sm font-bold text-gray-700 mb-2">Destination Warehouse <Text className="text-red-500">*</Text></Text>
-                            <TouchableOpacity className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 mb-4 flex-row justify-between items-center">
-                                <Text className="text-gray-500">Pilih Destination Warehouse...</Text>
-                                <ChevronDown size={20} color="#9CA3AF" />
-                            </TouchableOpacity>
+                            <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
+                                <Dropdown
+                                    style={{ height: 48, paddingHorizontal: 16 }}
+                                    data={DUMMY_WAREHOUSES}
+                                    labelField="label"
+                                    valueField="value"
+                                    search
+                                    searchPlaceholder="Cari destination warehouse..."
+                                    placeholder="Pilih Destination Warehouse"
+                                    value={warehouse}
+                                    onChange={item => setWarehouse(item.value)}
+                                />
+                            </View>
                         </View>
 
                         <View>
@@ -169,7 +267,6 @@ export function QuotationsAPFormScreen() {
                             <IncshipmentInvoiceTable details={[]} />
                         )}
                     </View>
-
                 </Animated.View>
 
                 <Animated.View entering={FadeInUp.delay(100)} className="mb-8">
@@ -182,6 +279,8 @@ export function QuotationsAPFormScreen() {
                         <Text className="text-white font-bold text-lg">Simpan</Text>
                     </Button>
                 </Animated.View>
+                </Animated.View>
+                )}
             </ScrollView>
 
             <PurchaseOrderModal
