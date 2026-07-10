@@ -87,17 +87,6 @@ export function QuotationsAPListScreen() {
         navigation.navigate('QuotationsAPEditScreen', { id });
     };
 
-
-
-    if (error && !isInitializing && !isLoadingList) {
-        return (
-            <View className="flex-1 bg-gray-50">
-                <HeaderNavigator title="QUOTATIONS AP" />
-                <ErrorState error={error} onRetry={loadList} />
-            </View>
-        );
-    }
-
     return (
         <View className="flex-1 bg-gray-50">
             <HeaderNavigator title="QUOTATIONS AP" />
@@ -141,31 +130,41 @@ export function QuotationsAPListScreen() {
                         paddingHorizontal: 16
                     }}
                     showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={isRefreshing}
-                        onRefresh={onRefresh}
-                        colors={[theme.colors.primary]}
-                    />
-                }
-                renderItem={({ item, index }) => (
-                    <QuotationsAPCard
-                        item={item}
-                        index={index}
-                        onPress={() => handleDetail(item.id_po)}
-                    />
-                )}
-                ListEmptyComponent={() => {
-                    if (isLoadingList || isInitializing) {
-                        return (
-                            <View className="flex-1 mt-4">
-                                <QuotationsAPSkeleton />
-                            </View>
-                        );
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={isRefreshing}
+                            onRefresh={onRefresh}
+                            colors={[theme.colors.primary]}
+                        />
                     }
-                    return <EmptyState title="Tidak ada data" message="Belum ada data quotations AP." />;
-                }}
-            />
+                    renderItem={({ item, index }) => (
+                        <QuotationsAPCard
+                            item={item}
+                            index={index}
+                            onPress={() => handleDetail(item.id_po)}
+                        />
+                    )}
+                    ListEmptyComponent={() => {
+                        if (error) {
+                            return (
+                                <ErrorState
+                                    title="Gagal Memuat Quotations"
+                                    message={error}
+                                    onRetry={loadList}
+                                    fullScreen={true}
+                                />
+                            );
+                        }
+                        if (isLoadingList || isInitializing) {
+                            return (
+                                <View style={{ marginHorizontal: -16 }}>
+                                    <QuotationsAPSkeleton />
+                                </View>
+                            );
+                        }
+                        return <EmptyState title="Tidak ada data" message="Belum ada data quotations AP." />;
+                    }}
+                />
             </View>
 
             {(!isLoadingList && !isInitializing) && (
