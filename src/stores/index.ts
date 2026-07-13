@@ -56,6 +56,8 @@ import incshipmentReducer from '../features/incshipment/stores/incshipmentSlice'
 // import activityLogReducer from '../features/activityLog/store/activityLogSlice';
 // import activityLeadsReducer from '../features/activityLeads/store/activityLeadsSlice';
 // import reportsReducer from '../features/reports/store/reportsSlice';
+import approveReducer from '../features/approve/stores/approveSlice';
+import approvebaruReducer from '../features/approvebaru/stores/approvebaruSlice';
 
 export const store = configureStore({
   reducer: {
@@ -109,6 +111,8 @@ export const store = configureStore({
     quotationsap: quotationsapReducer,
     po: poReducer,
     incshipment: incshipmentReducer,
+    approve: approveReducer,
+    approvebaru: approvebaruReducer,
     // dashboard: dashboardReducer,
     // profile: profileReducer,
     // activityLog: activityLogReducer,

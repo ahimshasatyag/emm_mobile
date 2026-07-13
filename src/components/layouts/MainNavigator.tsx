@@ -49,6 +49,8 @@ import { PoEditScreen } from '../../features/po/screens/PoEditScreen';
 import { IncshipmentListScreen } from '../../features/incshipment/screens/IncshipmentListScreen';
 import { IncshipmentFormScreen } from '../../features/incshipment/screens/IncshipmentFormScreen';
 import { IncshipmentEditScreen } from '../../features/incshipment/screens/IncshipmentEditScreen';
+import { ApproveListScreen } from '../../features/approve/screens/ApproveListScreen';
+import { ApprovebaruListScreen } from '../../features/approvebaru/screens/ApprovebaruListScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -92,6 +94,8 @@ export function MainNavigator() {
             <Stack.Screen name="IncshipmentListScreen" component={IncshipmentListScreen} />
             <Stack.Screen name="IncshipmentFormScreen" component={IncshipmentFormScreen} />
             <Stack.Screen name="IncshipmentEditScreen" component={IncshipmentEditScreen} />
+            <Stack.Screen name="ApproveListScreen" component={ApproveListScreen} />
+            <Stack.Screen name="ApprovebaruListScreen" component={ApprovebaruListScreen} />
             <Stack.Screen name="LeadsFormScreen" component={require('../../features/leads/screens/LeadsFormScreen').LeadsFormScreen} />
             <Stack.Screen name="CounterEdit" component={require('../../features/counter/screens/CounterEditScreen').CounterEditScreen} />
             <Stack.Screen name="SettingForm" component={require('../../features/setting/screens/SettingFormScreen').SettingFormScreen} />

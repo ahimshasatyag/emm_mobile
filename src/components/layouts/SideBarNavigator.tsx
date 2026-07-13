@@ -255,6 +255,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'QuotationsAPListScreen') return 'Quotations AP';
         if (route === 'PoListScreen') return 'PO';
         if (route === 'IncshipmentListScreen') return 'Incoming Shipments';
+        if (route === 'ApproveListScreen') return 'Approval List';
+        if (route === 'ApprovebaruListScreen') return 'Approval Baru';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -384,6 +386,10 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('PoListScreen', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Incoming Shipments') {
                                     props.navigation.navigate('IncshipmentListScreen', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Approval List') {
+                                    props.navigation.navigate('ApproveListScreen', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Approval Baru') {
+                                    props.navigation.navigate('ApprovebaruListScreen', { timestamp: Date.now() });
                                 }
                             }}
                         />
@@ -553,6 +559,16 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="IncshipmentListScreen"
                 component={require('../../features/incshipment/screens/IncshipmentListScreen').IncshipmentListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="ApproveListScreen"
+                component={require('../../features/approve/screens/ApproveListScreen').ApproveListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="ApprovebaruListScreen"
+                component={require('../../features/approvebaru/screens/ApprovebaruListScreen').ApprovebaruListScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>
