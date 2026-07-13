@@ -102,7 +102,7 @@ export function IncshipmentEditScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator title={selectedItem ? `Detail ${selectedItem.code}` : "INCOMING SHIPMENT DETAIL"} isBack={true} />
+            <HeaderNavigator title={selectedItem ? `Detail ${selectedItem.code}` : "INCOMING SHIPMENT DETAIL"} showBackButton={true} />
 
             <ScrollView 
                 className="flex-1 p-4"

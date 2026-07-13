@@ -113,7 +113,7 @@ export function IncshipmentTable({ details, showCheckbox, selectedIds, onToggleS
                                 <View className="p-3 bg-gray-50/50">
                                     <IncshipmentOptionTable 
                                         options={item.options} 
-                                        isReadOnly={true}
+                                        isReadOnly={!showCheckbox}
                                     />
                                 </View>
                             )}

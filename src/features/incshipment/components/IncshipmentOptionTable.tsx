@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput } from 'react-native';
-import { Package, CheckSquare, Square } from 'lucide-react-native';
+import { Package, Check } from 'lucide-react-native';
 import { formatRp } from '../../../utils/helpers/money';
 
 interface IncshipmentOptionItem {
@@ -18,14 +18,27 @@ interface IncshipmentOptionTableProps {
 }
 
 export function IncshipmentOptionTable({ options, onToggleOption, onPriceChange, isReadOnly = false }: IncshipmentOptionTableProps) {
+    const [localSelections, setLocalSelections] = useState<Record<number, boolean>>({});
+
+    const handleToggle = (index: number) => {
+        if (onToggleOption) {
+            onToggleOption(index);
+        } else {
+            setLocalSelections(prev => {
+                const isItemChecked = options[index].selected === true || options[index].selected === 1 || options[index].selected === '1';
+                const currentValue = prev[index] !== undefined ? prev[index] : isItemChecked;
+                return { ...prev, [index]: !currentValue };
+            });
+        }
+    };
     return (
         <View className="mb-4 bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
             <View className="flex-row bg-gray-50 p-3 border-b border-gray-100">
                 <Text className="flex-1 text-xs font-bold text-gray-500">Nama Option</Text>
                 <Text className="w-24 text-xs font-bold text-gray-500 text-right pr-4">Harga</Text>
-                {!isReadOnly && <Text className="w-10 text-xs font-bold text-gray-500 text-center">Pilih</Text>}
+                <Text className="w-16 text-xs font-bold text-gray-500 text-center">Pilih</Text>
             </View>
-            
+
             {options.map((item, index) => (
                 <View
                     key={index}
@@ -53,22 +66,25 @@ export function IncshipmentOptionTable({ options, onToggleOption, onPriceChange,
                             </Text>
                         )}
                     </View>
-                    {!isReadOnly && (
-                        <TouchableOpacity 
-                            className="w-10 items-center justify-center py-2"
-                            onPress={() => onToggleOption && onToggleOption(index)}
-                            disabled={!onToggleOption}
-                        >
-                            {item.selected ? (
-                                <CheckSquare size={20} color="#10B981" />
-                            ) : (
-                                <Square size={20} color="#9CA3AF" />
-                            )}
-                        </TouchableOpacity>
-                    )}
+                    <View className="w-16 items-center justify-center py-2">
+                        {(() => {
+                            const isItemChecked = item.selected === true || item.selected === 1 || item.selected === '1';
+                            const isChecked = localSelections[index] !== undefined ? localSelections[index] : isItemChecked;
+                            return (
+                                <TouchableOpacity
+                                    activeOpacity={0.7}
+                                    onPress={() => handleToggle(index)}
+                                    disabled={isReadOnly}
+                                    className={`w-6 h-6 rounded-md border items-center justify-center ${isChecked ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300'} ${isReadOnly ? 'opacity-70' : ''}`}
+                                >
+                                    {isChecked && <Check size={14} color="#FFF" />}
+                                </TouchableOpacity>
+                            );
+                        })()}
+                    </View>
                 </View>
             ))}
-            
+
             {options.length === 0 && (
                 <View className="py-8 items-center border-b border-gray-50 bg-white">
                     <Package color="#9ca3af" size={32} className="mb-2" />
