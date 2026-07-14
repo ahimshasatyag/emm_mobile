@@ -257,6 +257,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'IncshipmentListScreen') return 'Incoming Shipments';
         if (route === 'ApproveListScreen') return 'Approval List';
         if (route === 'ApprovebaruListScreen') return 'Approval Baru';
+        if (route === 'DoListScreen') return 'Delivery Order';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -390,6 +391,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('ApproveListScreen', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Approval Baru') {
                                     props.navigation.navigate('ApprovebaruListScreen', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Delivery Order') {
+                                    props.navigation.navigate('DoListScreen', { timestamp: Date.now() });
                                 }
                             }}
                         />
@@ -569,6 +572,11 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="ApprovebaruListScreen"
                 component={require('../../features/approvebaru/screens/ApprovebaruListScreen').ApprovebaruListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="DoListScreen"
+                component={require('../../features/do/screens/DoListScreen').DoListScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>

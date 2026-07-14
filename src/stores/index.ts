@@ -58,6 +58,7 @@ import incshipmentReducer from '../features/incshipment/stores/incshipmentSlice'
 // import reportsReducer from '../features/reports/store/reportsSlice';
 import approveReducer from '../features/approve/stores/approveSlice';
 import approvebaruReducer from '../features/approvebaru/stores/approvebaruSlice';
+import doReducer from '../features/do/stores/doSlice';
 
 export const store = configureStore({
   reducer: {
@@ -113,6 +114,7 @@ export const store = configureStore({
     incshipment: incshipmentReducer,
     approve: approveReducer,
     approvebaru: approvebaruReducer,
+    do: doReducer,
     // dashboard: dashboardReducer,
     // profile: profileReducer,
     // activityLog: activityLogReducer,
