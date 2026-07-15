@@ -18,6 +18,7 @@ import { ProductListScreen } from '../../features/products/screens/ProductListSc
 import { ProductCategoryListScreen } from '../../features/productcategory/screens/ProductCategoryListScreen';
 import { ProductSubCategoryListScreen } from '../../features/productsubcategory/screens/ProductSubCategoryListScreen';
 import { ProductBrandListScreen } from '../../features/productbrand/screens/ProductBrandListScreen';
+import { CustomerInvoiceListScreen } from '../../features/customerinvoice/screens/CustomerInvoiceListScreen';
 const Drawer = createDrawerNavigator();
 if (Platform.OS === 'android') {
     if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -258,6 +259,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'ApproveListScreen') return 'Approval List';
         if (route === 'ApprovebaruListScreen') return 'Approval Baru';
         if (route === 'DoListScreen') return 'Delivery Order';
+        if (route === 'CustomerInvoiceListScreen') return 'Customer Invoices';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -393,6 +395,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('ApprovebaruListScreen', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Delivery Order') {
                                     props.navigation.navigate('DoListScreen', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Customer Invoices') {
+                                    props.navigation.navigate('CustomerInvoiceListScreen', { timestamp: Date.now() });
                                 }
                             }}
                         />
@@ -577,6 +581,11 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="DoListScreen"
                 component={require('../../features/do/screens/DoListScreen').DoListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="CustomerInvoiceListScreen"
+                component={CustomerInvoiceListScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>

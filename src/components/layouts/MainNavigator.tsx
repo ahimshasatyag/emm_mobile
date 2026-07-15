@@ -54,6 +54,8 @@ import { ApprovebaruListScreen } from '../../features/approvebaru/screens/Approv
 import { DoListScreen } from '../../features/do/screens/DoListScreen';
 import { DoEditScreen } from '../../features/do/screens/DoEditScreen';
 import { DoEditSplitScreen } from '../../features/do/screens/DoEditSplitScreen';
+import { CustomerInvoiceListScreen } from '../../features/customerinvoice/screens/CustomerInvoiceListScreen';
+import { CustomerInvoiceEditScreen } from '../../features/customerinvoice/screens/CustomerInvoiceEditScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -102,6 +104,8 @@ export function MainNavigator() {
             <Stack.Screen name="DoListScreen" component={DoListScreen} />
             <Stack.Screen name="DoEditScreen" component={DoEditScreen} />
             <Stack.Screen name="DoEditSplitScreen" component={DoEditSplitScreen} />
+            <Stack.Screen name="CustomerInvoiceListScreen" component={CustomerInvoiceListScreen} />
+            <Stack.Screen name="CustomerInvoiceEditScreen" component={CustomerInvoiceEditScreen} />
             <Stack.Screen name="LeadsFormScreen" component={require('../../features/leads/screens/LeadsFormScreen').LeadsFormScreen} />
             <Stack.Screen name="CounterEdit" component={require('../../features/counter/screens/CounterEditScreen').CounterEditScreen} />
             <Stack.Screen name="SettingForm" component={require('../../features/setting/screens/SettingFormScreen').SettingFormScreen} />
