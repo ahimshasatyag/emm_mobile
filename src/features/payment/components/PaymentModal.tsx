@@ -213,41 +213,32 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onDismiss, 
                             <Text className="ml-2 font-semibold text-gray-700">Tandai sebagai DP (Down Payment)</Text>
                         </TouchableOpacity>
 
-                        {!isReadOnly && (
-                            <View className="flex-row items-center mt-2">
-                                {initialData ? (
-                                    <>
-                                        <TouchableOpacity
-                                            onPress={() => {
-                                                onDelete && onDelete();
-                                                onDismiss();
-                                            }}
-                                            className="w-14 h-14 rounded-2xl items-center justify-center mr-3 bg-red-50 border border-red-100"
-                                        >
-                                            <Trash2 color="#ef4444" size={20} />
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            onPress={handleSave}
-                                            className="flex-1 h-14 rounded-2xl flex-row items-center justify-center"
-                                            style={{ backgroundColor: theme.colors.primary }}
-                                        >
-                                            <Save color="#fff" size={20} className="mr-2" />
-                                            <Text className="text-white font-bold text-lg">Update Payment</Text>
-                                        </TouchableOpacity>
-                                    </>
-                                ) : (
-                                    <TouchableOpacity
-                                        onPress={handleSave}
-                                        className="flex-1 h-14 rounded-2xl flex-row items-center justify-center"
-                                        style={{ backgroundColor: theme.colors.primary }}
-                                    >
-                                        <Save color="#fff" size={20} className="mr-2" />
-                                        <Text className="text-white font-bold text-lg">Tambah Payment</Text>
-                                    </TouchableOpacity>
-                                )}
-                            </View>
-                        )}
                     </ScrollView>
+
+                    {/* Footer / Action Buttons */}
+                    {!isReadOnly && (
+                        <View className="p-4 border-t border-gray-100 flex-row gap-3">
+                            {initialData && onDelete && (
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        onDelete();
+                                        onDismiss();
+                                    }}
+                                    className="p-4 rounded-2xl items-center justify-center bg-red-50 border border-red-100"
+                                >
+                                    <Trash2 color="#ef4444" size={20} />
+                                </TouchableOpacity>
+                            )}
+                            <TouchableOpacity
+                                onPress={handleSave}
+                                className="flex-1 py-4 rounded-2xl flex-row items-center justify-center"
+                                style={{ backgroundColor: theme.colors.primary, elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
+                            >
+                                <Save color="#fff" size={20} className="mr-2" />
+                                <Text className="text-white font-bold text-lg">Simpan Payment</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
                 </View>
             </KeyboardAvoidingView>
 

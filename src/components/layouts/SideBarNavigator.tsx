@@ -262,6 +262,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'DoListScreen') return 'Delivery Order';
         if (route === 'CustomerInvoiceListScreen') return 'Customer Invoices';
         if (route === 'PaymentList') return 'Payment';
+        if (route === 'KasBankInList') return 'Penerimaan Kas dan Bank';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -401,6 +402,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('CustomerInvoiceListScreen', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Payment') {
                                     props.navigation.navigate('PaymentList', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Penerimaan Kas dan Bank') {
+                                    props.navigation.navigate('KasBankInList', { timestamp: Date.now() });
                                 }
                             }}
                         />
@@ -595,6 +598,11 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="PaymentList"
                 component={PaymentListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="KasBankInList"
+                component={require('../../features/akt-kasbankin/screens/KasBankInListScreen').KasBankInListScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>

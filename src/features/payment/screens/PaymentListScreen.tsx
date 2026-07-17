@@ -106,12 +106,12 @@ export const PaymentListScreen = () => {
         <View className="flex-1 bg-gray-50">
             <HeaderNavigator title="DAFTAR PAYMENT" />
 
-            <View className="px-6 pt-5 pb-4">
-                <Animated.View layout={LinearTransition.springify()} className="flex-row items-center mb-4">
-                    <Animated.View layout={LinearTransition.springify()} className="flex-1 bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 shadow-sm">
-                        <Search color="#9CA3AF" size={18} />
+            <Animated.View entering={FadeInUp.duration(400)} className="px-4 py-3 z-30">
+                <Animated.View layout={LinearTransition.springify()} className="flex-row items-center mb-3 space-x-3">
+                    <Animated.View layout={LinearTransition.springify()} className="flex-1 bg-white flex-row items-center px-4 py-3.5 rounded-xl border border-gray-200 shadow-sm">
+                        <Search color="#9CA3AF" size={20} />
                         <TextInput
-                            className="flex-1 ml-2 text-sm text-gray-800 p-0"
+                            className="flex-1 ml-3 text-sm text-gray-800 p-0"
                             placeholder="Cari Customer / Payment..."
                             placeholderTextColor="#9CA3AF"
                             value={searchQuery}
@@ -156,7 +156,7 @@ export const PaymentListScreen = () => {
                 </Animated.View>
 
                 {/* Dropdowns Filters Row */}
-                <View className="flex-row items-center justify-between space-x-2 mb-4 z-20">
+                <View className="flex-row items-center justify-between space-x-2 mb-3 z-20">
                     <View className="flex-1 h-10 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden justify-center">
                         <Dropdown
                             style={{ height: 40, paddingHorizontal: 8 }}
@@ -265,14 +265,14 @@ export const PaymentListScreen = () => {
                         <Text className="text-white text-xs font-bold">Filter</Text>
                     </TouchableOpacity>
                 </View>
-            </View>
+            </Animated.View>
 
             <View className="flex-1">
                 <Animated.FlatList
                     entering={FadeInDown}
                     data={isLoading || isInitializing || isRefreshing ? [] : filteredPayments}
                     keyExtractor={(item) => item.id_payment_schdl}
-                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 100, paddingHorizontal: 24, paddingTop: 8 }}
+                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 20, paddingHorizontal: 16 }}
                     showsVerticalScrollIndicator={false}
                     refreshControl={
                         <RefreshControl 

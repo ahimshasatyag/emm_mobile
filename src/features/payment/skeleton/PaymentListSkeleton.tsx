@@ -3,7 +3,7 @@ import { View } from 'react-native';
 
 export const PaymentListSkeleton = () => {
     return (
-        <View className="flex-1 px-4 pt-4">
+        <View className="flex-1">
             {[1, 2, 3, 4, 5].map((item) => (
                 <View key={item} className="bg-white rounded-xl p-4 mb-3 border border-gray-100 shadow-sm">
                     <View className="flex-row justify-between items-start mb-2">

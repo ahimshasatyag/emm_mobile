@@ -59,6 +59,8 @@ import { CustomerInvoiceEditScreen } from '../../features/customerinvoice/screen
 import { PaymentListScreen } from '../../features/payment/screens/PaymentListScreen';
 import { PaymentEditScreen } from '../../features/payment/screens/PaymentEditScreen';
 import { PaymentFormScreen } from '../../features/payment/screens/PaymentFormScreen';
+import { KasBankInListScreen } from '../../features/akt-kasbankin/screens/KasBankInListScreen';
+import { KasBankInFormScreen } from '../../features/akt-kasbankin/screens/KasBankInFormScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -113,6 +115,10 @@ export function MainNavigator() {
             <Stack.Screen name="PaymentList" component={PaymentListScreen} />
             <Stack.Screen name="PaymentEdit" component={PaymentEditScreen} />
             <Stack.Screen name="PaymentForm" component={PaymentFormScreen} />
+            
+            {/* Kas Bank In */}
+            <Stack.Screen name="KasBankInList" component={KasBankInListScreen} />
+            <Stack.Screen name="KasBankInForm" component={KasBankInFormScreen} />
 
             <Stack.Screen name="LeadsFormScreen" component={require('../../features/leads/screens/LeadsFormScreen').LeadsFormScreen} />
             <Stack.Screen name="CounterEdit" component={require('../../features/counter/screens/CounterEditScreen').CounterEditScreen} />
