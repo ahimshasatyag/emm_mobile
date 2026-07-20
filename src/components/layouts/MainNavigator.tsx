@@ -67,6 +67,9 @@ import { MataUangScreen } from '../../features/matauang/screens/MataUangScreen';
 import { AssestsListScreen } from '../../features/assests/screens/AssestsListScreen';
 import { AssestFormScreen } from '../../features/assests/screens/AssestFormScreen';
 import { AssestsEditScreen } from '../../features/assests/screens/AssestsEditScreen';
+import { InventoryScheduleListScreen } from '../../features/inventoryschedule/screens/InventoryScheduleListScreen';
+import { InventoryScheduleFormScreen } from '../../features/inventoryschedule/screens/InventoryScheduleFormScreen';
+import { InventoryScheduleEditScreen } from '../../features/inventoryschedule/screens/InventoryScheduleEditScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -400,6 +403,23 @@ export function MainNavigator() {
             <Stack.Screen
                 name="SurveyEdit"
                 getComponent={() => require('../../features/survey/screens/SurveyEditScreen').SurveyEditScreen}
+            />
+
+            {/* Inventory Schedule */}
+            <Stack.Screen
+                name="InventoryScheduleListScreen"
+                getComponent={() => require('../../features/inventoryschedule/screens/InventoryScheduleListScreen').InventoryScheduleListScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="InventoryScheduleFormScreen"
+                getComponent={() => require('../../features/inventoryschedule/screens/InventoryScheduleFormScreen').InventoryScheduleFormScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="InventoryScheduleEditScreen"
+                getComponent={() => require('../../features/inventoryschedule/screens/InventoryScheduleEditScreen').InventoryScheduleEditScreen}
+                options={{ headerShown: false }}
             />
         </Stack.Navigator>
     );

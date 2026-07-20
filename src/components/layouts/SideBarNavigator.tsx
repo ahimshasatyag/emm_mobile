@@ -5,7 +5,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, int
 import {
     ChevronDown, Home, LogOut, Shield, Users, Building2, Database, Tags,
     Wrench, TrendingUp, ShoppingBag, CheckSquare, Warehouse, Calculator,
-    FolderTree, Archive, MessageCircle, UserCircle, FilePieChart, Hash, Settings as SettingsIcon, Package
+    FolderTree, Archive, MessageCircle, UserCircle, FilePieChart, Hash, Settings as SettingsIcon, Package, ClipboardList, CalendarDays
 } from 'lucide-react-native';
 import { BottomBarNavigator } from './BottomBarNavigator';
 import { theme } from '../../theme/theme';
@@ -28,7 +28,7 @@ if (Platform.OS === 'android') {
 }
 const iconMap: Record<string, any> = {
     Shield, Users, Building2, Database, Tags, Wrench, TrendingUp, ShoppingBag,
-    CheckSquare, Warehouse, Calculator, FolderTree, Archive, MessageCircle, UserCircle, FilePieChart, Hash, Package
+    CheckSquare, Warehouse, Calculator, FolderTree, Archive, MessageCircle, UserCircle, FilePieChart, Hash, Package, ClipboardList, CalendarDays
 };
 const SIDEBAR_MENUS = [
     {
@@ -266,6 +266,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'ListPaymentScreen') return 'List Payment';
         if (route === 'MataUangScreen') return 'Mata Uang';
         if (route === 'AssestsListScreen') return 'Asset Management';
+        if (route === 'InventoryScheduleListScreen') return 'Asset Schedule';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -413,6 +414,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('MataUangScreen', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Asset Management') {
                                     props.navigation.navigate('AssestsListScreen', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Asset Schedule') {
+                                    props.navigation.navigate('InventoryScheduleListScreen', { timestamp: Date.now() });
                                 }
                             }}
                         />
@@ -612,6 +615,11 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="KasBankInList"
                 component={require('../../features/akt-kasbankin/screens/KasBankInListScreen').KasBankInListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="InventoryScheduleListScreen"
+                component={require('../../features/inventoryschedule/screens/InventoryScheduleListScreen').InventoryScheduleListScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>
