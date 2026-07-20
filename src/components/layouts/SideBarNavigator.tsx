@@ -267,6 +267,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'MataUangScreen') return 'Mata Uang';
         if (route === 'AssestsListScreen') return 'Asset Management';
         if (route === 'InventoryScheduleListScreen') return 'Asset Schedule';
+        if (route === 'SopDivisionScreen') return 'Daftar Induk Document';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -416,6 +417,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('AssestsListScreen', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Asset Schedule') {
                                     props.navigation.navigate('InventoryScheduleListScreen', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Daftar Induk Document') {
+                                    props.navigation.navigate('SopDivisionScreen', { timestamp: Date.now() });
                                 }
                             }}
                         />
@@ -620,6 +623,11 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="InventoryScheduleListScreen"
                 component={require('../../features/inventoryschedule/screens/InventoryScheduleListScreen').InventoryScheduleListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="SopDivisionScreen"
+                component={require('../../features/sop/screens/SopDivisionScreen').SopDivisionScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>

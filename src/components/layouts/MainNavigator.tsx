@@ -421,6 +421,28 @@ export function MainNavigator() {
                 getComponent={() => require('../../features/inventoryschedule/screens/InventoryScheduleEditScreen').InventoryScheduleEditScreen}
                 options={{ headerShown: false }}
             />
+
+            {/* SOP */}
+            <Stack.Screen
+                name="SopDivisionScreen"
+                getComponent={() => require('../../features/sop/screens/SopDivisionScreen').SopDivisionScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="SopListScreen"
+                getComponent={() => require('../../features/sop/screens/SopListScreen').SopListScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="SopFormScreen"
+                getComponent={() => require('../../features/sop/screens/SopFormScreen').SopFormScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="SopEditScreen"
+                getComponent={() => require('../../features/sop/screens/SopEditScreen').SopEditScreen}
+                options={{ headerShown: false }}
+            />
         </Stack.Navigator>
     );
 }
