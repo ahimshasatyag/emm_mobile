@@ -64,8 +64,9 @@ import { KasBankInFormScreen } from '../../features/akt-kasbankin/screens/KasBan
 import { ListPaymentScreen } from '../../features/listpayment/screens/ListPaymentScreen';
 import { ListPaymentDetailScreen } from '../../features/listpayment/screens/ListPaymentDetailScreen';
 import { MataUangScreen } from '../../features/matauang/screens/MataUangScreen';
-
-
+import { AssestsListScreen } from '../../features/assests/screens/AssestsListScreen';
+import { AssestFormScreen } from '../../features/assests/screens/AssestFormScreen';
+import { AssestsEditScreen } from '../../features/assests/screens/AssestsEditScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -127,8 +128,9 @@ export function MainNavigator() {
             <Stack.Screen name="ListPaymentScreen" component={ListPaymentScreen} />
             <Stack.Screen name="ListPaymentDetailScreen" component={ListPaymentDetailScreen} />
             <Stack.Screen name="MataUangScreen" component={MataUangScreen} />
-
-
+            <Stack.Screen name="AssestsListScreen" component={AssestsListScreen} />
+            <Stack.Screen name="AssestFormScreen" component={AssestFormScreen} />
+            <Stack.Screen name="AssestsEditScreen" component={AssestsEditScreen} />
 
             <Stack.Screen name="LeadsFormScreen" component={require('../../features/leads/screens/LeadsFormScreen').LeadsFormScreen} />
             <Stack.Screen name="CounterEdit" component={require('../../features/counter/screens/CounterEditScreen').CounterEditScreen} />

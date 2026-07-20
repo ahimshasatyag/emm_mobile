@@ -39,6 +39,7 @@ import salesreturReducer from '../features/salesretur/stores/salesreturSlice';
 import listsoReducer from '../features/listso/stores/listsoSlice';
 import listpaymentReducer from '../features/listpayment/stores/listpaymentSlice';
 import matauangReducer from '../features/matauang/stores/matauangSlice';
+import assestsReducer from '../features/assests/stores/assestsSlice';
 
 // import attendanceReducer from '../features/attendance/store/attendanceSlice';
 // import customerReducer from '../features/customer/store/customerSlice';
@@ -107,6 +108,7 @@ export const store = configureStore({
     listso: listsoReducer,
     listpayment: listpaymentReducer,
     matauang: matauangReducer,
+    assests: assestsReducer,
     // attendance: attendanceReducer,
     // customer: customerReducer,
     // product: productsReducer,
