@@ -37,6 +37,7 @@ import surveyReducer from '../features/survey/stores/surveySlice';
 import salescontractReducer from '../features/salescontract/stores/salescontractSlice';
 import salesreturReducer from '../features/salesretur/stores/salesreturSlice';
 import listsoReducer from '../features/listso/stores/listsoSlice';
+import listpaymentReducer from '../features/listpayment/stores/listpaymentSlice';
 
 // import attendanceReducer from '../features/attendance/store/attendanceSlice';
 // import customerReducer from '../features/customer/store/customerSlice';
@@ -103,6 +104,7 @@ export const store = configureStore({
     salescontract: salescontractReducer,
     salesretur: salesreturReducer,
     listso: listsoReducer,
+    listpayment: listpaymentReducer,
     // attendance: attendanceReducer,
     // customer: customerReducer,
     // product: productsReducer,
