@@ -63,6 +63,8 @@ import { KasBankInListScreen } from '../../features/akt-kasbankin/screens/KasBan
 import { KasBankInFormScreen } from '../../features/akt-kasbankin/screens/KasBankInFormScreen';
 import { ListPaymentScreen } from '../../features/listpayment/screens/ListPaymentScreen';
 import { ListPaymentDetailScreen } from '../../features/listpayment/screens/ListPaymentDetailScreen';
+import { MataUangScreen } from '../../features/matauang/screens/MataUangScreen';
+
 
 
 const Stack = createNativeStackNavigator();
@@ -124,6 +126,8 @@ export function MainNavigator() {
             <Stack.Screen name="KasBankInForm" component={KasBankInFormScreen} />
             <Stack.Screen name="ListPaymentScreen" component={ListPaymentScreen} />
             <Stack.Screen name="ListPaymentDetailScreen" component={ListPaymentDetailScreen} />
+            <Stack.Screen name="MataUangScreen" component={MataUangScreen} />
+
 
 
             <Stack.Screen name="LeadsFormScreen" component={require('../../features/leads/screens/LeadsFormScreen').LeadsFormScreen} />

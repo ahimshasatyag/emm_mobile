@@ -264,6 +264,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'PaymentList') return 'Payment';
         if (route === 'KasBankInList') return 'Penerimaan Kas dan Bank';
         if (route === 'ListPaymentScreen') return 'List Payment';
+        if (route === 'MataUangScreen') return 'Mata Uang';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -407,6 +408,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('KasBankInList', { timestamp: Date.now() });
                                 } else if (subMenuName === 'List Payment') {
                                     props.navigation.navigate('ListPaymentScreen', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Mata Uang') {
+                                    props.navigation.navigate('MataUangScreen', { timestamp: Date.now() });
                                 }
                             }}
                         />
