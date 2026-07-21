@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
+import { View, Text, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Save, X, Edit2 } from 'lucide-react-native';
 import { useCounterEdit } from '../hooks/useCounterEdit';
@@ -8,6 +8,8 @@ import Animated, { FadeInUp, LinearTransition, FadeIn, FadeOut } from 'react-nat
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { CounterEditSkeleton } from '../skeleton/CounterEditSkeleton';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export function CounterEditScreen() {
     const route = useRoute();
@@ -25,16 +27,37 @@ export function CounterEditScreen() {
         updateField,
         handleSave,
         loadCounter,
+        validateForm,
     } = useCounterEdit(id);
 
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMsg, setToastMsg] = useState('');
+    const [toastType, setToastType] = useState<ToastType>('error');
+    const [toastTitle, setToastTitle] = useState('Validasi');
+
     const onSavePress = async () => {
+        const validationError = validateForm();
+        if (validationError) {
+            setToastMsg(validationError);
+            setToastType('error');
+            setToastTitle('Validasi');
+            setToastVisible(true);
+            return;
+        }
+        setConfirmModalVisible(true);
+    };
+
+    const handleConfirmSave = async () => {
+        setConfirmModalVisible(false);
         const success = await handleSave();
         if (success) {
-            Alert.alert(
-                'Sukses',
-                'Data counter berhasil diperbarui.',
-                [{ text: 'OK', onPress: () => setIsEditing(false) }]
-            );
+            setIsEditing(false);
+            setToastMsg('Data counter berhasil diperbarui!');
+            setToastType('success');
+            setToastTitle('Sukses');
+            setToastVisible(true);
+            loadCounter();
         }
     };
 
@@ -68,11 +91,7 @@ export function CounterEditScreen() {
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
-                        {error && (
-                            <Animated.View entering={FadeInUp} className="bg-red-50 p-4 rounded-xl mb-6 border border-red-100">
-                                <Text className="text-red-600 font-medium">{error}</Text>
-                            </Animated.View>
-                        )}
+                        {/* Error inline removed as it is handled by Toast */}
 
                         <Animated.View 
                             key={`form-container-${isEditing}`}
@@ -160,6 +179,24 @@ export function CounterEditScreen() {
                     </Animated.View>
                 )}
             </ScrollView>
+
+            <ModalConfirm
+                visible={confirmModalVisible}
+                title="Simpan Perubahan Counter"
+                message="Anda yakin ingin menyimpan perubahan data counter ini?"
+                confirmText="Ya, Update"
+                cancelText="Batal"
+                onConfirm={handleConfirmSave}
+                onCancel={() => setConfirmModalVisible(false)}
+            />
+
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastTitle}
+                message={toastMsg}
+                onClose={() => setToastVisible(false)}
+            />
         </KeyboardAvoidingView>
     );
 }

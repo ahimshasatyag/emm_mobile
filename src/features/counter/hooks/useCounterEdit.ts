@@ -55,11 +55,6 @@ export function useCounterEdit(id: string) {
     };
 
     const handleSave = async (): Promise<boolean> => {
-        const validationError = validateForm();
-        if (validationError) {
-            setError(validationError);
-            return false;
-        }
 
         setIsSaving(true);
         setError(null);
@@ -90,5 +85,7 @@ export function useCounterEdit(id: string) {
         updateField,
         handleSave,
         loadCounter,
+        validateForm,
+        setError,
     };
 }

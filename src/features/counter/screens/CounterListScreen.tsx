@@ -1,5 +1,5 @@
-import React, { useState , useCallback } from 'react';
-import { View, Text, FlatList, RefreshControl } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Text, FlatList, RefreshControl, TextInput } from 'react-native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useCounter } from '../hooks/useCounter';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
@@ -21,6 +21,17 @@ export function CounterListScreen() {
     const { data, isLoading, error } = useCounter();
 
     const [isInitializing, setIsInitializing] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredData = useMemo(() => {
+        if (!searchQuery) return data;
+        const query = searchQuery.toLowerCase();
+        return data.filter(item =>
+            item.periode.toLowerCase().includes(query) ||
+            item.id_counter.toLowerCase().includes(query) ||
+            item.no_counter.toString().toLowerCase().includes(query)
+        );
+    }, [data, searchQuery]);
 
     useFocusEffect(
         useCallback(() => {
@@ -70,16 +81,22 @@ export function CounterListScreen() {
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
             <HeaderNavigator isLoading={isLoading} />
 
-            <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
-                <View className="bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2">
-                    <Search color="#9ca3af" size={20} />
-                    <Text className="text-gray-400 ml-2">Cari counter...</Text>
+            <View className="px-4 pt-3 pb-1">
+                <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm mb-2">
+                    <Search size={20} color="#9CA3AF" />
+                    <TextInput
+                        placeholder="Cari ID, Periode, atau No Counter..."
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        className="flex-1 ml-3 text-sm text-gray-800 p-0"
+                        placeholderTextColor="#9CA3AF"
+                    />
                 </View>
-            </Animated.View>
+            </View>
 
             <View className="flex-1">
                 <FlatList
-                    data={(isLoading || isInitializing) ? [] : data}
+                    data={(isLoading || isInitializing) ? [] : filteredData}
                     keyExtractor={(item) => item.id_counter}
                     renderItem={({ item, index }) => (
                         <CounterCard item={item} index={index} onPress={handlePressCard} />
