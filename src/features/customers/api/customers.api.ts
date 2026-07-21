@@ -101,7 +101,7 @@ export const customersApi = {
         });
     },
 
-    createCustomer: async (data: CustomerFormData): Promise<{ success: boolean; message?: string }> => {
+    createCustomer: async (data: CustomerFormData): Promise<{ success: boolean; message?: string; data?: Customer }> => {
         return new Promise((resolve) => {
             setTimeout(() => {
                 const newId = (DUMMY_CUSTOMERS.length + 1).toString();
@@ -110,7 +110,7 @@ export const customersApi = {
                 const prov = DUMMY_PROVINCES.find(p => p.id === data.provinsi);
                 const kab = DUMMY_REGENCIES.find(r => r.id === data.kabupaten);
 
-                DUMMY_CUSTOMERS.push({
+                const newCustomer: Customer = {
                     id_customers: newId,
                     code_customers: newCode,
                     nm_customers: data.nm_customers,
@@ -131,13 +131,14 @@ export const customersApi = {
                     is_blacklist: data.is_blacklist,
                     is_external_sales: data.is_external_sales,
                     jumlah_so: 0,
-                });
-                resolve({ success: true, message: 'Customer created successfully' });
+                };
+                DUMMY_CUSTOMERS = [...DUMMY_CUSTOMERS, newCustomer];
+                resolve({ success: true, message: 'Customer created successfully', data: newCustomer });
             }, 800);
         });
     },
 
-    updateCustomer: async (id: string, data: CustomerFormData): Promise<{ success: boolean; message?: string }> => {
+    updateCustomer: async (id: string, data: CustomerFormData): Promise<{ success: boolean; message?: string; data?: Customer }> => {
         return new Promise((resolve, reject) => {
             setTimeout(() => {
                 const index = DUMMY_CUSTOMERS.findIndex(c => c.id_customers === id);
@@ -145,13 +146,16 @@ export const customersApi = {
                     const prov = DUMMY_PROVINCES.find(p => p.id === data.provinsi);
                     const kab = DUMMY_REGENCIES.find(r => r.id === data.kabupaten);
 
-                    DUMMY_CUSTOMERS[index] = {
+                    const updatedCustomer = {
                         ...DUMMY_CUSTOMERS[index],
                         ...data,
                         provinsi: prov ? prov.nama : data.provinsi,
                         kabupaten: kab ? kab.nama_kabupaten : data.kabupaten,
                     };
-                    resolve({ success: true, message: 'Customer updated successfully' });
+                    const newCustomers = [...DUMMY_CUSTOMERS];
+                    newCustomers[index] = updatedCustomer;
+                    DUMMY_CUSTOMERS = newCustomers;
+                    resolve({ success: true, message: 'Customer updated successfully', data: updatedCustomer });
                 } else {
                     reject(new Error('Customer not found'));
                 }

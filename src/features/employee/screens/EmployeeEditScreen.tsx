@@ -27,17 +27,18 @@ export function EmployeeEditScreen() {
     const [toastType, setToastType] = useState<ToastType>('error');
     const [toastTitle, setToastTitle] = useState('Validasi');
 
+    const [hasShownToast, setHasShownToast] = React.useState(false);
+
     useEffect(() => {
         const params = route.params as any;
-        if (params?.toastMessage) {
+        if (params?.toastMessage && !hasShownToast) {
             setToastMsg(params.toastMessage);
             setToastType(params.toastType || 'success');
             setToastTitle(params.toastType === 'error' ? 'Gagal' : 'Sukses');
             setToastVisible(true);
-            
-            navigation.setParams({ toastMessage: undefined, toastType: undefined } as any);
+            setHasShownToast(true);
         }
-    }, [route.params]);
+    }, [route.params, hasShownToast]);
 
     const {
         formData,

@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { CustomerFormData, CustomerContact, Province, Regency } from '../types/customers.types';
 import { customersApi } from '../api/customers.api';
-import { Alert } from 'react-native';
 
 const initialFormData: CustomerFormData = {
     nm_customers: '',
@@ -29,14 +28,14 @@ export function useCustomerForm(initialId?: string) {
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [initialLoadDone, setInitialLoadDone] = useState(false);
-    
+
     const [provinces, setProvinces] = useState<Province[]>([]);
     const [regencies, setRegencies] = useState<Regency[]>([]);
 
     const loadInitialData = useCallback(async () => {
         try {
             setInitialLoadDone(false);
-            
+
             // Load provinces
             const provRes = await customersApi.fetchProvinces();
             if (provRes.success) {
@@ -47,7 +46,7 @@ export function useCustomerForm(initialId?: string) {
                 const res = await customersApi.fetchCustomerById(initialId);
                 if (res.success && res.data) {
                     const header = res.data.header;
-                    
+
                     // Match province ID by name or just use it (assuming backend returns name, we might need ID. Let's assume we find it)
                     let matchedProvId = '';
                     if (provRes.success) {
@@ -135,36 +134,27 @@ export function useCustomerForm(initialId?: string) {
         });
     }, []);
 
-    const save = async () => {
-        if (!formData.nm_customers) {
-            setError("Nama Company harus diisi");
-            return false;
-        }
-        if (!formData.customers_address) {
-            setError("Address harus diisi");
-            return false;
-        }
-        if (!formData.customers_address_invoice) {
-            setError("Address Invoice harus diisi");
-            return false;
-        }
-        if (!formData.customers_mobile) {
-            setError("Mobile harus diisi");
-            return false;
-        }
+    const validateForm = () => {
+        if (!formData.nm_customers) return "Nama Company harus diisi";
+        if (!formData.customers_address) return "Address harus diisi";
+        if (!formData.customers_address_invoice) return "Address Invoice harus diisi";
+        if (!formData.customers_mobile) return "Mobile harus diisi";
+        return null;
+    };
+
+    const save = async (): Promise<any> => {
 
         setIsSaving(true);
         setError(null);
         try {
+            let res;
             if (initialId) {
-                const res = await customersApi.updateCustomer(initialId, formData);
-                setIsSaving(false);
-                return res.success;
+                res = await customersApi.updateCustomer(initialId, formData);
             } else {
-                const res = await customersApi.createCustomer(formData);
-                setIsSaving(false);
-                return res.success;
+                res = await customersApi.createCustomer(formData);
             }
+            setIsSaving(false);
+            return res.success ? res.data : false;
         } catch (e: any) {
             setIsSaving(false);
             setError(e.message || 'Terjadi kesalahan saat menyimpan');
@@ -186,5 +176,7 @@ export function useCustomerForm(initialId?: string) {
         updateContact,
         save,
         loadInitialData,
+        validateForm,
+        setFormData,
     };
 }

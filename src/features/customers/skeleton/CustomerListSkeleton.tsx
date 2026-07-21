@@ -26,13 +26,11 @@ export function CustomerListSkeleton() {
                 >
                     <View className="flex-row justify-between mb-2">
                         <View className="w-1/3 h-5 bg-gray-200 rounded" />
-                        <View className="w-1/4 h-4 bg-gray-200 rounded" />
                     </View>
                     <View className="w-2/3 h-6 bg-gray-200 rounded mb-2" />
                     <View className="w-1/2 h-4 bg-gray-200 rounded mb-3" />
                     <View className="flex-row justify-between pt-2 border-t border-gray-100">
                         <View className="w-1/3 h-4 bg-gray-200 rounded" />
-                        <View className="w-1/4 h-4 bg-gray-200 rounded" />
                     </View>
                 </Animated.View>
             ))}

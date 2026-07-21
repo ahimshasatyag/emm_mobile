@@ -4,11 +4,16 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Save, Trash2, Plus, Edit2, X, CheckSquare, Square } from 'lucide-react-native';
 import { useCustomerForm } from '../hooks/useCustomerForm';
-import { CustomerFormSkeleton } from '../skeleton/CustomerFormSkeleton';
+import { CustomerEditSkeleton } from '../skeleton/CustomerEditSkeleton';
 import { theme } from '../../../theme/theme';
 import Animated, { FadeInUp, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { CustomerTableContact } from '../components/CustomerTableContact';
+import { CustomerModalContact } from '../components/CustomerModalContact';
+import { CustomerContact } from '../types/customers.types';
 
 type RootStackParamList = {
     CustomerEdit: { id: string };
@@ -20,6 +25,29 @@ export function CustomerEditScreen() {
     const { id } = route.params;
 
     const [isEditing, setIsEditing] = useState(false);
+    
+    const [contactModalVisible, setContactModalVisible] = useState(false);
+    const [selectedContact, setSelectedContact] = useState<CustomerContact | null>(null);
+    const [selectedContactIndex, setSelectedContactIndex] = useState<number | null>(null);
+
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMsg, setToastMsg] = useState('');
+    const [toastType, setToastType] = useState<ToastType>('error');
+    const [toastTitle, setToastTitle] = useState('Validasi');
+
+    const [hasShownToast, setHasShownToast] = useState(false);
+
+    useEffect(() => {
+        const params = route.params as any;
+        if (params?.toastMessage && !hasShownToast) {
+            setToastMsg(params.toastMessage);
+            setToastType(params.toastType || 'success');
+            setToastTitle(params.toastType === 'error' ? 'Gagal' : 'Sukses');
+            setToastVisible(true);
+            setHasShownToast(true);
+        }
+    }, [route.params, hasShownToast]);
 
     const {
         formData,
@@ -29,24 +57,83 @@ export function CustomerEditScreen() {
         error,
         initialLoadDone,
         updateField,
-        handleProvinceChange,
-        addContact,
+        setFormData,
         removeContact,
-        updateContact,
         save,
         loadInitialData,
+        validateForm,
     } = useCustomerForm(id);
 
     useEffect(() => {
         loadInitialData();
     }, [loadInitialData]);
 
+    const handleOpenAddContact = () => {
+        setSelectedContact(null);
+        setSelectedContactIndex(null);
+        setContactModalVisible(true);
+    };
+
+    const handleOpenEditContact = (contact: CustomerContact, index: number) => {
+        setSelectedContact(contact);
+        setSelectedContactIndex(index);
+        setContactModalVisible(true);
+    };
+
+    const handleSaveContact = (contact: CustomerContact) => {
+        if (selectedContactIndex !== null) {
+            // Edit
+            const newContacts = [...formData.contacts];
+            newContacts[selectedContactIndex] = contact;
+            setFormData({ ...formData, contacts: newContacts });
+            
+            setToastMsg('Kontak berhasil diperbarui');
+        } else {
+            // Add
+            setFormData({
+                ...formData,
+                contacts: [...formData.contacts, { ...contact, id_contact: Date.now().toString() }]
+            });
+            
+            setToastMsg('Kontak baru berhasil ditambahkan');
+        }
+        
+        setToastTitle('Sukses');
+        setToastType('success');
+        setToastVisible(true);
+        setContactModalVisible(false);
+    };
+
+    const handleDeleteContact = (index: number) => {
+        removeContact(index);
+        setToastTitle('Sukses');
+        setToastMsg('Kontak berhasil dihapus');
+        setToastType('success');
+        setToastVisible(true);
+    };
+
     const onSavePress = async () => {
-        const success = await save();
-        if (success) {
-            Alert.alert('Sukses', 'Data pelanggan berhasil diperbarui', [
-                { text: 'OK', onPress: () => setIsEditing(false) }
-            ]);
+        const validationError = validateForm();
+        if (validationError) {
+            setToastMsg(validationError);
+            setToastType('error');
+            setToastTitle('Validasi');
+            setToastVisible(true);
+            return;
+        }
+        setConfirmModalVisible(true);
+    };
+
+    const handleConfirmSave = async () => {
+        setConfirmModalVisible(false);
+        const result = await save();
+        if (result) {
+            setIsEditing(false);
+            setToastMsg('Data pelanggan berhasil diperbarui!');
+            setToastType('success');
+            setToastTitle('Sukses');
+            setToastVisible(true);
+            loadInitialData();
         }
     };
 
@@ -56,22 +143,22 @@ export function CustomerEditScreen() {
     };
 
     const getInputClass = () => {
-        return `px-4 rounded-xl border ${isEditing ? 'bg-gray-50 border-gray-200 text-gray-900 focus:border-indigo-500' : 'bg-gray-100 border-gray-200 text-gray-500'}`;
+        return `px-4 rounded-xl border ${isEditing ? 'bg-gray-50 border-gray-200 text-gray-900 focus:border-[#9e0b0f]' : 'bg-gray-100 border-gray-200 text-gray-500'}`;
     };
 
     return (
-        <KeyboardAvoidingView 
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={{ flex: 1, backgroundColor: theme.colors.background }}
         >
-            <HeaderNavigator 
-                title={!initialLoadDone ? 'MEMUAT DATA...' : (isEditing ? 'EDIT PELANGGAN' : 'DETAIL PELANGGAN')} 
-                showBackButton 
-                onBackPress={() => navigation.goBack()} 
+            <HeaderNavigator
+                title={!initialLoadDone ? 'MEMUAT DATA...' : (isEditing ? 'EDIT PELANGGAN' : 'DETAIL PELANGGAN')}
+                showBackButton
+                onBackPress={() => navigation.goBack()}
             />
 
-            <ScrollView 
-                className="flex-1" 
+            <ScrollView
+                className="flex-1"
                 contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
@@ -80,7 +167,7 @@ export function CustomerEditScreen() {
             >
                 {!initialLoadDone ? (
                     <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
-                        <CustomerFormSkeleton />
+                        <CustomerEditSkeleton />
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
@@ -90,12 +177,13 @@ export function CustomerEditScreen() {
                             </Animated.View>
                         )}
 
-                        <Animated.View 
-                            entering={FadeInUp.delay(50)} 
+                        <Animated.View
+                            entering={FadeInUp.delay(50)}
                             layout={LinearTransition.springify()}
-                            className="bg-white p-5 rounded-3xl border border-gray-100 mb-6" 
+                            className="bg-white rounded-3xl border border-gray-100 mb-6 overflow-hidden"
                             style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}
                         >
+                            <View className="p-5">
                             {/* 1. Company Name */}
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Company Name <Text className="text-red-500">*</Text></Text>
@@ -140,8 +228,8 @@ export function CustomerEditScreen() {
 
                             {/* 4 & 5. Blacklist and External Sales checkboxes */}
                             <View className="flex-row justify-between items-center mb-4">
-                                <TouchableOpacity 
-                                    className="flex-row items-center" 
+                                <TouchableOpacity
+                                    className="flex-row items-center"
                                     onPress={() => isEditing && updateField('is_blacklist', !formData.is_blacklist)}
                                     activeOpacity={isEditing ? 0.2 : 1}
                                 >
@@ -149,8 +237,8 @@ export function CustomerEditScreen() {
                                     <Text className={`text-sm font-bold ml-2 ${isEditing ? 'text-gray-700' : 'text-gray-500'}`}>Blacklist</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity 
-                                    className="flex-row items-center" 
+                                <TouchableOpacity
+                                    className="flex-row items-center"
                                     onPress={() => isEditing && updateField('is_external_sales', !formData.is_external_sales)}
                                     activeOpacity={isEditing ? 0.2 : 1}
                                 >
@@ -327,89 +415,36 @@ export function CustomerEditScreen() {
                                     />
                                 </View>
                             </View>
-                        </Animated.View>
-
-                        {/* SECTION: CONTACT PERSONS */}
-                        <Animated.View 
-                            entering={FadeInUp.delay(100)} 
-                            layout={LinearTransition.springify()}
-                            className="bg-white p-5 rounded-3xl border border-gray-100 mb-6" 
-                            style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}
-                        >
-                            <View className="flex-row justify-between items-center mb-4">
-                                <Text className="text-sm font-bold text-gray-700">Daftar Kontak</Text>
-                                {isEditing && (
-                                    <TouchableOpacity 
-                                        onPress={addContact}
-                                        className="bg-indigo-50 flex-row items-center px-3 py-1.5 rounded-lg"
-                                    >
-                                        <Plus size={14} color="#4f46e5" />
-                                        <Text className="text-indigo-600 text-xs font-bold ml-1">Tambah</Text>
-                                    </TouchableOpacity>
-                                )}
                             </View>
 
-                            {formData.contacts.map((contact, index) => (
-                                <View key={contact.id_contact || index} className={`mb-4 p-4 border rounded-xl ${isEditing ? 'border-gray-200 bg-gray-50' : 'border-gray-200 bg-gray-100'}`}>
-                                    <View className="flex-row justify-between items-center mb-3">
-                                        <Text className="text-xs font-bold text-gray-500">Kontak #{index + 1}</Text>
-                                        {isEditing && (
-                                            <TouchableOpacity onPress={() => removeContact(index)} className="p-1">
-                                                <Trash2 size={16} color="#ef4444" />
-                                            </TouchableOpacity>
-                                        )}
-                                    </View>
-                                    
-                                    <View className="mb-3">
-                                        <TextInput
-                                            className={`h-10 text-sm ${getInputClass()}`}
-                                            value={contact.nm_customers_contact}
-                                            onChangeText={(t) => updateContact(index, 'nm_customers_contact', t)}
-                                            placeholder="Nama Kontak"
-                                            editable={isEditing}
-                                        />
-                                    </View>
-                                    <View className="mb-3">
-                                        <TextInput
-                                            className={`h-10 text-sm ${getInputClass()}`}
-                                            value={contact.customers_contact_posisi}
-                                            onChangeText={(t) => updateContact(index, 'customers_contact_posisi', t)}
-                                            placeholder="Posisi (mis: Manager)"
-                                            editable={isEditing}
-                                        />
-                                    </View>
-                                    <View className="mb-3">
-                                        <TextInput
-                                            className={`h-10 text-sm ${getInputClass()}`}
-                                            value={contact.customers_contact_phone}
-                                            onChangeText={(t) => updateContact(index, 'customers_contact_phone', t.replace(/[^0-9]/g, ''))}
-                                            placeholder="No HP"
-                                            keyboardType="phone-pad"
-                                            editable={isEditing}
-                                        />
-                                    </View>
-                                    <View>
-                                        <TextInput
-                                            className={`h-10 text-sm ${getInputClass()}`}
-                                            value={contact.customers_contact_email}
-                                            onChangeText={(t) => updateContact(index, 'customers_contact_email', t)}
-                                            placeholder="Email"
-                                            keyboardType="email-address"
-                                            autoCapitalize="none"
-                                            editable={isEditing}
-                                        />
-                                    </View>
+                            {/* SECTION: CONTACT PERSONS */}
+                            <View className="border-t border-gray-100 bg-white">
+                                <View className="flex-row justify-between items-center mb-4 px-5 pt-5">
+                                    <Text className="text-sm font-bold text-gray-700">Daftar Kontak</Text>
+                                    {isEditing && (
+                                        <TouchableOpacity
+                                            onPress={handleOpenAddContact}
+                                            className="flex-row items-center px-3 py-1.5 rounded-lg"
+                                            style={{ backgroundColor: `${theme.colors.primary}15` }}
+                                        >
+                                            <Plus size={14} color={theme.colors.primary} />
+                                            <Text className="text-xs font-bold ml-1" style={{ color: theme.colors.primary }}>Tambah</Text>
+                                        </TouchableOpacity>
+                                    )}
                                 </View>
-                            ))}
-                            {formData.contacts.length === 0 && (
-                                <Text className="text-gray-400 text-center text-sm py-4">Belum ada kontak yang ditambahkan.</Text>
-                            )}
+
+                                <CustomerTableContact 
+                                    contacts={formData.contacts} 
+                                    onEdit={handleOpenEditContact}
+                                    onDelete={isEditing ? handleDeleteContact : undefined}
+                                />
+                            </View>
                         </Animated.View>
 
                         {/* Bottom Actions */}
-                        <Animated.View 
-                            key={`actions-${isEditing}`} 
-                            entering={FadeInUp.delay(150)} 
+                        <Animated.View
+                            key={`actions-${isEditing}`}
+                            entering={FadeInUp.delay(150)}
                             layout={LinearTransition.springify()}
                             className="flex-row gap-3"
                         >
@@ -432,7 +467,7 @@ export function CustomerEditScreen() {
                                         <X color={theme.colors.primary} size={20} className="mr-2" />
                                         <Text className="font-bold text-lg" style={{ color: theme.colors.primary }}>Batal</Text>
                                     </Button>
-                                    
+
                                     <Button
                                         onPress={onSavePress}
                                         disabled={isSaving}
@@ -455,6 +490,31 @@ export function CustomerEditScreen() {
                     </Animated.View>
                 )}
             </ScrollView>
+
+            <ModalConfirm
+                visible={confirmModalVisible}
+                title="Konfirmasi Update"
+                message="Apakah Anda yakin ingin menyimpan perubahan pada data pelanggan ini?"
+                onConfirm={handleConfirmSave}
+                onCancel={() => setConfirmModalVisible(false)}
+            />
+
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastTitle}
+                message={toastMsg}
+                onClose={() => setToastVisible(false)}
+            />
+
+            <CustomerModalContact 
+                visible={contactModalVisible}
+                onDismiss={() => setContactModalVisible(false)}
+                onSave={handleSaveContact}
+                initialData={selectedContact}
+                onDelete={isEditing && selectedContactIndex !== null ? () => handleDeleteContact(selectedContactIndex) : undefined}
+                readOnly={!isEditing}
+            />
         </KeyboardAvoidingView>
     );
 }

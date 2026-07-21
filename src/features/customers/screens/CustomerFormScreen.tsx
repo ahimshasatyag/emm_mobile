@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, TextInput, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, TouchableOpacity, Switch } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, TouchableOpacity, Switch, RefreshControl } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { useNavigation } from '@react-navigation/native';
 import { Save, Trash2, Plus, CheckSquare, Square } from 'lucide-react-native';
@@ -9,9 +9,24 @@ import { theme } from '../../../theme/theme';
 import Animated, { FadeInUp, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { CustomerTableContact } from '../components/CustomerTableContact';
+import { CustomerModalContact } from '../components/CustomerModalContact';
+import { CustomerContact } from '../types/customers.types';
 
 export function CustomerFormScreen() {
     const navigation = useNavigation();
+
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMsg, setToastMsg] = useState('');
+    const [toastType, setToastType] = useState<ToastType>('error');
+    const [toastTitle, setToastTitle] = useState('Validasi');
+
+    const [contactModalVisible, setContactModalVisible] = useState(false);
+    const [selectedContact, setSelectedContact] = useState<CustomerContact | null>(null);
+    const [selectedContactIndex, setSelectedContactIndex] = useState<number | null>(null);
 
     const {
         formData,
@@ -22,11 +37,11 @@ export function CustomerFormScreen() {
         initialLoadDone,
         updateField,
         handleProvinceChange,
-        addContact,
+        setFormData,
         removeContact,
-        updateContact,
         save,
         loadInitialData,
+        validateForm,
     } = useCustomerForm();
 
     useEffect(() => {
@@ -34,12 +49,70 @@ export function CustomerFormScreen() {
     }, [loadInitialData]);
 
     const onSavePress = async () => {
-        const success = await save();
-        if (success) {
-            Alert.alert('Sukses', 'Data pelanggan berhasil ditambahkan', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+        const validationError = validateForm();
+        if (validationError) {
+            setToastMsg(validationError);
+            setToastType('error');
+            setToastTitle('Validasi');
+            setToastVisible(true);
+            return;
         }
+        setConfirmModalVisible(true);
+    };
+
+    const handleConfirmSave = async () => {
+        setConfirmModalVisible(false);
+        const result = await save();
+        if (result && result.id_customers) {
+            (navigation as any).replace('CustomerEdit', { 
+                id: result.id_customers,
+                toastMessage: 'Data pelanggan berhasil ditambahkan!',
+                toastType: 'success'
+            });
+        }
+    };
+
+    const handleOpenAddContact = () => {
+        setSelectedContact(null);
+        setSelectedContactIndex(null);
+        setContactModalVisible(true);
+    };
+
+    const handleOpenEditContact = (contact: CustomerContact, index: number) => {
+        setSelectedContact(contact);
+        setSelectedContactIndex(index);
+        setContactModalVisible(true);
+    };
+
+    const handleSaveContact = (contact: CustomerContact) => {
+        if (selectedContactIndex !== null) {
+            // Edit
+            const newContacts = [...formData.contacts];
+            newContacts[selectedContactIndex] = contact;
+            setFormData({ ...formData, contacts: newContacts });
+            
+            setToastMsg('Kontak berhasil diperbarui');
+        } else {
+            // Add
+            setFormData({
+                ...formData,
+                contacts: [...formData.contacts, { ...contact, id_contact: Date.now().toString() }]
+            });
+            
+            setToastMsg('Kontak baru berhasil ditambahkan');
+        }
+        
+        setToastTitle('Sukses');
+        setToastType('success');
+        setToastVisible(true);
+    };
+
+    const handleDeleteContact = (index: number) => {
+        removeContact(index);
+        setToastTitle('Sukses');
+        setToastMsg('Kontak berhasil dihapus');
+        setToastType('success');
+        setToastVisible(true);
     };
 
     return (
@@ -48,7 +121,7 @@ export function CustomerFormScreen() {
             style={{ flex: 1, backgroundColor: theme.colors.background }}
         >
             <HeaderNavigator 
-                title="TAMBAH PELANGGAN" 
+                title={!initialLoadDone ? "MEMUAT DATA..." : "TAMBAH PELANGGAN"}
                 showBackButton 
                 onBackPress={() => navigation.goBack()} 
             />
@@ -57,6 +130,9 @@ export function CustomerFormScreen() {
                 className="flex-1" 
                 contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl refreshing={!initialLoadDone} onRefresh={loadInitialData} colors={[theme.colors.primary]} />
+                }
             >
                 {!initialLoadDone ? (
                     <Animated.View exiting={FadeOut.duration(300)}>
@@ -73,14 +149,15 @@ export function CustomerFormScreen() {
                         <Animated.View 
                             entering={FadeInUp.delay(50)} 
                             layout={LinearTransition.springify()}
-                            className="bg-white p-5 rounded-3xl border border-gray-100 mb-6" 
+                            className="bg-white rounded-3xl border border-gray-100 mb-6 overflow-hidden" 
                             style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}
                         >
-                            {/* 1. Company Name */}
-                            <View className="mb-4">
+                            <View className="p-5">
+                                {/* 1. Company Name */}
+                                <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Company Name <Text className="text-red-500">*</Text></Text>
                                 <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                     value={formData.nm_customers}
                                     onChangeText={(t) => updateField('nm_customers', t)}
                                     placeholder="Enter company name"
@@ -91,7 +168,7 @@ export function CustomerFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Address <Text className="text-red-500">*</Text></Text>
                                 <TextInput
-                                    className="bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900 min-h-[96px]"
+                                    className="bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900 min-h-[96px]"
                                     value={formData.customers_address}
                                     onChangeText={(t) => updateField('customers_address', t)}
                                     placeholder="Enter address"
@@ -105,7 +182,7 @@ export function CustomerFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Address Invoice <Text className="text-red-500">*</Text></Text>
                                 <TextInput
-                                    className="bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900 min-h-[96px]"
+                                    className="bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900 min-h-[96px]"
                                     value={formData.customers_address_invoice}
                                     onChangeText={(t) => updateField('customers_address_invoice', t)}
                                     placeholder="Enter address invoice"
@@ -151,7 +228,7 @@ export function CustomerFormScreen() {
                                     <View className="mb-4">
                                         <Text className="text-sm font-bold text-gray-700 mb-2">Nama PIC</Text>
                                         <TextInput
-                                            className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                            className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                             value={formData.nama_lengkap}
                                             onChangeText={(t) => updateField('nama_lengkap', t)}
                                             placeholder="Enter Nama PIC"
@@ -160,7 +237,7 @@ export function CustomerFormScreen() {
                                     <View className="mb-4">
                                         <Text className="text-sm font-bold text-gray-700 mb-2">NIB</Text>
                                         <TextInput
-                                            className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                            className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                             value={formData.nib}
                                             onChangeText={(t) => updateField('nib', t.replace(/[^0-9]/g, ''))}
                                             placeholder="Enter NIB"
@@ -170,7 +247,7 @@ export function CustomerFormScreen() {
                                     <View className="mb-4">
                                         <Text className="text-sm font-bold text-gray-700 mb-2">NPWP</Text>
                                         <TextInput
-                                            className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                            className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                             value={formData.npwp}
                                             onChangeText={(t) => updateField('npwp', t)}
                                             placeholder="Enter NPWP"
@@ -183,7 +260,7 @@ export function CustomerFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">NIK PIC</Text>
                                 <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                     value={formData.nik}
                                     onChangeText={(t) => updateField('nik', t.replace(/[^0-9]/g, ''))}
                                     placeholder="Enter NIK PIC"
@@ -196,7 +273,7 @@ export function CustomerFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Mobile <Text className="text-red-500">*</Text></Text>
                                 <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                     value={formData.customers_mobile}
                                     onChangeText={(t) => updateField('customers_mobile', t.replace(/[^0-9]/g, ''))}
                                     placeholder="Enter mobile"
@@ -208,7 +285,7 @@ export function CustomerFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Email</Text>
                                 <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                     value={formData.customers_email}
                                     onChangeText={(t) => updateField('customers_email', t)}
                                     placeholder="Enter email"
@@ -221,7 +298,7 @@ export function CustomerFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Fax</Text>
                                 <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                     value={formData.customers_fax}
                                     onChangeText={(t) => updateField('customers_fax', t.replace(/[^0-9]/g, ''))}
                                     placeholder="Enter fax"
@@ -233,7 +310,7 @@ export function CustomerFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Phone</Text>
                                 <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                     value={formData.customers_phone}
                                     onChangeText={(t) => updateField('customers_phone', t.replace(/[^0-9]/g, ''))}
                                     placeholder="Enter phone number"
@@ -245,7 +322,7 @@ export function CustomerFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Alamat PIC</Text>
                                 <TextInput
-                                    className="bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900 min-h-[96px]"
+                                    className="bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900 min-h-[96px]"
                                     value={formData.alamat}
                                     onChangeText={(t) => updateField('alamat', t)}
                                     placeholder="Enter Alamat PIC"
@@ -290,75 +367,28 @@ export function CustomerFormScreen() {
                                     />
                                 </View>
                             </View>
-                        </Animated.View>
-
-                        {/* SECTION: CONTACT PERSONS (Bonus, since user might still need it) */}
-                        <Animated.View 
-                            entering={FadeInUp.delay(100)} 
-                            layout={LinearTransition.springify()}
-                            className="bg-white p-5 rounded-3xl border border-gray-100 mb-6" 
-                            style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}
-                        >
-                            <View className="flex-row justify-between items-center mb-4">
-                                <Text className="text-sm font-bold text-gray-700">Daftar Kontak</Text>
-                                <TouchableOpacity 
-                                    onPress={addContact}
-                                    className="bg-indigo-50 flex-row items-center px-3 py-1.5 rounded-lg"
-                                >
-                                    <Plus size={14} color="#4f46e5" />
-                                    <Text className="text-indigo-600 text-xs font-bold ml-1">Tambah</Text>
-                                </TouchableOpacity>
                             </View>
 
-                            {formData.contacts.map((contact, index) => (
-                                <View key={contact.id_contact || index} className="mb-4 p-4 border border-gray-200 rounded-xl bg-gray-50">
-                                    <View className="flex-row justify-between items-center mb-3">
-                                        <Text className="text-xs font-bold text-gray-500">Kontak #{index + 1}</Text>
-                                        <TouchableOpacity onPress={() => removeContact(index)} className="p-1">
-                                            <Trash2 size={16} color="#ef4444" />
-                                        </TouchableOpacity>
-                                    </View>
-                                    
-                                    <View className="mb-3">
-                                        <TextInput
-                                            className="h-10 bg-white px-3 rounded-lg border border-gray-200 focus:border-indigo-500 text-gray-900 text-sm"
-                                            value={contact.nm_customers_contact}
-                                            onChangeText={(t) => updateContact(index, 'nm_customers_contact', t)}
-                                            placeholder="Nama Kontak"
-                                        />
-                                    </View>
-                                    <View className="mb-3">
-                                        <TextInput
-                                            className="h-10 bg-white px-3 rounded-lg border border-gray-200 focus:border-indigo-500 text-gray-900 text-sm"
-                                            value={contact.customers_contact_posisi}
-                                            onChangeText={(t) => updateContact(index, 'customers_contact_posisi', t)}
-                                            placeholder="Posisi (mis: Manager)"
-                                        />
-                                    </View>
-                                    <View className="mb-3">
-                                        <TextInput
-                                            className="h-10 bg-white px-3 rounded-lg border border-gray-200 focus:border-indigo-500 text-gray-900 text-sm"
-                                            value={contact.customers_contact_phone}
-                                            onChangeText={(t) => updateContact(index, 'customers_contact_phone', t.replace(/[^0-9]/g, ''))}
-                                            placeholder="No HP"
-                                            keyboardType="phone-pad"
-                                        />
-                                    </View>
-                                    <View>
-                                        <TextInput
-                                            className="h-10 bg-white px-3 rounded-lg border border-gray-200 focus:border-indigo-500 text-gray-900 text-sm"
-                                            value={contact.customers_contact_email}
-                                            onChangeText={(t) => updateContact(index, 'customers_contact_email', t)}
-                                            placeholder="Email"
-                                            keyboardType="email-address"
-                                            autoCapitalize="none"
-                                        />
-                                    </View>
+                            {/* SECTION: CONTACT PERSONS */}
+                            <View className="border-t border-gray-100 bg-white">
+                                <View className="flex-row justify-between items-center mb-4 px-5 pt-5">
+                                    <Text className="text-sm font-bold text-gray-700">Daftar Kontak</Text>
+                                    <TouchableOpacity 
+                                        onPress={handleOpenAddContact}
+                                        className="flex-row items-center px-3 py-1.5 rounded-lg"
+                                        style={{ backgroundColor: `${theme.colors.primary}15` }}
+                                    >
+                                        <Plus size={14} color={theme.colors.primary} />
+                                        <Text className="text-xs font-bold ml-1" style={{ color: theme.colors.primary }}>Tambah</Text>
+                                    </TouchableOpacity>
                                 </View>
-                            ))}
-                            {formData.contacts.length === 0 && (
-                                <Text className="text-gray-400 text-center text-sm py-4">Belum ada kontak yang ditambahkan.</Text>
-                            )}
+
+                                <CustomerTableContact 
+                                    contacts={formData.contacts} 
+                                    onEdit={handleOpenEditContact}
+                                    onDelete={handleDeleteContact}
+                                />
+                            </View>
                         </Animated.View>
 
                         <Animated.View entering={FadeInUp.delay(150)}>
@@ -382,6 +412,30 @@ export function CustomerFormScreen() {
                     </Animated.View>
                 )}
             </ScrollView>
+
+            <ModalConfirm
+                visible={confirmModalVisible}
+                title="Konfirmasi Simpan"
+                message="Apakah Anda yakin ingin menyimpan data pelanggan ini?"
+                onConfirm={handleConfirmSave}
+                onCancel={() => setConfirmModalVisible(false)}
+            />
+
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastTitle}
+                message={toastMsg}
+                onClose={() => setToastVisible(false)}
+            />
+
+            <CustomerModalContact 
+                visible={contactModalVisible}
+                onDismiss={() => setContactModalVisible(false)}
+                onSave={handleSaveContact}
+                initialData={selectedContact}
+                onDelete={selectedContactIndex !== null ? () => handleDeleteContact(selectedContactIndex) : undefined}
+            />
         </KeyboardAvoidingView>
     );
 }

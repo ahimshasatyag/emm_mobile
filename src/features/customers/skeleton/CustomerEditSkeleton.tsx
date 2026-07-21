@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedStyle, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 
-export function CustomerFormSkeleton() {
+export function CustomerEditSkeleton() {
     const animatedStyle = useAnimatedStyle(() => ({
         opacity: withRepeat(
             withSequence(
@@ -43,6 +43,7 @@ export function CustomerFormSkeleton() {
 
             {/* Bottom Actions Skeleton */}
             <Animated.View style={animatedStyle} className="flex-row gap-3 mb-6">
+                <View className="flex-1 h-14 bg-gray-300 rounded-2xl" />
                 <View className="flex-1 h-14 bg-gray-300 rounded-2xl" />
             </Animated.View>
         </View>

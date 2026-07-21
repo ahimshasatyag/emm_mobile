@@ -1,4 +1,4 @@
-import React, { useEffect , useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, FlatList, Text, RefreshControl, TextInput } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -23,6 +23,17 @@ export function CustomerListScreen() {
     const { customers, isLoading, error, searchQuery, fetchCustomers, setSearchQuery } = useCustomers();
 
     const [isInitializing, setIsInitializing] = useState(true);
+
+    const filteredData = useMemo(() => {
+        if (!searchQuery) return customers;
+        const query = searchQuery.toLowerCase();
+        return customers.filter(item => 
+            (item.nm_customers && item.nm_customers.toLowerCase().includes(query)) ||
+            (item.code_customers && item.code_customers.toLowerCase().includes(query)) ||
+            (item.customers_phone && item.customers_phone.toLowerCase().includes(query)) ||
+            (item.customers_mobile && item.customers_mobile.toLowerCase().includes(query))
+        );
+    }, [customers, searchQuery]);
 
     useFocusEffect(
         useCallback(() => {
@@ -70,20 +81,21 @@ export function CustomerListScreen() {
             <HeaderNavigator title="DATA PELANGGAN" />
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
-                <View className="bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2">
+                <View className="bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2 shadow-sm">
                     <Search color="#9ca3af" size={20} />
                     <TextInput
-                        className="flex-1 ml-2 text-gray-900"
+                        className="flex-1 ml-2 text-gray-900 h-full"
                         placeholder="Cari nama, kode, no hp..."
                         value={searchQuery}
                         onChangeText={setSearchQuery}
+                        placeholderTextColor="#9ca3af"
                     />
                 </View>
             </Animated.View>
 
             <View className="flex-1">
                 <FlatList
-                    data={(isLoading || isInitializing) ? [] : customers}
+                    data={(isLoading || isInitializing) ? [] : filteredData}
                     keyExtractor={(item) => item.id_customers}
                     renderItem={({ item, index }) => (
                         <CustomerCard item={item} index={index} onPress={onItemPress} />
