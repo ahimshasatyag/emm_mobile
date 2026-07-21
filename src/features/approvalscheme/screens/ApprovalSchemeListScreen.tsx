@@ -1,10 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, FlatList, Text, RefreshControl, TextInput } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Search } from 'lucide-react-native';
-import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
-
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { ButtonAdd } from '../../../components/ui/buttonAdd';
 import { ApprovalSchemeCard } from '../components/ApprovalSchemeCard';
@@ -21,16 +20,24 @@ type RootStackParamList = {
 
 export function ApprovalSchemeListScreen() {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-    const { 
-        data, 
-        isLoading, 
-        error, 
-        searchQuery, 
-        setSearchQuery, 
-        loadData 
+    const {
+        data,
+        isLoading,
+        error,
+        searchQuery,
+        setSearchQuery,
+        loadData
     } = useApprovalScheme();
 
     const [isInitializing, setIsInitializing] = useState(true);
+
+    const filteredData = useMemo(() => {
+        if (!searchQuery) return data;
+        const query = searchQuery.toLowerCase();
+        return data.filter(item =>
+            item.scheme_name.toLowerCase().includes(query)
+        );
+    }, [data, searchQuery]);
 
     useFocusEffect(
         useCallback(() => {
@@ -74,20 +81,21 @@ export function ApprovalSchemeListScreen() {
             <HeaderNavigator title="SKEMA APPROVAL" />
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
-                <View className="bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2">
+                <View className="bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2 shadow-sm">
                     <Search color="#9ca3af" size={20} />
                     <TextInput
-                        className="flex-1 ml-2 text-gray-900"
+                        className="flex-1 ml-2 text-gray-900 h-full"
                         placeholder="Cari nama skema..."
                         value={searchQuery}
                         onChangeText={setSearchQuery}
+                        placeholderTextColor="#9ca3af"
                     />
                 </View>
             </Animated.View>
 
             <View className="flex-1">
                 <FlatList
-                    data={(isLoading || isInitializing) ? [] : data}
+                    data={(isLoading || isInitializing) ? [] : filteredData}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item, index }) => (
                         <ApprovalSchemeCard item={item} index={index} onPress={handleItemPress} />

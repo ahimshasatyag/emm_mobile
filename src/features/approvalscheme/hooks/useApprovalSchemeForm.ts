@@ -29,11 +29,15 @@ export function useApprovalSchemeForm(id?: string) {
         setIsLoading(true);
         setError(null);
         try {
-            const rules = await fetchApprovalRulesApi();
+            const [rules, schemeData] = await Promise.all([
+                fetchApprovalRulesApi(),
+                id ? fetchApprovalSchemeByIdApi(id) : Promise.resolve(null),
+                new Promise(resolve => setTimeout(resolve, 800))
+            ]);
+
             setRulesOption(rules);
 
-            if (id) {
-                const schemeData = await fetchApprovalSchemeByIdApi(id);
+            if (schemeData) {
                 setFormData({
                     scheme_name: schemeData.scheme_name,
                     description: schemeData.description,
@@ -73,23 +77,19 @@ export function useApprovalSchemeForm(id?: string) {
         return null;
     };
 
-    const save = async () => {
-        const validationError = validate();
-        if (validationError) {
-            setError(validationError);
-            return false;
-        }
+    const save = async (): Promise<any> => {
 
         setIsSaving(true);
         setError(null);
         try {
+            let result;
             if (id) {
-                await updateApprovalSchemeApi(id, formData);
+                result = await updateApprovalSchemeApi(id, formData);
             } else {
-                await createApprovalSchemeApi(formData);
+                result = await createApprovalSchemeApi(formData);
             }
             dispatch(fetchApprovalSchemes());
-            return true;
+            return result;
         } catch (err: any) {
             setError(err.message || 'Gagal menyimpan data');
             return false;
@@ -108,6 +108,7 @@ export function useApprovalSchemeForm(id?: string) {
         updateField,
         toggleRule,
         save,
-        loadData
+        loadData,
+        validate
     };
 }

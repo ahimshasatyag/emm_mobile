@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { MultiSelect } from 'react-native-element-dropdown';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Save, CheckSquare, Square, Edit2, Trash2, X } from 'lucide-react-native';
@@ -10,6 +10,8 @@ import { theme } from '../../../theme/theme';
 import Animated, { FadeInUp, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 type RootStackParamList = {
     ApprovalSchemeEdit: { id: string };
@@ -20,15 +22,50 @@ export function ApprovalSchemeEditScreen() {
     const route = useRoute<RouteProp<RootStackParamList, 'ApprovalSchemeEdit'>>();
     const { id } = route.params;
 
-    const { formData, rulesOption, isLoading, isSaving, error, initialLoadDone, updateField, toggleRule, save, loadData } = useApprovalSchemeForm(id);
+    const { formData, rulesOption, isLoading, isSaving, error, initialLoadDone, updateField, toggleRule, save, loadData, validate } = useApprovalSchemeForm(id);
     const { handleDelete } = useApprovalScheme();
 
     const [isEditing, setIsEditing] = useState(false);
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMsg, setToastMsg] = useState('');
+    const [toastType, setToastType] = useState<ToastType>('error');
+    const [toastTitle, setToastTitle] = useState('Validasi');
+
+    useEffect(() => {
+        const params = route.params as any;
+        if (params?.toastMessage) {
+            setToastMsg(params.toastMessage);
+            setToastType(params.toastType || 'success');
+            setToastTitle(params.toastType === 'error' ? 'Gagal' : 'Sukses');
+            setToastVisible(true);
+            
+            navigation.setParams({ toastMessage: undefined, toastType: undefined } as any);
+        }
+    }, [route.params]);
 
     const onSavePress = async () => {
-        const success = await save();
-        if (success) {
+        const validationError = validate();
+        if (validationError) {
+            setToastMsg(validationError);
+            setToastType('error');
+            setToastTitle('Validasi');
+            setToastVisible(true);
+            return;
+        }
+        setConfirmModalVisible(true);
+    };
+
+    const handleConfirmSave = async () => {
+        setConfirmModalVisible(false);
+        const result = await save();
+        if (result) {
             setIsEditing(false);
+            setToastMsg('Data skema approval berhasil diperbarui!');
+            setToastType('success');
+            setToastTitle('Sukses');
+            setToastVisible(true);
+            loadData();
         }
     };
 
@@ -71,6 +108,9 @@ export function ApprovalSchemeEditScreen() {
                     className="flex-1"
                     contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
                     showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl refreshing={isLoading} onRefresh={loadData} colors={[theme.colors.primary]} />
+                    }
                 >
                     {(!initialLoadDone || isLoading) ? (
                         <Animated.View exiting={FadeOut}>
@@ -93,7 +133,7 @@ export function ApprovalSchemeEditScreen() {
                                 <View className="mb-4">
                                     <Text className="text-sm font-bold text-gray-700 mb-2">Nama Skema <Text className="text-red-500">*</Text></Text>
                                     <TextInput
-                                        className={`h-12 px-4 rounded-xl border ${isEditing ? 'bg-gray-50 border-gray-200 text-gray-900 focus:border-indigo-500' : 'bg-gray-100 border-transparent text-gray-500'}`}
+                                        className={`h-12 px-4 rounded-xl border ${isEditing ? 'bg-gray-50 border-gray-200 text-gray-900 focus:border-[#9e0b0f]' : 'bg-gray-100 border-transparent text-gray-500 font-bold'}`}
                                         value={formData.scheme_name}
                                         onChangeText={(t) => updateField('scheme_name', t)}
                                         placeholder="Masukkan nama skema"
@@ -104,7 +144,7 @@ export function ApprovalSchemeEditScreen() {
                                 <View className="mb-6">
                                     <Text className="text-sm font-bold text-gray-700 mb-2">Deskripsi <Text className="text-red-500">*</Text></Text>
                                     <TextInput
-                                        className={`p-4 rounded-xl border h-24 ${isEditing ? 'bg-gray-50 border-gray-200 text-gray-900 focus:border-indigo-500' : 'bg-gray-100 border-transparent text-gray-500'}`}
+                                        className={`p-4 rounded-xl border h-24 ${isEditing ? 'bg-gray-50 border-gray-200 text-gray-900 focus:border-[#9e0b0f]' : 'bg-gray-100 border-transparent text-gray-500 font-bold'}`}
                                         value={formData.description}
                                         onChangeText={(t) => updateField('description', t)}
                                         placeholder="Masukkan deskripsi skema"
@@ -178,6 +218,22 @@ export function ApprovalSchemeEditScreen() {
                     )}
                 </ScrollView>
             </KeyboardAvoidingView>
+
+            <ModalConfirm
+                visible={confirmModalVisible}
+                title="Konfirmasi Update"
+                message="Apakah Anda yakin ingin menyimpan perubahan pada skema approval ini?"
+                onConfirm={handleConfirmSave}
+                onCancel={() => setConfirmModalVisible(false)}
+            />
+
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastTitle}
+                message={toastMsg}
+                onClose={() => setToastVisible(false)}
+            />
         </View>
     );
 }
