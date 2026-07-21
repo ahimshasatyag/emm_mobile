@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, RefreshControl } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Text, FlatList, RefreshControl, TextInput } from 'react-native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useInventoryCategory } from '../hooks/useInventoryCategory';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
@@ -13,9 +13,10 @@ import { ButtonAdd } from '../../../components/ui/buttonAdd';
 import { theme } from '../../../theme/theme';
 import { Search } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { InventoryCategoryData } from '../types/inventorycategory.types';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 type RootStackParamList = {
     InventoryCategoryForm: { id?: string } | undefined;
@@ -28,6 +29,33 @@ export function InventoryCategoryListScreen() {
     const { data, isLoading, error } = useInventoryCategory();
 
     const [isInitializing, setIsInitializing] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const route = useRoute();
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMsg, setToastMsg] = useState('');
+    const [toastType, setToastType] = useState<ToastType>('success');
+    const [toastTitle, setToastTitle] = useState('Sukses');
+
+    React.useEffect(() => {
+        const params = route.params as any;
+        if (params?.toastMessage) {
+            setToastMsg(params.toastMessage);
+            setToastType(params.toastType || 'success');
+            setToastTitle(params.toastType === 'error' ? 'Gagal' : 'Sukses');
+            setToastVisible(true);
+            
+            navigation.setParams({ toastMessage: undefined, toastType: undefined });
+        }
+    }, [route.params]);
+
+    const filteredData = useMemo(() => {
+        if (!searchQuery) return data;
+        const query = searchQuery.toLowerCase();
+        return data.filter(item =>
+            item.name.toLowerCase().includes(query)
+        );
+    }, [data, searchQuery]);
 
     useFocusEffect(
         useCallback(() => {
@@ -83,15 +111,21 @@ export function InventoryCategoryListScreen() {
             <HeaderNavigator isLoading={isLoading} />
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
-                <View className="bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2">
+                <View className="bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2 shadow-sm">
                     <Search color="#9ca3af" size={20} />
-                    <Text className="text-gray-400 ml-2">Cari kategori inventori...</Text>
+                    <TextInput
+                        className="flex-1 ml-2 text-gray-900 h-full"
+                        placeholder="Cari kategori inventori..."
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        placeholderTextColor="#9ca3af"
+                    />
                 </View>
             </Animated.View>
 
             <View className="flex-1">
                 <FlatList
-                    data={(isLoading || isInitializing) ? [] : data}
+                    data={(isLoading || isInitializing) ? [] : filteredData}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item, index }) => (
                         <InventoryCategoryCard item={item} index={index} onPress={handlePressCard} />
@@ -133,6 +167,14 @@ export function InventoryCategoryListScreen() {
             {(!isLoading && !isInitializing) && !error && (
                 <ButtonAdd onPress={handleAdd} />
             )}
+
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastTitle}
+                message={toastMsg}
+                onClose={() => setToastVisible(false)}
+            />
         </View>
     );
 }

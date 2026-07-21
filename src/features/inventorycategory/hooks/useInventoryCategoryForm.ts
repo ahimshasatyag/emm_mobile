@@ -19,14 +19,25 @@ export function useInventoryCategoryForm(id?: string) {
     const { data: globalData } = useAppSelector((state) => state.inventorycategory);
 
     const loadData = async () => {
-        if (!id) return;
         setIsLoading(true);
         setError(null);
         try {
-            const categoryData = await fetchInventoryCategoryByIdApi(id);
-            setFormData({
-                name: categoryData.name,
-            });
+            if (id) {
+                await Promise.all([
+                    (async () => {
+                        const categoryData = await fetchInventoryCategoryByIdApi(id);
+                        setFormData({
+                            name: categoryData.name,
+                        });
+                    })(),
+                    new Promise(resolve => setTimeout(resolve, 800))
+                ]);
+            } else {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                setFormData({
+                    name: '',
+                });
+            }
         } catch (err: any) {
             setError(err.message || 'Gagal memuat data form');
         } finally {
@@ -36,11 +47,7 @@ export function useInventoryCategoryForm(id?: string) {
     };
 
     useEffect(() => {
-        if (id) {
-            loadData();
-        } else {
-            setInitialLoadDone(true);
-        }
+        loadData();
     }, [id]);
 
     const updateField = (field: keyof InventoryCategoryFormData, value: string) => {
@@ -54,12 +61,6 @@ export function useInventoryCategoryForm(id?: string) {
     };
 
     const save = async (): Promise<boolean> => {
-        const validationError = validateForm();
-        if (validationError) {
-            setError(validationError);
-            return false;
-        }
-
         setIsSaving(true);
         setError(null);
         try {
@@ -106,5 +107,6 @@ export function useInventoryCategoryForm(id?: string) {
         save,
         remove,
         loadData,
+        validateForm,
     };
 }
