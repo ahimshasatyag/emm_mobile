@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, RefreshControl } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Text, FlatList, RefreshControl, TextInput } from 'react-native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useApprovalItems } from '../hooks/useApprovalItems';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
@@ -28,6 +28,16 @@ export function ApprovalItemsListScreen() {
     const { data, isLoading, error } = useApprovalItems();
 
     const [isInitializing, setIsInitializing] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredData = useMemo(() => {
+        if (!searchQuery) return data;
+        const query = searchQuery.toLowerCase();
+        return data.filter(item =>
+            item.approval_name.toLowerCase().includes(query) ||
+            item.module_name.toLowerCase().includes(query)
+        );
+    }, [data, searchQuery]);
 
     useFocusEffect(
         useCallback(() => {
@@ -83,15 +93,21 @@ export function ApprovalItemsListScreen() {
             <HeaderNavigator isLoading={isLoading} />
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
-                <View className="bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2">
+                <View className="bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2 shadow-sm">
                     <Search color="#9ca3af" size={20} />
-                    <Text className="text-gray-400 ml-2">Cari aturan persetujuan...</Text>
+                    <TextInput
+                        className="flex-1 ml-2 text-gray-900 h-full"
+                        placeholder="Cari aturan persetujuan..."
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        placeholderTextColor="#9ca3af"
+                    />
                 </View>
             </Animated.View>
 
             <View className="flex-1">
                 <FlatList
-                    data={(isLoading || isInitializing) ? [] : data}
+                    data={(isLoading || isInitializing) ? [] : filteredData}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item, index }) => (
                         <ApprovalItemCard item={item} index={index} onPress={handlePressCard} />

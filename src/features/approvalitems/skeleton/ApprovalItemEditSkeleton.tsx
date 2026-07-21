@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
 
-export function ApprovalItemFormSkeleton() {
+export function ApprovalItemEditSkeleton() {
     const opacity = useSharedValue(0.5);
 
     useEffect(() => {
@@ -33,10 +33,7 @@ export function ApprovalItemFormSkeleton() {
 
                 {/* Tipe Approval */}
                 <View className="w-1/3 h-4 bg-gray-200 rounded mb-2" />
-                <View className="flex-row gap-3 mb-4">
-                    <View className="flex-1 h-12 bg-gray-200 rounded-xl" />
-                    <View className="flex-1 h-12 bg-gray-200 rounded-xl" />
-                </View>
+                <View className="w-full h-12 bg-gray-200 rounded-xl mb-4" />
 
                 {/* Nama Modul */}
                 <View className="w-1/3 h-4 bg-gray-200 rounded mb-2" />

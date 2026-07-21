@@ -36,23 +36,46 @@ export function useApprovalItemsForm(id?: string) {
         setIsLoading(true);
         setError(null);
         try {
-            // Load levels first
-            const levels = await fetchUsersLevelApi();
-            setLevelsOption(levels);
-
             if (id) {
-                const itemData = await fetchApprovalItemByIdApi(id);
+                await Promise.all([
+                    (async () => {
+                        const levels = await fetchUsersLevelApi();
+                        setLevelsOption(levels);
+                        const itemData = await fetchApprovalItemByIdApi(id);
+                        setFormData({
+                            approval_name: itemData.approval_name,
+                            description: itemData.description,
+                            approval_type: itemData.approval_type,
+                            module_name: itemData.module_name,
+                            table_name: itemData.table_name,
+                            status_column_name: itemData.status_column_name,
+                            new_status_approve: itemData.new_status_approve,
+                            new_status_reject: itemData.new_status_reject,
+                            rule: itemData.rule,
+                            level_ids: [...itemData.level_ids],
+                        });
+                    })(),
+                    new Promise(resolve => setTimeout(resolve, 800))
+                ]);
+            } else {
+                await Promise.all([
+                    (async () => {
+                        const levels = await fetchUsersLevelApi();
+                        setLevelsOption(levels);
+                    })(),
+                    new Promise(resolve => setTimeout(resolve, 800))
+                ]);
                 setFormData({
-                    approval_name: itemData.approval_name,
-                    description: itemData.description,
-                    approval_type: itemData.approval_type,
-                    module_name: itemData.module_name,
-                    table_name: itemData.table_name,
-                    status_column_name: itemData.status_column_name,
-                    new_status_approve: itemData.new_status_approve,
-                    new_status_reject: itemData.new_status_reject,
-                    rule: itemData.rule,
-                    level_ids: [...itemData.level_ids],
+                    approval_name: '',
+                    description: '',
+                    approval_type: 'standard',
+                    module_name: '',
+                    table_name: '',
+                    status_column_name: '',
+                    new_status_approve: '',
+                    new_status_reject: '',
+                    rule: '',
+                    level_ids: [],
                 });
             }
         } catch (err: any) {
@@ -94,12 +117,7 @@ export function useApprovalItemsForm(id?: string) {
         return null;
     };
 
-    const save = async (): Promise<boolean> => {
-        const validationError = validateForm();
-        if (validationError) {
-            setError(validationError);
-            return false;
-        }
+    const save = async (): Promise<ApprovalItemData | false> => {
 
         setIsSaving(true);
         setError(null);
@@ -113,7 +131,7 @@ export function useApprovalItemsForm(id?: string) {
                 result = await createApprovalItemApi(formData);
                 dispatch(setData([result, ...globalData]));
             }
-            return true;
+            return result;
         } catch (err: any) {
             setError(err.message || 'Gagal menyimpan data');
             return false;
@@ -149,5 +167,6 @@ export function useApprovalItemsForm(id?: string) {
         save,
         remove,
         loadData,
+        validateForm,
     };
 }

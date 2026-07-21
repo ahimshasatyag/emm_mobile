@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, TouchableOpacity, RefreshControl } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Save, X, Edit2 } from 'lucide-react-native';
 import { MultiSelect, Dropdown } from 'react-native-element-dropdown';
 import { useApprovalItemsForm } from '../hooks/useApprovalItemsForm';
-import { ApprovalItemFormSkeleton } from '../skeleton/ApprovalItemFormSkeleton';
+import { ApprovalItemEditSkeleton } from '../skeleton/ApprovalItemEditSkeleton';
 import { theme } from '../../../theme/theme';
 import Animated, { FadeInUp, LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export function ApprovalItemsEditScreen() {
     const route = useRoute();
@@ -27,16 +29,49 @@ export function ApprovalItemsEditScreen() {
         toggleLevel,
         save,
         loadData,
+        validateForm,
     } = useApprovalItemsForm(id);
 
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMsg, setToastMsg] = useState('');
+    const [toastType, setToastType] = useState<ToastType>('error');
+    const [toastTitle, setToastTitle] = useState('Validasi');
+
+    React.useEffect(() => {
+        const params = route.params as any;
+        if (params?.toastMessage) {
+            setToastMsg(params.toastMessage);
+            setToastType(params.toastType || 'success');
+            setToastTitle(params.toastType === 'error' ? 'Gagal' : 'Sukses');
+            setToastVisible(true);
+            
+            navigation.setParams({ toastMessage: undefined, toastType: undefined } as any);
+        }
+    }, [route.params]);
+
     const onSavePress = async () => {
+        const validationError = validateForm();
+        if (validationError) {
+            setToastMsg(validationError);
+            setToastType('error');
+            setToastTitle('Validasi');
+            setToastVisible(true);
+            return;
+        }
+        setConfirmModalVisible(true);
+    };
+
+    const handleConfirmSave = async () => {
+        setConfirmModalVisible(false);
         const success = await save();
         if (success) {
-            Alert.alert(
-                'Sukses',
-                'Data aturan persetujuan berhasil diperbarui.',
-                [{ text: 'OK', onPress: () => setIsEditing(false) }]
-            );
+            setIsEditing(false);
+            setToastMsg('Data aturan persetujuan berhasil diperbarui!');
+            setToastType('success');
+            setToastTitle('Sukses');
+            setToastVisible(true);
+            loadData();
         }
     };
 
@@ -55,11 +90,11 @@ export function ApprovalItemsEditScreen() {
     );
 
     const inputClass = isEditing
-        ? "h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 font-bold text-gray-900"
+        ? "h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] font-bold text-gray-900"
         : "h-12 bg-gray-100 px-4 rounded-xl border border-gray-200 font-bold text-gray-500";
 
     const textAreaClass = isEditing
-        ? "bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-indigo-500 font-bold text-gray-900"
+        ? "bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] font-bold text-gray-900"
         : "bg-gray-100 p-4 rounded-xl border border-gray-200 font-bold text-gray-500";
 
     return (
@@ -83,15 +118,11 @@ export function ApprovalItemsEditScreen() {
             >
                 {isFetching ? (
                     <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
-                        <ApprovalItemFormSkeleton />
+                        <ApprovalItemEditSkeleton />
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
-                        {error && (
-                            <Animated.View entering={FadeInUp} className="bg-red-50 p-4 rounded-xl mb-6 border border-red-100">
-                                <Text className="text-red-600 font-medium">{error}</Text>
-                            </Animated.View>
-                        )}
+                        {/* Error inline removed as it is handled by Toast */}
 
                         <Animated.View
                             key={`form-container-${isEditing}`}
@@ -295,6 +326,24 @@ export function ApprovalItemsEditScreen() {
                     </Animated.View>
                 )}
             </ScrollView>
+
+            <ModalConfirm
+                visible={confirmModalVisible}
+                title="Simpan Perubahan Approval"
+                message="Anda yakin ingin menyimpan perubahan data aturan persetujuan ini?"
+                confirmText="Ya, Update"
+                cancelText="Batal"
+                onConfirm={handleConfirmSave}
+                onCancel={() => setConfirmModalVisible(false)}
+            />
+
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastTitle}
+                message={toastMsg}
+                onClose={() => setToastVisible(false)}
+            />
         </KeyboardAvoidingView>
     );
 }

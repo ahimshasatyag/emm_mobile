@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, TouchableOpacity, RefreshControl } from 'react-native';
 import { MultiSelect, Dropdown } from 'react-native-element-dropdown';
 import { useNavigation } from '@react-navigation/native';
 import { Save, X } from 'lucide-react-native';
@@ -9,6 +9,8 @@ import { theme } from '../../../theme/theme';
 import Animated, { FadeInUp, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export function ApprovalItemsFormScreen() {
     const navigation = useNavigation();
@@ -16,20 +18,42 @@ export function ApprovalItemsFormScreen() {
     const {
         formData,
         levelsOption,
+        isLoading,
         isSaving,
-        error,
         initialLoadDone,
         updateField,
-        toggleLevel,
         save,
+        loadData,
+        validateForm,
     } = useApprovalItemsForm();
 
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMsg, setToastMsg] = useState('');
+    const [toastType, setToastType] = useState<ToastType>('error');
+    const [toastTitle, setToastTitle] = useState('Validasi');
+
     const onSavePress = async () => {
-        const success = await save();
-        if (success) {
-            Alert.alert('Sukses', 'Approval rule berhasil ditambahkan', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+        const validationError = validateForm();
+        if (validationError) {
+            setToastMsg(validationError);
+            setToastType('error');
+            setToastTitle('Validasi');
+            setToastVisible(true);
+            return;
+        }
+        setConfirmModalVisible(true);
+    };
+
+    const handleConfirmSave = async () => {
+        setConfirmModalVisible(false);
+        const result = await save();
+        if (result) {
+            (navigation as any).replace('ApprovalItemsEdit', {
+                id: result.id,
+                toastMessage: 'Approval rule berhasil ditambahkan!',
+                toastType: 'success'
+            });
         }
     };
 
@@ -48,27 +72,31 @@ export function ApprovalItemsFormScreen() {
             style={{ flex: 1, backgroundColor: theme.colors.background }}
         >
             <HeaderNavigator
-                title="TAMBAH APPROVAL"
+                title={isLoading ? "MEMUAT DATA..." : "TAMBAH APPROVAL"}
                 showBackButton
                 onBackPress={() => navigation.goBack()}
+                isLoading={isLoading}
             />
 
             <ScrollView
                 className="flex-1"
                 contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isLoading}
+                        onRefresh={loadData}
+                        colors={[theme.colors.primary]}
+                    />
+                }
             >
-                {!initialLoadDone ? (
+                {(!initialLoadDone || isLoading) ? (
                     <Animated.View exiting={FadeOut.duration(300)}>
                         <ApprovalItemFormSkeleton />
                     </Animated.View>
                 ) : (
                     <Animated.View entering={FadeIn.duration(600)}>
-                        {error && (
-                            <Animated.View entering={FadeInUp} className="bg-red-50 p-4 rounded-xl mb-6 border border-red-100">
-                                <Text className="text-red-600 font-medium">{error}</Text>
-                            </Animated.View>
-                        )}
+                        {/* Error inline removed as it is handled by Toast */}
 
                         <Animated.View
                             entering={FadeInUp.delay(50)}
@@ -80,7 +108,7 @@ export function ApprovalItemsFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Nama Approval <Text className="text-red-500">*</Text></Text>
                                 <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                     value={formData.approval_name}
                                     onChangeText={(t) => updateField('approval_name', t)}
                                     placeholder="Masukkan nama approval"
@@ -90,7 +118,7 @@ export function ApprovalItemsFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Deskripsi</Text>
                                 <TextInput
-                                    className="bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                    className="bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                     value={formData.description}
                                     onChangeText={(t) => updateField('description', t)}
                                     placeholder="Masukkan deskripsi"
@@ -118,7 +146,7 @@ export function ApprovalItemsFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Nama Modul <Text className="text-red-500">*</Text></Text>
                                 <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                     value={formData.module_name}
                                     onChangeText={(t) => updateField('module_name', t)}
                                     placeholder="Masukkan nama modul"
@@ -133,7 +161,7 @@ export function ApprovalItemsFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Nama Tabel <Text className="text-red-500">*</Text></Text>
                                 <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                     value={formData.table_name}
                                     onChangeText={(t) => updateField('table_name', t)}
                                     placeholder="Masukkan nama tabel"
@@ -143,7 +171,7 @@ export function ApprovalItemsFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Nama Kolom Status</Text>
                                 <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                     value={formData.status_column_name}
                                     onChangeText={(t) => updateField('status_column_name', t)}
                                     placeholder="Masukkan nama kolom status"
@@ -154,7 +182,7 @@ export function ApprovalItemsFormScreen() {
                                 <View className="flex-1">
                                     <Text className="text-sm font-bold text-gray-700 mb-2">Status (Approve)</Text>
                                     <TextInput
-                                        className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                        className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                         value={formData.new_status_approve}
                                         onChangeText={(t) => updateField('new_status_approve', t)}
                                         placeholder="Approve"
@@ -163,7 +191,7 @@ export function ApprovalItemsFormScreen() {
                                 <View className="flex-1">
                                     <Text className="text-sm font-bold text-gray-700 mb-2">Status (Reject)</Text>
                                     <TextInput
-                                        className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                        className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                         value={formData.new_status_reject}
                                         onChangeText={(t) => updateField('new_status_reject', t)}
                                         placeholder="Reject"
@@ -179,7 +207,7 @@ export function ApprovalItemsFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Rule <Text className="text-red-500">*</Text></Text>
                                 <TextInput
-                                    className="p-4 rounded-xl border border-gray-200 focus:border-indigo-500 bg-gray-50 text-gray-900 font-mono text-sm leading-6"
+                                    className="p-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] bg-gray-50 text-gray-900 font-mono text-sm leading-6"
                                     value={formData.rule}
                                     onChangeText={(t) => updateField('rule', t)}
                                     placeholder="Masukkan kode untuk validasi"
@@ -233,6 +261,24 @@ export function ApprovalItemsFormScreen() {
                     </Animated.View>
                 )}
             </ScrollView>
+
+            <ModalConfirm
+                visible={confirmModalVisible}
+                title="Simpan Approval Rule"
+                message="Anda yakin ingin menyimpan aturan persetujuan baru ini?"
+                confirmText="Ya, Simpan"
+                cancelText="Batal"
+                onConfirm={handleConfirmSave}
+                onCancel={() => setConfirmModalVisible(false)}
+            />
+
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastTitle}
+                message={toastMsg}
+                onClose={() => setToastVisible(false)}
+            />
         </KeyboardAvoidingView>
     );
 }
