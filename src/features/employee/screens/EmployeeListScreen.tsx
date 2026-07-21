@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, FlatList, Text, RefreshControl, TextInput } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -23,6 +23,16 @@ export function EmployeeListScreen() {
     const { data, isLoading, error, searchQuery, setSearchQuery, loadData } = useEmployee();
 
     const [isInitializing, setIsInitializing] = useState(true);
+
+    const filteredData = useMemo(() => {
+        if (!searchQuery) return data;
+        const query = searchQuery.toLowerCase();
+        return data.filter(item => 
+            item.nm_karyawan.toLowerCase().includes(query) ||
+            item.no_hp.toLowerCase().includes(query) ||
+            (item.nm_karyawan_divisi && item.nm_karyawan_divisi.toLowerCase().includes(query))
+        );
+    }, [data, searchQuery]);
 
     useFocusEffect(
         useCallback(() => {
@@ -66,20 +76,21 @@ export function EmployeeListScreen() {
             <HeaderNavigator title="DATA KARYAWAN" />
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
-                <View className="bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2">
+                <View className="bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2 shadow-sm">
                     <Search color="#9ca3af" size={20} />
                     <TextInput
-                        className="flex-1 ml-2 text-gray-900"
+                        className="flex-1 ml-2 text-gray-900 h-full"
                         placeholder="Cari karyawan, divisi, atau HP..."
                         value={searchQuery}
                         onChangeText={setSearchQuery}
+                        placeholderTextColor="#9ca3af"
                     />
                 </View>
             </Animated.View>
 
             <View className="flex-1">
                 <FlatList
-                    data={(isLoading || isInitializing) ? [] : data}
+                    data={(isLoading || isInitializing) ? [] : filteredData}
                     keyExtractor={(item) => item.id_karyawan}
                     renderItem={({ item, index }) => (
                         <EmployeeCard item={item} index={index} onPress={onItemPress} />

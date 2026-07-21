@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, RefreshControl, TouchableOpacity } from 'react-native';
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Dropdown } from "react-native-element-dropdown";
@@ -10,6 +10,8 @@ import { theme } from '../../../theme/theme';
 import Animated, { FadeInUp, LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export function EmployeeEditScreen() {
     const route = useRoute();
@@ -18,6 +20,24 @@ export function EmployeeEditScreen() {
 
     const [isEditing, setIsEditing] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
+    
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMsg, setToastMsg] = useState('');
+    const [toastType, setToastType] = useState<ToastType>('error');
+    const [toastTitle, setToastTitle] = useState('Validasi');
+
+    useEffect(() => {
+        const params = route.params as any;
+        if (params?.toastMessage) {
+            setToastMsg(params.toastMessage);
+            setToastType(params.toastType || 'success');
+            setToastTitle(params.toastType === 'error' ? 'Gagal' : 'Sukses');
+            setToastVisible(true);
+            
+            navigation.setParams({ toastMessage: undefined, toastType: undefined } as any);
+        }
+    }, [route.params]);
 
     const {
         formData,
@@ -28,17 +48,32 @@ export function EmployeeEditScreen() {
         error,
         updateField,
         save,
+        validateForm,
         loadData,
     } = useEmployeeForm(id);
 
     const onSavePress = async () => {
+        const validationError = validateForm();
+        if (validationError) {
+            setToastMsg(validationError);
+            setToastType('error');
+            setToastTitle('Validasi');
+            setToastVisible(true);
+            return;
+        }
+        setConfirmModalVisible(true);
+    };
+
+    const handleConfirmSave = async () => {
+        setConfirmModalVisible(false);
         const success = await save();
         if (success) {
-            Alert.alert(
-                'Sukses',
-                'Data karyawan berhasil diperbarui.',
-                [{ text: 'OK', onPress: () => setIsEditing(false) }]
-            );
+            setIsEditing(false);
+            setToastMsg('Data karyawan berhasil diperbarui!');
+            setToastType('success');
+            setToastTitle('Sukses');
+            setToastVisible(true);
+            loadData();
         }
     };
 
@@ -48,11 +83,11 @@ export function EmployeeEditScreen() {
     };
 
     const inputClass = isEditing 
-        ? "h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 font-bold text-gray-900" 
+        ? "h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] font-bold text-gray-900" 
         : "h-12 bg-gray-100 px-4 rounded-xl border border-gray-200 font-bold text-gray-500";
 
     const textAreaClass = isEditing
-        ? "bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-indigo-500 font-bold text-gray-900 h-24"
+        ? "bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] font-bold text-gray-900 h-24"
         : "bg-gray-100 p-4 rounded-xl border border-gray-200 font-bold text-gray-500 h-24";
 
     return (
@@ -132,15 +167,20 @@ export function EmployeeEditScreen() {
                                         value={formData.date_lahir ? new Date(formData.date_lahir.split('-').reverse().join('-')) : new Date()}
                                         mode="date"
                                         display="default"
-                                        onValueChange={(date) => {
-                                            setShowDatePicker(false);
-                                            const validDate = date instanceof Date ? date : null;
-                                            if (validDate) {
-                                                const formattedDate = `${validDate.getDate().toString().padStart(2, '0')}-${(validDate.getMonth() + 1).toString().padStart(2, '0')}-${validDate.getFullYear()}`;
+                                        onChange={(event, selectedDate) => {
+                                            if (Platform.OS === 'android') {
+                                                setShowDatePicker(false);
+                                            }
+                                            if (event.type === 'set' && selectedDate) {
+                                                if (Platform.OS === 'ios') {
+                                                    setShowDatePicker(false);
+                                                }
+                                                const formattedDate = `${selectedDate.getDate().toString().padStart(2, '0')}-${(selectedDate.getMonth() + 1).toString().padStart(2, '0')}-${selectedDate.getFullYear()}`;
                                                 updateField('date_lahir', formattedDate);
+                                            } else if (event.type === 'dismissed') {
+                                                setShowDatePicker(false);
                                             }
                                         }}
-                                        onDismiss={() => setShowDatePicker(false)}
                                     />
                                 )}
                             </View>
@@ -316,6 +356,22 @@ export function EmployeeEditScreen() {
                     </Animated.View>
                 )}
             </ScrollView>
+
+            <ModalConfirm
+                visible={confirmModalVisible}
+                title="Konfirmasi Update"
+                message="Apakah Anda yakin ingin menyimpan perubahan pada data karyawan ini?"
+                onConfirm={handleConfirmSave}
+                onCancel={() => setConfirmModalVisible(false)}
+            />
+
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastTitle}
+                message={toastMsg}
+                onClose={() => setToastVisible(false)}
+            />
         </KeyboardAvoidingView>
     );
 }

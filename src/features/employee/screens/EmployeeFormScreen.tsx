@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, TouchableOpacity, RefreshControl } from 'react-native';
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Dropdown } from "react-native-element-dropdown";
 import { useNavigation } from '@react-navigation/native';
@@ -10,6 +10,8 @@ import { theme } from '../../../theme/theme';
 import Animated, { FadeInUp, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export function EmployeeFormScreen() {
     const navigation = useNavigation();
@@ -20,18 +22,42 @@ export function EmployeeFormScreen() {
         divisions,
         positions,
         isSaving,
+        isLoading,
         error,
         initialLoadDone,
         updateField,
         save,
+        loadData,
+        validateForm,
     } = useEmployeeForm();
 
+    const [confirmModalVisible, setConfirmModalVisible] = React.useState(false);
+    const [toastVisible, setToastVisible] = React.useState(false);
+    const [toastMsg, setToastMsg] = React.useState('');
+    const [toastType, setToastType] = React.useState<ToastType>('error');
+    const [toastTitle, setToastTitle] = React.useState('Validasi');
+
     const onSavePress = async () => {
-        const success = await save();
-        if (success) {
-            Alert.alert('Sukses', 'Data karyawan berhasil ditambahkan', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+        const validationError = validateForm();
+        if (validationError) {
+            setToastMsg(validationError);
+            setToastType('error');
+            setToastTitle('Validasi');
+            setToastVisible(true);
+            return;
+        }
+        setConfirmModalVisible(true);
+    };
+
+    const handleConfirmSave = async () => {
+        setConfirmModalVisible(false);
+        const result = await save();
+        if (result) {
+            (navigation as any).replace('EmployeeEdit', {
+                id: result.id_karyawan,
+                toastMessage: 'Data karyawan berhasil ditambahkan!',
+                toastType: 'success'
+            });
         }
     };
 
@@ -41,7 +67,7 @@ export function EmployeeFormScreen() {
             style={{ flex: 1, backgroundColor: theme.colors.background }}
         >
             <HeaderNavigator 
-                title="TAMBAH KARYAWAN" 
+                title={(!initialLoadDone || isLoading) ? 'MEMUAT DATA...' : 'TAMBAH KARYAWAN'} 
                 showBackButton 
                 onBackPress={() => navigation.goBack()} 
             />
@@ -50,8 +76,11 @@ export function EmployeeFormScreen() {
                 className="flex-1" 
                 contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl refreshing={isLoading} onRefresh={loadData} colors={[theme.colors.primary]} />
+                }
             >
-                {!initialLoadDone ? (
+                {(!initialLoadDone || isLoading) ? (
                     <Animated.View exiting={FadeOut.duration(300)}>
                         <EmployeeFormSkeleton />
                     </Animated.View>
@@ -72,7 +101,7 @@ export function EmployeeFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Nama Karyawan <Text className="text-red-500">*</Text></Text>
                                 <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                     value={formData.nm_karyawan}
                                     onChangeText={(t) => updateField('nm_karyawan', t)}
                                     placeholder="Masukkan nama karyawan"
@@ -82,7 +111,7 @@ export function EmployeeFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Tempat Lahir <Text className="text-red-500">*</Text></Text>
                                 <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                     value={formData.tempat_lahir}
                                     onChangeText={(t) => updateField('tempat_lahir', t)}
                                     placeholder="Tempat kelahiran"
@@ -105,19 +134,20 @@ export function EmployeeFormScreen() {
                                         value={formData.date_lahir ? new Date(formData.date_lahir.split('-').reverse().join('-')) : new Date()}
                                         mode="date"
                                         display="default"
-                                        onValueChange={(date) => {
-                                            setShowDatePicker(false);
-                                            // onValueChange passes the date directly as first argument usually or event then date?
-                                            // The safest way is to check if it's a date object
-                                            const selectedDate = (date instanceof Date) ? date : (date && typeof date === 'object' && 'nativeEvent' in date) ? undefined : new Date();
-                                            // Actually let's just do:
-                                            const validDate = date instanceof Date ? date : null;
-                                            if (validDate) {
-                                                const formattedDate = `${validDate.getDate().toString().padStart(2, '0')}-${(validDate.getMonth() + 1).toString().padStart(2, '0')}-${validDate.getFullYear()}`;
+                                        onChange={(event, selectedDate) => {
+                                            if (Platform.OS === 'android') {
+                                                setShowDatePicker(false);
+                                            }
+                                            if (event.type === 'set' && selectedDate) {
+                                                if (Platform.OS === 'ios') {
+                                                    setShowDatePicker(false);
+                                                }
+                                                const formattedDate = `${selectedDate.getDate().toString().padStart(2, '0')}-${(selectedDate.getMonth() + 1).toString().padStart(2, '0')}-${selectedDate.getFullYear()}`;
                                                 updateField('date_lahir', formattedDate);
+                                            } else if (event.type === 'dismissed') {
+                                                setShowDatePicker(false);
                                             }
                                         }}
-                                        onDismiss={() => setShowDatePicker(false)}
                                     />
                                 )}
                             </View>
@@ -155,7 +185,7 @@ export function EmployeeFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">No. HP</Text>
                                 <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                     value={formData.no_hp}
                                     onChangeText={(t) => updateField('no_hp', t.replace(/[^0-9]/g, ''))}
                                     placeholder="Contoh: 08123456789"
@@ -182,7 +212,7 @@ export function EmployeeFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Email</Text>
                                 <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                     value={formData.karyawan_email}
                                     onChangeText={(t) => updateField('karyawan_email', t)}
                                     placeholder="Masukkan email"
@@ -194,7 +224,7 @@ export function EmployeeFormScreen() {
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Alamat <Text className="text-red-500">*</Text></Text>
                                 <TextInput
-                                    className="bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900 h-24"
+                                    className="bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900 h-24"
                                     value={formData.karyawan_address}
                                     onChangeText={(t) => updateField('karyawan_address', t)}
                                     placeholder="Masukkan alamat lengkap"
@@ -257,6 +287,22 @@ export function EmployeeFormScreen() {
                     </Animated.View>
                 )}
             </ScrollView>
+
+            <ModalConfirm
+                visible={confirmModalVisible}
+                title="Konfirmasi Simpan"
+                message="Apakah Anda yakin ingin menyimpan data karyawan ini?"
+                onConfirm={handleConfirmSave}
+                onCancel={() => setConfirmModalVisible(false)}
+            />
+
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastTitle}
+                message={toastMsg}
+                onClose={() => setToastVisible(false)}
+            />
         </KeyboardAvoidingView>
     );
 }

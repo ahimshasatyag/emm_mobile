@@ -91,23 +91,19 @@ export function useEmployeeForm(id?: string) {
         return null;
     };
 
-    const save = async (): Promise<boolean> => {
-        const validationError = validateForm();
-        if (validationError) {
-            setError(validationError);
-            return false;
-        }
+    const save = async (): Promise<any> => {
 
         setIsSaving(true);
         setError(null);
         try {
+            let result;
             if (id) {
-                await updateEmployeeApi(id, formData);
+                result = await updateEmployeeApi(id, formData);
             } else {
-                await createEmployeeApi(formData);
+                result = await createEmployeeApi(formData);
             }
             dispatch(fetchEmployees()); // Refresh list
-            return true;
+            return result;
         } catch (err: any) {
             setError(err.message || 'Gagal menyimpan data');
             return false;
@@ -126,6 +122,7 @@ export function useEmployeeForm(id?: string) {
         initialLoadDone,
         updateField,
         save,
-        loadData
+        loadData,
+        validateForm
     };
 }
