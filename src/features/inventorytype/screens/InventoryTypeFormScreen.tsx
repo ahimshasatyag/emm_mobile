@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TextInput, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Save } from 'lucide-react-native';
 import { useInventoryTypeForm } from '../hooks/useInventoryTypeForm';
@@ -8,25 +8,53 @@ import { theme } from '../../../theme/theme';
 import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export function InventoryTypeFormScreen() {
     const navigation = useNavigation();
 
     const {
         formData,
+        isLoading,
         isSaving,
         error,
         initialLoadDone,
         updateField,
         save,
+        loadData,
+        validateForm,
     } = useInventoryTypeForm();
 
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMsg, setToastMsg] = useState('');
+    const [toastType, setToastType] = useState<ToastType>('error');
+    const [toastTitle, setToastTitle] = useState('Validasi');
+
     const onSavePress = async () => {
+        const validationError = validateForm();
+        if (validationError) {
+            setToastMsg(validationError);
+            setToastType('error');
+            setToastTitle('Validasi');
+            setToastVisible(true);
+            return;
+        }
+        setConfirmModalVisible(true);
+    };
+
+    const handleConfirmSave = async () => {
+        setConfirmModalVisible(false);
         const success = await save();
         if (success) {
-            Alert.alert('Sukses', 'Tipe inventori berhasil ditambahkan', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+            (navigation as any).navigate('Drawer', {
+                screen: 'InventoryTypeList',
+                params: {
+                    toastMessage: 'Tipe inventori berhasil ditambahkan!',
+                    toastType: 'success'
+                }
+            });
         }
     };
 
@@ -36,7 +64,7 @@ export function InventoryTypeFormScreen() {
             style={{ flex: 1, backgroundColor: theme.colors.background }}
         >
             <HeaderNavigator 
-                title="TAMBAH TIPE" 
+                title={isLoading ? 'MEMUAT DATA...' : 'TAMBAH TIPE'} 
                 showBackButton 
                 onBackPress={() => navigation.goBack()} 
             />
@@ -45,18 +73,17 @@ export function InventoryTypeFormScreen() {
                 className="flex-1" 
                 contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl refreshing={isLoading} onRefresh={loadData} colors={[theme.colors.primary]} />
+                }
             >
-                {!initialLoadDone ? (
-                    <Animated.View exiting={FadeOut.duration(300)}>
+                {isLoading ? (
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
                         <InventoryTypeFormSkeleton />
                     </Animated.View>
                 ) : (
-                    <Animated.View entering={FadeIn.duration(600)}>
-                        {error && (
-                            <Animated.View entering={FadeInUp} className="bg-red-50 p-4 rounded-xl mb-6 border border-red-100">
-                                <Text className="text-red-600 font-medium">{error}</Text>
-                            </Animated.View>
-                        )}
+                    <Animated.View key="content" entering={FadeIn.duration(600)}>
+                        {/* Error inline removed as it is handled by Toast */}
 
                         <Animated.View entering={FadeInUp.delay(50)} className="bg-white p-5 rounded-3xl border border-gray-100 mb-6" style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}>
                             
@@ -93,6 +120,24 @@ export function InventoryTypeFormScreen() {
                     </Animated.View>
                 )}
             </ScrollView>
+
+            <ModalConfirm
+                visible={confirmModalVisible}
+                title="Simpan Tipe Baru"
+                message="Anda yakin ingin menyimpan tipe inventori baru ini?"
+                confirmText="Ya, Simpan"
+                cancelText="Batal"
+                onConfirm={handleConfirmSave}
+                onCancel={() => setConfirmModalVisible(false)}
+            />
+
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastTitle}
+                message={toastMsg}
+                onClose={() => setToastVisible(false)}
+            />
         </KeyboardAvoidingView>
     );
 }

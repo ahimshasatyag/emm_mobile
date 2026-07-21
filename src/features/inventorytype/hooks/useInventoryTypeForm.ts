@@ -19,14 +19,25 @@ export function useInventoryTypeForm(id?: string) {
     const { data: globalData } = useAppSelector((state) => state.inventorytype);
 
     const loadData = async () => {
-        if (!id) return;
         setIsLoading(true);
         setError(null);
         try {
-            const typeData = await fetchInventoryTypeByIdApi(id);
-            setFormData({
-                name: typeData.name,
-            });
+            if (id) {
+                await Promise.all([
+                    (async () => {
+                        const typeData = await fetchInventoryTypeByIdApi(id);
+                        setFormData({
+                            name: typeData.name,
+                        });
+                    })(),
+                    new Promise(resolve => setTimeout(resolve, 800))
+                ]);
+            } else {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                setFormData({
+                    name: '',
+                });
+            }
         } catch (err: any) {
             setError(err.message || 'Gagal memuat data form');
         } finally {
@@ -36,11 +47,7 @@ export function useInventoryTypeForm(id?: string) {
     };
 
     useEffect(() => {
-        if (id) {
-            loadData();
-        } else {
-            setInitialLoadDone(true);
-        }
+        loadData();
     }, [id]);
 
     const updateField = (field: keyof InventoryTypeFormData, value: string) => {
@@ -54,12 +61,6 @@ export function useInventoryTypeForm(id?: string) {
     };
 
     const save = async (): Promise<boolean> => {
-        const validationError = validateForm();
-        if (validationError) {
-            setError(validationError);
-            return false;
-        }
-
         setIsSaving(true);
         setError(null);
         try {
@@ -106,5 +107,6 @@ export function useInventoryTypeForm(id?: string) {
         save,
         remove,
         loadData,
+        validateForm,
     };
 }
