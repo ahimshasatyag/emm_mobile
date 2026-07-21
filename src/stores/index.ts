@@ -42,6 +42,7 @@ import matauangReducer from '../features/matauang/stores/matauangSlice';
 import assestsReducer from '../features/assests/stores/assestsSlice';
 import inventoryscheduleReducer from '../features/inventoryschedule/stores/inventoryscheduleSlice';
 import sopReducer from '../features/sop/stores/sopSlice';
+import tandaterimacustReducer from '../features/tandaterimacust/stores/tandaterimacustSlice';
 
 // import attendanceReducer from '../features/attendance/store/attendanceSlice';
 // import customerReducer from '../features/customer/store/customerSlice';
@@ -113,6 +114,7 @@ export const store = configureStore({
     assests: assestsReducer,
     inventoryschedule: inventoryscheduleReducer,
     sop: sopReducer,
+    tandaterimacust: tandaterimacustReducer,
     // attendance: attendanceReducer,
     // customer: customerReducer,
     // product: productsReducer,

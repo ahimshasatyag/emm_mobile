@@ -268,6 +268,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'AssestsListScreen') return 'Asset Management';
         if (route === 'InventoryScheduleListScreen') return 'Asset Schedule';
         if (route === 'SopDivisionScreen') return 'Daftar Induk Document';
+        if (route === 'TandaTerimaCustListScreen') return 'Repository Tanda Terima';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -419,6 +420,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('InventoryScheduleListScreen', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Daftar Induk Document') {
                                     props.navigation.navigate('SopDivisionScreen', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Repository Tanda Terima') {
+                                    props.navigation.navigate('TandaTerimaCustListScreen', { timestamp: Date.now() });
                                 }
                             }}
                         />
@@ -628,6 +631,11 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="SopDivisionScreen"
                 component={require('../../features/sop/screens/SopDivisionScreen').SopDivisionScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="TandaTerimaCustListScreen"
+                component={require('../../features/tandaterimacust/screens/TandaTerimaCustListScreen').TandaTerimaCustListScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>

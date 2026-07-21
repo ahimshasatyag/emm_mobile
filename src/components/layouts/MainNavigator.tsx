@@ -70,6 +70,9 @@ import { AssestsEditScreen } from '../../features/assests/screens/AssestsEditScr
 import { InventoryScheduleListScreen } from '../../features/inventoryschedule/screens/InventoryScheduleListScreen';
 import { InventoryScheduleFormScreen } from '../../features/inventoryschedule/screens/InventoryScheduleFormScreen';
 import { InventoryScheduleEditScreen } from '../../features/inventoryschedule/screens/InventoryScheduleEditScreen';
+import { TandaTerimaCustListScreen } from '../../features/tandaterimacust/screens/TandaTerimaCustListScreen';
+import { TandaTerimaCustFormScreen } from '../../features/tandaterimacust/screens/TandaTerimaCustFormScreen';
+import { TandaTerimaCustEditScreen } from '../../features/tandaterimacust/screens/TandaTerimaCustEditScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -441,6 +444,23 @@ export function MainNavigator() {
             <Stack.Screen
                 name="SopEditScreen"
                 getComponent={() => require('../../features/sop/screens/SopEditScreen').SopEditScreen}
+                options={{ headerShown: false }}
+            />
+
+            {/* Repository Tanda Terima */}
+            <Stack.Screen
+                name="TandaTerimaCustListScreen"
+                component={TandaTerimaCustListScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="TandaTerimaCustFormScreen"
+                component={TandaTerimaCustFormScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="TandaTerimaCustEditScreen"
+                component={TandaTerimaCustEditScreen}
                 options={{ headerShown: false }}
             />
         </Stack.Navigator>
