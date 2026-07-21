@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TextInput, ScrollView, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, ScrollView, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Save, CheckCircle2, Circle } from 'lucide-react-native';
 import { useUsersLevelForm } from '../hooks/useUsersLevelForm';
@@ -8,6 +8,8 @@ import { theme } from '../../../theme/theme';
 import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export function UsersLevelFormScreen() {
     const navigation = useNavigation();
@@ -25,16 +27,38 @@ export function UsersLevelFormScreen() {
         handleRoleSelectAllInMenu,
         save,
         loadData,
+        validateForm,
     } = useUsersLevelForm();
 
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMsg, setToastMsg] = useState('');
+    const [toastType, setToastType] = useState<ToastType>('error');
+    const [toastTitle, setToastTitle] = useState('Validasi');
+
     const onSavePress = async () => {
+        const validationError = validateForm();
+        if (validationError) {
+            setToastMsg(validationError);
+            setToastType('error');
+            setToastTitle('Validasi');
+            setToastVisible(true);
+            return;
+        }
+        setConfirmModalVisible(true);
+    };
+
+    const handleConfirmSave = async () => {
+        setConfirmModalVisible(false);
         const success = await save();
         if (success) {
-            Alert.alert(
-                'Sukses',
-                'Level pengguna baru berhasil ditambahkan.',
-                [{ text: 'OK', onPress: () => navigation.goBack() }]
-            );
+            (navigation as any).navigate('Drawer', {
+                screen: 'UsersLevelList',
+                params: {
+                    toastMessage: 'Level pengguna baru berhasil ditambahkan.',
+                    toastType: 'success'
+                }
+            });
         }
     };
 
@@ -63,11 +87,7 @@ export function UsersLevelFormScreen() {
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
-                        {error && (
-                            <Animated.View entering={FadeInUp} className="bg-red-50 p-4 rounded-xl mb-6 border border-red-100">
-                                <Text className="text-red-600 font-medium">{error}</Text>
-                            </Animated.View>
-                        )}
+                        {/* Error inline removed as it is handled by Toast */}
 
                         <Animated.View
                             entering={FadeInUp.delay(50)}
@@ -181,6 +201,24 @@ export function UsersLevelFormScreen() {
                     </Animated.View>
                 )}
             </ScrollView>
+
+            <ModalConfirm
+                visible={confirmModalVisible}
+                title="Simpan Level Pengguna"
+                message="Anda yakin ingin menyimpan level pengguna baru ini?"
+                confirmText="Ya, Simpan"
+                cancelText="Batal"
+                onConfirm={handleConfirmSave}
+                onCancel={() => setConfirmModalVisible(false)}
+            />
+
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastTitle}
+                message={toastMsg}
+                onClose={() => setToastVisible(false)}
+            />
         </KeyboardAvoidingView>
     );
 }

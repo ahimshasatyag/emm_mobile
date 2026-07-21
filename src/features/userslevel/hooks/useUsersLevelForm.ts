@@ -78,14 +78,6 @@ export function useUsersLevelForm(id?: string) {
     };
 
     const save = async (): Promise<boolean> => {
-        if (!formData.nm_users_level) {
-            setError("Nama Level harus diisi");
-            return false;
-        }
-        if (!formData.id_dashboard) {
-            setError("Dashboard harus dipilih");
-            return false;
-        }
 
         setIsSaving(true);
         setError(null);
@@ -123,6 +115,12 @@ export function useUsersLevelForm(id?: string) {
         }
     };
 
+    const validateForm = (): string | null => {
+        if (!formData.nm_users_level?.trim()) return 'Nama level wajib diisi';
+        if (!formData.id_dashboard) return 'Dashboard wajib dipilih';
+        return null;
+    };
+
     return {
         formData,
         setFormData,
@@ -138,5 +136,7 @@ export function useUsersLevelForm(id?: string) {
         save,
         remove,
         loadData,
+        validateForm,
+        setError,
     };
 }
