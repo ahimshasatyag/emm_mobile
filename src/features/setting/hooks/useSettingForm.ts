@@ -23,18 +23,33 @@ export function useSettingForm(id?: string) {
     const { data: globalData } = useAppSelector((state) => state.setting);
 
     const loadData = async () => {
-        if (!id) return;
         setIsLoading(true);
         setError(null);
         try {
-            const settingData = await fetchSettingByIdApi(id);
-            setFormData({
-                setting_label: settingData.setting_label,
-                setting_key: settingData.setting_key,
-                setting_value: settingData.setting_value,
-                setting_note: settingData.setting_note,
-                setting_flag: settingData.setting_flag,
-            });
+            if (id) {
+                await Promise.all([
+                    (async () => {
+                        const settingData = await fetchSettingByIdApi(id);
+                        setFormData({
+                            setting_label: settingData.setting_label,
+                            setting_key: settingData.setting_key,
+                            setting_value: settingData.setting_value,
+                            setting_note: settingData.setting_note,
+                            setting_flag: settingData.setting_flag,
+                        });
+                    })(),
+                    new Promise(resolve => setTimeout(resolve, 800))
+                ]);
+            } else {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                setFormData({
+                    setting_label: '',
+                    setting_key: '',
+                    setting_value: '',
+                    setting_note: '',
+                    setting_flag: '',
+                });
+            }
         } catch (err: any) {
             setError(err.message || 'Gagal memuat data form');
         } finally {
@@ -44,11 +59,7 @@ export function useSettingForm(id?: string) {
     };
 
     useEffect(() => {
-        if (id) {
-            loadData();
-        } else {
-            setInitialLoadDone(true);
-        }
+        loadData();
     }, [id]);
 
     const updateField = (field: keyof SettingFormData, value: string) => {
@@ -65,12 +76,6 @@ export function useSettingForm(id?: string) {
     };
 
     const save = async (): Promise<boolean> => {
-        const validationError = validateForm();
-        if (validationError) {
-            setError(validationError);
-            return false;
-        }
-
         setIsSaving(true);
         setError(null);
         try {
@@ -117,5 +122,6 @@ export function useSettingForm(id?: string) {
         save,
         remove,
         loadData,
+        validateForm,
     };
 }

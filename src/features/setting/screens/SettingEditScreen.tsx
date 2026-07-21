@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, TouchableOpacity, RefreshControl } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Save, X, Edit2 } from 'lucide-react-native';
 import { useSettingForm } from '../hooks/useSettingForm';
-import { SettingFormSkeleton } from '../skeleton/SettingFormSkeleton';
+import { SettingEditSkeleton } from '../skeleton/SettingEditSkeleton';
 import { theme } from '../../../theme/theme';
 import Animated, { FadeInUp, LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export function SettingEditScreen() {
     const route = useRoute();
@@ -24,16 +26,37 @@ export function SettingEditScreen() {
         updateField,
         save,
         loadData,
+        validateForm,
     } = useSettingForm(id);
 
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMsg, setToastMsg] = useState('');
+    const [toastType, setToastType] = useState<ToastType>('error');
+    const [toastTitle, setToastTitle] = useState('Validasi');
+
     const onSavePress = async () => {
+        const validationError = validateForm();
+        if (validationError) {
+            setToastMsg(validationError);
+            setToastType('error');
+            setToastTitle('Validasi');
+            setToastVisible(true);
+            return;
+        }
+        setConfirmModalVisible(true);
+    };
+
+    const handleConfirmSave = async () => {
+        setConfirmModalVisible(false);
         const success = await save();
         if (success) {
-            Alert.alert(
-                'Sukses',
-                'Data setting berhasil diperbarui.',
-                [{ text: 'OK', onPress: () => setIsEditing(false) }]
-            );
+            setIsEditing(false);
+            setToastMsg('Data setting berhasil diperbarui!');
+            setToastType('success');
+            setToastTitle('Sukses');
+            setToastVisible(true);
+            loadData();
         }
     };
 
@@ -63,15 +86,11 @@ export function SettingEditScreen() {
             >
                 {isFetching ? (
                     <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
-                        <SettingFormSkeleton />
+                        <SettingEditSkeleton />
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
-                        {error && (
-                            <Animated.View entering={FadeInUp} className="bg-red-50 p-4 rounded-xl mb-6 border border-red-100">
-                                <Text className="text-red-600 font-medium">{error}</Text>
-                            </Animated.View>
-                        )}
+                        {/* Error inline removed as it is handled by Toast */}
 
                         <Animated.View 
                             key={`form-container-${isEditing}`}
@@ -196,6 +215,24 @@ export function SettingEditScreen() {
                     </Animated.View>
                 )}
             </ScrollView>
+
+            <ModalConfirm
+                visible={confirmModalVisible}
+                title="Simpan Perubahan Setting"
+                message="Anda yakin ingin menyimpan perubahan data setting ini?"
+                confirmText="Ya, Update"
+                cancelText="Batal"
+                onConfirm={handleConfirmSave}
+                onCancel={() => setConfirmModalVisible(false)}
+            />
+
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastTitle}
+                message={toastMsg}
+                onClose={() => setToastVisible(false)}
+            />
         </KeyboardAvoidingView>
     );
 }

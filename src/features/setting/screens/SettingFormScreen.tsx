@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TextInput, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, TouchableOpacity, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Save } from 'lucide-react-native';
 import { useSettingForm } from '../hooks/useSettingForm';
@@ -8,6 +8,8 @@ import { theme } from '../../../theme/theme';
 import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export function SettingFormScreen() {
     const navigation = useNavigation();
@@ -16,17 +18,42 @@ export function SettingFormScreen() {
         formData,
         isSaving,
         error,
-        initialLoadDone,
+        isLoading,
         updateField,
         save,
+        loadData,
+        validateForm,
     } = useSettingForm();
 
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMsg, setToastMsg] = useState('');
+    const [toastType, setToastType] = useState<ToastType>('error');
+    const [toastTitle, setToastTitle] = useState('Validasi');
+
     const onSavePress = async () => {
+        const validationError = validateForm();
+        if (validationError) {
+            setToastMsg(validationError);
+            setToastType('error');
+            setToastTitle('Validasi');
+            setToastVisible(true);
+            return;
+        }
+        setConfirmModalVisible(true);
+    };
+
+    const handleConfirmSave = async () => {
+        setConfirmModalVisible(false);
         const success = await save();
         if (success) {
-            Alert.alert('Sukses', 'Data setting berhasil ditambahkan', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+            (navigation as any).navigate('Drawer', {
+                screen: 'SettingList',
+                params: {
+                    toastMessage: 'Data setting berhasil ditambahkan!',
+                    toastType: 'success'
+                }
+            });
         }
     };
 
@@ -36,7 +63,7 @@ export function SettingFormScreen() {
             style={{ flex: 1, backgroundColor: theme.colors.background }}
         >
             <HeaderNavigator 
-                title="TAMBAH SETTING" 
+                title={isLoading ? 'MEMUAT DATA...' : 'TAMBAH SETTING'} 
                 showBackButton 
                 onBackPress={() => navigation.goBack()} 
             />
@@ -45,18 +72,17 @@ export function SettingFormScreen() {
                 className="flex-1" 
                 contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl refreshing={isLoading} onRefresh={loadData} colors={[theme.colors.primary]} />
+                }
             >
-                {!initialLoadDone ? (
+                {isLoading ? (
                     <Animated.View exiting={FadeOut.duration(300)}>
                         <SettingFormSkeleton />
                     </Animated.View>
                 ) : (
                     <Animated.View entering={FadeIn.duration(600)}>
-                        {error && (
-                            <Animated.View entering={FadeInUp} className="bg-red-50 p-4 rounded-xl mb-6 border border-red-100">
-                                <Text className="text-red-600 font-medium">{error}</Text>
-                            </Animated.View>
-                        )}
+                        {/* Error inline removed as it is handled by Toast */}
 
                         <Animated.View entering={FadeInUp.delay(50)} className="bg-white p-5 rounded-3xl border border-gray-100 mb-6" style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}>
                             
@@ -148,6 +174,24 @@ export function SettingFormScreen() {
                     </Animated.View>
                 )}
             </ScrollView>
+
+            <ModalConfirm
+                visible={confirmModalVisible}
+                title="Simpan Setting Baru"
+                message="Anda yakin ingin menyimpan data setting baru ini?"
+                confirmText="Ya, Simpan"
+                cancelText="Batal"
+                onConfirm={handleConfirmSave}
+                onCancel={() => setConfirmModalVisible(false)}
+            />
+
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastTitle}
+                message={toastMsg}
+                onClose={() => setToastVisible(false)}
+            />
         </KeyboardAvoidingView>
     );
 }
