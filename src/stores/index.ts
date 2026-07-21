@@ -43,25 +43,13 @@ import assestsReducer from '../features/assests/stores/assestsSlice';
 import inventoryscheduleReducer from '../features/inventoryschedule/stores/inventoryscheduleSlice';
 import sopReducer from '../features/sop/stores/sopSlice';
 import tandaterimacustReducer from '../features/tandaterimacust/stores/tandaterimacustSlice';
-
-// import attendanceReducer from '../features/attendance/store/attendanceSlice';
-// import customerReducer from '../features/customer/store/customerSlice';
-// import productsReducer from '../features/product/store/productSlice';
-// import activitiesReducer from '../features/activities/store/activitiesSlice';
-// import formReducer from '../features/form/store/formSlice';
-// import RequestFormReducer from '../features/requestForm/store/requestFormSlice';
+import whatsappchatReducer from '../features/whatsappchat/stores/whatsappchatSlice';
 import leadsReducer from '../features/leads/stores/leadsSlice';
 import purchaserequisitionsReducer from '../features/purchaserequisitions/stores/purchaserequisitionsSlice';
 import suppliersReducer from '../features/suppliers/stores/suppliersSlice';
 import quotationsapReducer from '../features/quotationsap/stores/quotationsapSlice';
 import poReducer from '../features/po/stores/poSlice';
-
-// import dashboardReducer from '../features/dashboard/stores/dashboardSlice';
 import incshipmentReducer from '../features/incshipment/stores/incshipmentSlice';
-// import profileReducer from '../features/profile/store/profileSlice';
-// import activityLogReducer from '../features/activityLog/store/activityLogSlice';
-// import activityLeadsReducer from '../features/activityLeads/store/activityLeadsSlice';
-// import reportsReducer from '../features/reports/store/reportsSlice';
 import approveReducer from '../features/approve/stores/approveSlice';
 import approvebaruReducer from '../features/approvebaru/stores/approvebaruSlice';
 import doReducer from '../features/do/stores/doSlice';
@@ -115,12 +103,7 @@ export const store = configureStore({
     inventoryschedule: inventoryscheduleReducer,
     sop: sopReducer,
     tandaterimacust: tandaterimacustReducer,
-    // attendance: attendanceReducer,
-    // customer: customerReducer,
-    // product: productsReducer,
-    // activities: activitiesReducer,
-    // form: formReducer,
-    // requestForm: RequestFormReducer,
+    whatsappchat: whatsappchatReducer,
     leads: leadsReducer,
     purchaserequisitions: purchaserequisitionsReducer,
     suppliers: suppliersReducer,
@@ -133,11 +116,6 @@ export const store = configureStore({
     customerinvoice: customerinvoiceReducer,
     payment: paymentReducer,
     kasbankin: kasbankinReducer,
-    // dashboard: dashboardReducer,
-    // profile: profileReducer,
-    // activityLog: activityLogReducer,
-    // activityLeads: activityLeadsReducer,
-    // reports: reportsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

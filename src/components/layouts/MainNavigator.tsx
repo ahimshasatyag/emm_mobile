@@ -73,6 +73,8 @@ import { InventoryScheduleEditScreen } from '../../features/inventoryschedule/sc
 import { TandaTerimaCustListScreen } from '../../features/tandaterimacust/screens/TandaTerimaCustListScreen';
 import { TandaTerimaCustFormScreen } from '../../features/tandaterimacust/screens/TandaTerimaCustFormScreen';
 import { TandaTerimaCustEditScreen } from '../../features/tandaterimacust/screens/TandaTerimaCustEditScreen';
+import { WhatsappChatRoomScreen } from '../../features/whatsappchat/screens/WhatsappChatRoomScreen';
+import { WhatsappLogScreen } from '../../features/whatsappchat/screens/WhatsappLogScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -461,6 +463,17 @@ export function MainNavigator() {
             <Stack.Screen
                 name="TandaTerimaCustEditScreen"
                 component={TandaTerimaCustEditScreen}
+                options={{ headerShown: false }}
+            />
+            {/* Whatsapp Chat */}
+            <Stack.Screen
+                name="WhatsappChatRoomScreen"
+                component={WhatsappChatRoomScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="WhatsappLogScreen"
+                component={WhatsappLogScreen}
                 options={{ headerShown: false }}
             />
         </Stack.Navigator>

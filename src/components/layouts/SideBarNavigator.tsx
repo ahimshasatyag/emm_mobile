@@ -269,6 +269,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'InventoryScheduleListScreen') return 'Asset Schedule';
         if (route === 'SopDivisionScreen') return 'Daftar Induk Document';
         if (route === 'TandaTerimaCustListScreen') return 'Repository Tanda Terima';
+        if (route === 'WhatsappChatListScreen') return 'Chat';
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
@@ -422,6 +423,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('SopDivisionScreen', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Repository Tanda Terima') {
                                     props.navigation.navigate('TandaTerimaCustListScreen', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Chat') {
+                                    props.navigation.navigate('WhatsappChatListScreen', { timestamp: Date.now() });
                                 }
                             }}
                         />
@@ -636,6 +639,11 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="TandaTerimaCustListScreen"
                 component={require('../../features/tandaterimacust/screens/TandaTerimaCustListScreen').TandaTerimaCustListScreen}
+                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="WhatsappChatListScreen"
+                component={require('../../features/whatsappchat/screens/WhatsappChatListScreen').WhatsappChatListScreen}
                 options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>
