@@ -110,5 +110,7 @@ export function useUserForm(userId?: string) {
         updateField,
         handleSave,
         loadUser,
+        validateForm,
+        setError,
     };
 }

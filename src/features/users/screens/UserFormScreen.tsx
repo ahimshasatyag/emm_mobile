@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { ArrowLeft, Save } from 'lucide-react-native';
@@ -8,6 +8,18 @@ import { theme } from '../../../theme/theme';
 import Animated, { FadeInDown, FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
+import { Dropdown } from 'react-native-element-dropdown';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+
+const levelAksesData = [
+    { label: 'Super Admin', value: 'Super Admin' },
+    { label: 'Admin', value: 'Admin' },
+    { label: 'HRD', value: 'HRD' },
+    { label: 'Teknisi', value: 'Teknisi' },
+    { label: 'Sales', value: 'Sales' },
+    { label: 'Finance', value: 'Finance' }
+];
 
 export function UserFormScreen() {
     const navigation = useNavigation();
@@ -19,17 +31,44 @@ export function UserFormScreen() {
         error,
         updateField,
         handleSave,
+        validateForm,
+        setError,
     } = useUserForm();
 
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMsg, setToastMsg] = useState('');
+
     const onSavePress = async () => {
+        const validationError = validateForm();
+        if (validationError) {
+            setToastMsg(validationError);
+            setToastVisible(true);
+            return;
+        }
+        setConfirmModalVisible(true);
+    };
+
+    const handleConfirmSave = async () => {
+        setConfirmModalVisible(false);
         const success = await handleSave();
         if (success) {
-            Alert.alert(
-                'Sukses',
-                'Pengguna baru berhasil ditambahkan.',
-                [{ text: 'OK', onPress: () => navigation.goBack() }]
-            );
+            (navigation as any).navigate('Drawer', {
+                screen: 'UserList',
+                params: {
+                    toastMessage: 'Data pengguna baru berhasil ditambahkan!',
+                    toastType: 'success'
+                }
+            });
         }
+    };
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        // Simulate a network request for the form
+        await new Promise(resolve => setTimeout(resolve, 800));
+        setIsRefreshing(false);
     };
 
     return (
@@ -38,7 +77,7 @@ export function UserFormScreen() {
             style={{ flex: 1, backgroundColor: theme.colors.background }}
         >
             <HeaderNavigator 
-                title={isFetching ? "MEMUAT DATA..." : "TAMBAH PENGGUNA"} 
+                title={isFetching || isRefreshing ? "MEMUAT DATA..." : "TAMBAH PENGGUNA"} 
                 showBackButton 
                 onBackPress={() => navigation.goBack()} 
             />
@@ -48,21 +87,15 @@ export function UserFormScreen() {
                 contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={isFetching} onRefresh={() => {}} colors={[theme.colors.primary]} />
+                    <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
                 }
             >
-                {isFetching ? (
+                {isFetching || isRefreshing ? (
                     <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
                         <UserFormSkeleton />
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
-                        {error && (
-                            <Animated.View entering={FadeInUp} className="bg-red-50 p-4 rounded-xl mb-6 border border-red-100">
-                                <Text className="text-red-600 font-medium">{error}</Text>
-                            </Animated.View>
-                        )}
-
                         <Animated.View 
                             entering={FadeInUp.delay(50)} 
                             className="bg-white p-5 rounded-3xl border border-gray-100"
@@ -71,7 +104,8 @@ export function UserFormScreen() {
                             <Animated.View entering={FadeInUp.delay(100)} className="mb-5">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Username</Text>
                                 <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 text-gray-900 focus:border-blue-500"
+                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 text-gray-900 focus:border-[#9e0b0f]"
+                                    cursorColor={theme.colors.primary}
                                     value={formData.username}
                                     onChangeText={(text) => updateField('username', text)}
                                     placeholder="Contoh: andi_admin"
@@ -82,7 +116,8 @@ export function UserFormScreen() {
                             <Animated.View entering={FadeInUp.delay(200)} className="mb-5">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Password</Text>
                                 <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 text-gray-900 focus:border-blue-500"
+                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 text-gray-900 focus:border-[#9e0b0f]"
+                                    cursorColor={theme.colors.primary}
                                     value={formData.password}
                                     onChangeText={(text) => updateField('password', text)}
                                     placeholder="Min. 8 kar (Huruf, angka, simbol)"
@@ -93,7 +128,8 @@ export function UserFormScreen() {
                             <Animated.View entering={FadeInUp.delay(300)} className="mb-5">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Nama Lengkap</Text>
                                 <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 text-gray-900 focus:border-blue-500"
+                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 text-gray-900 focus:border-[#9e0b0f]"
+                                    cursorColor={theme.colors.primary}
                                     value={formData.name}
                                     onChangeText={(text) => updateField('name', text)}
                                     placeholder="Contoh: Andi Wijaya"
@@ -102,18 +138,16 @@ export function UserFormScreen() {
 
                             <Animated.View entering={FadeInUp.delay(400)} className="mb-5">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Level Akses</Text>
-                                <View className="flex-row flex-wrap gap-2">
-                                    {['Super Admin', 'Admin', 'HRD', 'Teknisi', 'Sales', 'Finance'].map((level) => (
-                                        <TouchableOpacity
-                                            key={level}
-                                            onPress={() => updateField('level', level)}
-                                            className={`px-4 py-2 rounded-full border ${formData.level === level ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300'}`}
-                                        >
-                                            <Text className={formData.level === level ? 'text-white font-bold text-xs' : 'text-gray-600 text-xs'}>
-                                                {level}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))}
+                                <View className="border border-gray-200 rounded-lg bg-gray-50">
+                                    <Dropdown
+                                        style={{ height: 50, paddingHorizontal: 16 }}
+                                        data={levelAksesData}
+                                        labelField="label"
+                                        valueField="value"
+                                        placeholder="Pilih Level Akses..."
+                                        value={formData.level}
+                                        onChange={item => updateField('level', item.value)}
+                                    />
                                 </View>
                             </Animated.View>
 
@@ -159,6 +193,24 @@ export function UserFormScreen() {
                     </Animated.View>
                 )}
             </ScrollView>
+
+            <ModalConfirm
+                visible={confirmModalVisible}
+                title="Simpan Pengguna"
+                message="Anda yakin ingin menyimpan data pengguna ini?"
+                confirmText="Ya, Simpan"
+                cancelText="Batal"
+                onConfirm={handleConfirmSave}
+                onCancel={() => setConfirmModalVisible(false)}
+            />
+
+            <ToastMessages
+                visible={toastVisible}
+                type="error"
+                title="Validasi"
+                message={toastMsg}
+                onClose={() => setToastVisible(false)}
+            />
         </KeyboardAvoidingView>
     );
 }

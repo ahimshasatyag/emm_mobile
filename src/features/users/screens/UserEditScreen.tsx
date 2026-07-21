@@ -3,11 +3,23 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator,
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Save, X, Edit2 } from 'lucide-react-native';
 import { useUserForm } from '../hooks/useUserForm';
-import { UserFormSkeleton } from '../skeleton/UserFormSkeleton';
+import { UserEditSkeleton } from '../skeleton/UserEditSkeleton';
 import { theme } from '../../../theme/theme';
 import Animated, { FadeInUp, LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
+import { Dropdown } from 'react-native-element-dropdown';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+
+const levelAksesData = [
+    { label: 'Super Admin', value: 'Super Admin' },
+    { label: 'Admin', value: 'Admin' },
+    { label: 'HRD', value: 'HRD' },
+    { label: 'Teknisi', value: 'Teknisi' },
+    { label: 'Sales', value: 'Sales' },
+    { label: 'Finance', value: 'Finance' }
+];
 
 export function UserEditScreen() {
     const route = useRoute();
@@ -24,16 +36,39 @@ export function UserEditScreen() {
         updateField,
         handleSave,
         loadUser,
+        validateForm,
+        setError,
     } = useUserForm(userId);
 
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMsg, setToastMsg] = useState('');
+    const [toastType, setToastType] = useState<ToastType>('error');
+    const [toastTitle, setToastTitle] = useState('Validasi');
+
     const onSavePress = async () => {
+        const validationError = validateForm();
+        if (validationError) {
+            setToastMsg(validationError);
+            setToastType('error');
+            setToastTitle('Validasi');
+            setToastVisible(true);
+            return;
+        }
+        setConfirmModalVisible(true);
+    };
+
+    const handleConfirmSave = async () => {
+        setConfirmModalVisible(false);
         const success = await handleSave();
         if (success) {
-            Alert.alert(
-                'Sukses',
-                'Data pengguna berhasil diperbarui.',
-                [{ text: 'OK', onPress: () => setIsEditing(false) }] // Switch back to view mode on success
-            );
+            setIsEditing(false);
+            setToastMsg('Data pengguna berhasil diperbarui!');
+            setToastType('success');
+            setToastTitle('Sukses');
+            setToastVisible(true);
+            loadUser(); // Refresh data to reflect changes
         }
     };
 
@@ -42,40 +77,41 @@ export function UserEditScreen() {
         loadUser(); // Re-fetch to discard changes
     };
 
+    const onRefresh = async () => {
+        setIsRefreshing(true);
+        await loadUser();
+        setIsRefreshing(false);
+    };
+
     return (
-        <KeyboardAvoidingView 
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={{ flex: 1, backgroundColor: theme.colors.background }}
         >
-            <HeaderNavigator 
-                title={isFetching ? 'MEMUAT DATA...' : (isEditing ? 'EDIT PENGGUNA' : 'DETAIL PENGGUNA')} 
-                showBackButton 
-                onBackPress={() => navigation.goBack()} 
+            <HeaderNavigator
+                title={isFetching || isRefreshing ? 'MEMUAT DATA...' : (isEditing ? 'EDIT PENGGUNA' : 'DETAIL PENGGUNA')}
+                showBackButton
+                onBackPress={() => navigation.goBack()}
             />
 
-            <ScrollView 
-                className="flex-1" 
+            <ScrollView
+                className="flex-1"
                 contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={isFetching} onRefresh={loadUser} colors={[theme.colors.primary]} />
+                    <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
                 }
             >
-                {isFetching ? (
+                {isFetching || isRefreshing ? (
                     <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
-                        <UserFormSkeleton />
+                        <UserEditSkeleton />
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
-                        {error && (
-                            <Animated.View entering={FadeInUp} className="bg-red-50 p-4 rounded-xl mb-6 border border-red-100">
-                                <Text className="text-red-600 font-medium">{error}</Text>
-                            </Animated.View>
-                        )}
 
-                        <Animated.View 
+                        <Animated.View
                             key={`form-container-${isEditing}`}
-                            entering={FadeInUp.delay(50)} 
+                            entering={FadeInUp.delay(50)}
                             layout={LinearTransition.springify()}
                             className="bg-white p-5 rounded-3xl border border-gray-100"
                             style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}
@@ -95,7 +131,8 @@ export function UserEditScreen() {
                                 <Animated.View entering={FadeInUp.delay(200)} className="mb-5">
                                     <Text className="text-sm font-bold text-gray-700 mb-2">Password Baru</Text>
                                     <TextInput
-                                        className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 text-gray-900 focus:border-blue-500"
+                                        className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 text-gray-900 focus:border-[#9e0b0f]"
+                                        cursorColor={theme.colors.primary}
                                         value={formData.password}
                                         onChangeText={(text) => updateField('password', text)}
                                         placeholder="Kosongkan jika tidak diubah"
@@ -108,7 +145,8 @@ export function UserEditScreen() {
                             <Animated.View entering={FadeInUp.delay(300)} className="mb-5">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Nama Lengkap</Text>
                                 <TextInput
-                                    className={`h-12 px-4 rounded-xl border ${isEditing ? 'bg-gray-50 border-gray-200 text-gray-900 focus:border-blue-500' : 'bg-gray-100 border-gray-200 text-gray-500'}`}
+                                    className={`h-12 px-4 rounded-xl border ${isEditing ? 'bg-gray-50 border-gray-200 text-gray-900 focus:border-[#9e0b0f]' : 'bg-gray-100 border-gray-200 text-gray-500'}`}
+                                    cursorColor={theme.colors.primary}
                                     value={formData.name}
                                     onChangeText={(text) => updateField('name', text)}
                                     placeholder="Contoh: Andi Wijaya"
@@ -118,22 +156,18 @@ export function UserEditScreen() {
 
                             <Animated.View entering={FadeInUp.delay(400)} className="mb-5">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Level Akses</Text>
-                                <View className="flex-row flex-wrap gap-2">
-                                    {['Super Admin', 'Admin', 'HRD', 'Teknisi', 'Sales', 'Finance'].map((level) => {
-                                        const isSelected = formData.level === level;
-                                        return (
-                                            <TouchableOpacity
-                                                key={level}
-                                                onPress={() => isEditing && updateField('level', level)}
-                                                activeOpacity={isEditing ? 0.7 : 1}
-                                                className={`px-4 py-2 rounded-full border ${isSelected ? (isEditing ? 'bg-blue-600 border-blue-600' : 'bg-gray-400 border-gray-400') : 'bg-white border-gray-300'} ${!isEditing && !isSelected && 'opacity-50'}`}
-                                            >
-                                                <Text className={isSelected ? 'text-white font-bold text-xs' : 'text-gray-600 text-xs'}>
-                                                    {level}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        );
-                                    })}
+                                <View className={`border rounded-xl ${isEditing ? 'border-gray-200 bg-gray-50 focus:border-[#9e0b0f]' : 'border-gray-200 bg-gray-100'}`}>
+                                    <Dropdown
+                                        style={{ height: 48, paddingHorizontal: 16 }}
+                                        data={levelAksesData}
+                                        labelField="label"
+                                        valueField="value"
+                                        placeholder="Pilih Level Akses..."
+                                        value={formData.level}
+                                        onChange={item => isEditing && updateField('level', item.value)}
+                                        disable={!isEditing}
+                                        selectedTextStyle={{ color: isEditing ? '#111827' : '#6b7280' }}
+                                    />
                                 </View>
                             </Animated.View>
 
@@ -159,9 +193,9 @@ export function UserEditScreen() {
                         </Animated.View>
 
                         {/* Bottom Actions */}
-                        <Animated.View 
-                            key={`actions-${isEditing}`} 
-                            entering={FadeInUp.delay(300)} 
+                        <Animated.View
+                            key={`actions-${isEditing}`}
+                            entering={FadeInUp.delay(300)}
                             layout={LinearTransition.springify()}
                             className="mt-4 flex-row gap-3"
                         >
@@ -184,7 +218,7 @@ export function UserEditScreen() {
                                         <X color={theme.colors.primary} size={20} className="mr-2" />
                                         <Text className="font-bold text-lg" style={{ color: theme.colors.primary }}>Batal</Text>
                                     </Button>
-                                    
+
                                     <Button
                                         onPress={onSavePress}
                                         disabled={isSaving}
@@ -206,6 +240,24 @@ export function UserEditScreen() {
                     </Animated.View>
                 )}
             </ScrollView>
+
+            <ModalConfirm
+                visible={confirmModalVisible}
+                title="Simpan Perubahan"
+                message="Anda yakin ingin menyimpan perubahan data pengguna ini?"
+                confirmText="Ya, Update"
+                cancelText="Batal"
+                onConfirm={handleConfirmSave}
+                onCancel={() => setConfirmModalVisible(false)}
+            />
+
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastTitle}
+                message={toastMsg}
+                onClose={() => setToastVisible(false)}
+            />
         </KeyboardAvoidingView>
     );
 }
