@@ -60,20 +60,18 @@ export function useCustomerContactForm() {
         }
     };
 
-    const validate = (): boolean => {
-        if (!formData.nm_customers_contact.trim()) {
-            setError('Nama Kontak Pelanggan harus diisi');
-            return false;
-        }
-        if (!formData.id_customers) {
-            setError('Pelanggan (Perusahaan) harus dipilih');
-            return false;
-        }
-        return true;
+    const validateForm = () => {
+        if (!formData.nm_customers_contact.trim()) return 'Nama Kontak Pelanggan harus diisi';
+        if (!formData.id_customers) return 'Company Name harus dipilih';
+        return null;
     };
 
-    const save = async (): Promise<boolean> => {
-        if (!validate()) return false;
+    const save = async (): Promise<string | null> => {
+        const errorMsg = validateForm();
+        if (errorMsg) {
+            setError(errorMsg);
+            return null;
+        }
 
         try {
             setIsSaving(true);
@@ -81,13 +79,14 @@ export function useCustomerContactForm() {
 
             if (formData.id_customers_contact) {
                 await customerContactsApi.updateCustomerContact(formData.id_customers_contact, formData);
+                return formData.id_customers_contact;
             } else {
-                await customerContactsApi.createCustomerContact(formData);
+                const res = await customerContactsApi.createCustomerContact(formData);
+                return res.data?.id_customers_contact || null;
             }
-            return true;
         } catch (err: any) {
             setError(err.message || 'Gagal menyimpan data');
-            return false;
+            return null;
         } finally {
             setIsSaving(false);
         }
@@ -101,6 +100,7 @@ export function useCustomerContactForm() {
         error,
         updateField,
         loadInitialData,
+        validateForm,
         save,
     };
 }
