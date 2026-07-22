@@ -5,22 +5,28 @@ import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Save, Edit2, X } from 'lucide-react-native';
 import { theme } from '../../../theme/theme';
 import { useProductBrands } from '../hooks/useProductBrands';
-import { ProductBrandFormData } from '../types/productbrand.types';
 import Animated, { FadeInUp, LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
-import { ProductBrandFormSkeleton } from '../skeleton/ProductBrandFormSkeleton';
+import { ProductBrandEditSkeleton } from '../skeleton/ProductBrandEditSkeleton';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 export function ProductBrandEditScreen() {
     const route = useRoute<any>();
     const navigation = useNavigation<any>();
-    const { brands, editBrand, isLoading, refreshData } = useProductBrands();
+    const { brands, editBrand, isLoading, refreshData, formData, setFormData, validateForm } = useProductBrands();
 
     const brandId = route.params?.id;
-    const [formData, setFormData] = useState<ProductBrandFormData>({
-        nm_product_brand: ''
-    });
     const [isInitializing, setIsInitializing] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
+    const [focusedField, setFocusedField] = useState<string | null>(null);
+    const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
+
+    const [toastState, setToastState] = useState({
+        visible: false,
+        type: 'success' as ToastType,
+        message: ''
+    });
 
     useEffect(() => {
         const brand = brands.find(b => b.id_product_brand === brandId);
@@ -29,26 +35,51 @@ export function ProductBrandEditScreen() {
                 nm_product_brand: brand.nm_product_brand
             });
             setIsInitializing(false);
+
+            if (route.params?.showSuccessToast) {
+                setToastState({
+                    visible: true,
+                    type: 'success',
+                    message: 'Merek produk berhasil ditambahkan'
+                });
+                navigation.setParams({ showSuccessToast: undefined });
+            }
         } else if (!isLoading) {
             Alert.alert('Error', 'Merek tidak ditemukan', [
                 { text: 'OK', onPress: () => navigation.goBack() }
             ]);
         }
-    }, [brandId, brands, isLoading]);
+    }, [brandId, brands, isLoading, route.params?.showSuccessToast, navigation]);
 
-    const handleSave = async () => {
-        if (!formData.nm_product_brand.trim()) {
-            Alert.alert('Error', 'Brand Name wajib diisi!');
+    const handleSave = () => {
+        const error = validateForm();
+        if (error) {
+            setToastState({
+                visible: true,
+                type: 'error',
+                message: error
+            });
             return;
         }
+        setIsModalConfirmVisible(true);
+    };
 
+    const confirmSave = async () => {
+        setIsModalConfirmVisible(false);
         try {
             await editBrand(brandId, formData);
-            Alert.alert('Sukses', 'Merek berhasil diperbarui', [
-                { text: 'OK', onPress: () => setIsEditing(false) }
-            ]);
-        } catch (error) {
-            // Error is handled by hook
+            setToastState({
+                visible: true,
+                type: 'success',
+                message: 'Merek berhasil diperbarui'
+            });
+            setIsEditing(false);
+        } catch (error: any) {
+            setToastState({
+                visible: true,
+                type: 'error',
+                message: error.message || 'Gagal memperbarui merek'
+            });
         }
     };
 
@@ -73,6 +104,24 @@ export function ProductBrandEditScreen() {
                 onBackPress={() => navigation.goBack()}
             />
 
+            <ToastMessages
+                visible={toastState.visible}
+                type={toastState.type}
+                title={toastState.type === 'success' ? 'Sukses' : 'Error'}
+                message={toastState.message}
+                onClose={() => setToastState({ ...toastState, visible: false })}
+            />
+
+            <ModalConfirm
+                visible={isModalConfirmVisible}
+                title="Konfirmasi Edit"
+                message="Apakah Anda yakin ingin menyimpan perubahan pada merek ini?"
+                confirmText="Ya, Simpan"
+                cancelText="Batal"
+                onCancel={() => setIsModalConfirmVisible(false)}
+                onConfirm={confirmSave}
+            />
+
             <ScrollView
                 className="flex-1"
                 contentContainerStyle={{ padding: 16, paddingTop: 24, paddingBottom: 100 }}
@@ -83,7 +132,7 @@ export function ProductBrandEditScreen() {
             >
                 {isInitializing || isLoading ? (
                     <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
-                        <ProductBrandFormSkeleton />
+                        <ProductBrandEditSkeleton />
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
@@ -105,11 +154,14 @@ export function ProductBrandEditScreen() {
                             <View>
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Brand Name <Text className="text-red-500">*</Text></Text>
                                 <TextInput
-                                    className={`px-4 py-3 rounded-xl border ${isEditing ? 'bg-gray-50 border-gray-200 focus:border-indigo-500 text-gray-900' : 'bg-gray-100 border-gray-200 text-gray-500'}`}
+                                    className={`px-4 py-3 rounded-xl border ${isEditing ? 'bg-gray-50 text-gray-900' : 'bg-gray-100 text-gray-500'}`}
+                                    style={{ borderColor: isEditing && focusedField === 'brand' ? theme.colors.primary : '#e5e7eb' }}
                                     placeholder="Masukkan nama merek"
                                     value={formData.nm_product_brand}
                                     onChangeText={(text) => setFormData({ ...formData, nm_product_brand: text })}
                                     editable={isEditing}
+                                    onFocus={() => isEditing && setFocusedField('brand')}
+                                    onBlur={() => setFocusedField(null)}
                                 />
                             </View>
                         </Animated.View>

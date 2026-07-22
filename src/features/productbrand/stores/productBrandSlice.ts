@@ -6,14 +6,12 @@ interface ProductBrandState {
     data: ProductBrand[];
     isLoading: boolean;
     error: string | null;
-    successMessage: string | null;
 }
 
 const initialState: ProductBrandState = {
     data: [],
     isLoading: false,
-    error: null,
-    successMessage: null
+    error: null
 };
 
 export const fetchBrands = createAsyncThunk(
@@ -67,13 +65,6 @@ const productBrandSlice = createSlice({
     reducers: {
         clearError: (state) => {
             state.error = null;
-        },
-        clearSuccessMessage: (state) => {
-            state.successMessage = null;
-        },
-        clearMessages: (state) => {
-            state.error = null;
-            state.successMessage = null;
         }
     },
     extraReducers: (builder) => {
@@ -95,12 +86,10 @@ const productBrandSlice = createSlice({
         builder.addCase(createBrand.pending, (state) => {
             state.isLoading = true;
             state.error = null;
-            state.successMessage = null;
         });
         builder.addCase(createBrand.fulfilled, (state, action) => {
             state.isLoading = false;
             state.data.push(action.payload);
-            state.successMessage = 'Merek produk berhasil ditambahkan';
         });
         builder.addCase(createBrand.rejected, (state, action) => {
             state.isLoading = false;
@@ -111,7 +100,6 @@ const productBrandSlice = createSlice({
         builder.addCase(updateBrand.pending, (state) => {
             state.isLoading = true;
             state.error = null;
-            state.successMessage = null;
         });
         builder.addCase(updateBrand.fulfilled, (state, action) => {
             state.isLoading = false;
@@ -119,7 +107,6 @@ const productBrandSlice = createSlice({
             if (index !== -1) {
                 state.data[index] = action.payload;
             }
-            state.successMessage = 'Merek produk berhasil diperbarui';
         });
         builder.addCase(updateBrand.rejected, (state, action) => {
             state.isLoading = false;
@@ -130,12 +117,10 @@ const productBrandSlice = createSlice({
         builder.addCase(deleteBrand.pending, (state) => {
             state.isLoading = true;
             state.error = null;
-            state.successMessage = null;
         });
         builder.addCase(deleteBrand.fulfilled, (state, action) => {
             state.isLoading = false;
             state.data = state.data.filter(item => item.id_product_brand !== action.payload);
-            state.successMessage = 'Merek produk berhasil dihapus';
         });
         builder.addCase(deleteBrand.rejected, (state, action) => {
             state.isLoading = false;
@@ -144,5 +129,5 @@ const productBrandSlice = createSlice({
     }
 });
 
-export const { clearError, clearSuccessMessage, clearMessages } = productBrandSlice.actions;
+export const { clearError } = productBrandSlice.actions;
 export default productBrandSlice.reducer;

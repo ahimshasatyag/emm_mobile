@@ -9,41 +9,81 @@ import { ProductBrandFormData } from '../types/productbrand.types';
 import Animated, { FadeInUp, LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { ProductBrandFormSkeleton } from '../skeleton/ProductBrandFormSkeleton';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export function ProductBrandFormScreen() {
     const navigation = useNavigation<any>();
-    const { addBrand, isLoading, refreshData } = useProductBrands();
-    
-    const [formData, setFormData] = useState<ProductBrandFormData>({
-        nm_product_brand: ''
+    const { addBrand, isLoading, refreshData, formData, setFormData, validateForm } = useProductBrands();
+
+    const [focusedField, setFocusedField] = useState<string | null>(null);
+    const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
+    const [toastState, setToastState] = useState({
+        visible: false,
+        type: 'success' as ToastType,
+        message: ''
     });
 
-    const handleSave = async () => {
-        if (!formData.nm_product_brand.trim()) {
-            Alert.alert('Error', 'Brand Name wajib diisi!');
+    const handleSave = () => {
+        const error = validateForm();
+        if (error) {
+            setToastState({
+                visible: true,
+                type: 'error',
+                message: error
+            });
             return;
         }
+        setIsModalConfirmVisible(true);
+    };
 
+    const confirmSave = async () => {
+        setIsModalConfirmVisible(false);
         try {
-            await addBrand(formData);
-            navigation.goBack();
-        } catch (error) {
-            // Error is handled by hook
+            const result = await addBrand(formData);
+            navigation.replace('ProductBrandEdit', {
+                id: result.id_product_brand,
+                showSuccessToast: true
+            });
+        } catch (error: any) {
+            setToastState({
+                visible: true,
+                type: 'error',
+                message: error.message || 'Gagal menyimpan merek produk'
+            });
         }
     };
 
     return (
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             className="flex-1 bg-gray-50"
         >
-            <HeaderNavigator 
-                title={isLoading ? "MEMUAT DATA..." : "TAMBAH MEREK"} 
-                showBackButton={true} 
-                onBackPress={() => navigation.goBack()} 
+            <HeaderNavigator
+                title={isLoading ? "MEMUAT DATA..." : "TAMBAH MEREK"}
+                showBackButton={true}
+                onBackPress={() => navigation.goBack()}
             />
 
-            <ScrollView 
+            <ToastMessages
+                visible={toastState.visible}
+                type={toastState.type}
+                title={toastState.type === 'success' ? 'Sukses' : 'Validasi'}
+                message={toastState.message}
+                onClose={() => setToastState({ ...toastState, visible: false })}
+            />
+
+            <ModalConfirm
+                visible={isModalConfirmVisible}
+                title="Konfirmasi Simpan"
+                message="Apakah Anda yakin ingin menyimpan merek produk ini?"
+                confirmText="Ya, Simpan"
+                cancelText="Batal"
+                onCancel={() => setIsModalConfirmVisible(false)}
+                onConfirm={confirmSave}
+            />
+
+            <ScrollView
                 className="flex-1"
                 contentContainerStyle={{ padding: 16, paddingTop: 24, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
@@ -57,7 +97,7 @@ export function ProductBrandFormScreen() {
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
-                        <Animated.View 
+                        <Animated.View
                             entering={FadeInUp.delay(50)}
                             layout={LinearTransition.springify()}
                             className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-4"
@@ -66,29 +106,23 @@ export function ProductBrandFormScreen() {
                             <View>
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Brand Name <Text className="text-red-500">*</Text></Text>
                                 <TextInput
-                                    className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
+                                    className="bg-gray-50 px-4 py-3 rounded-xl border text-gray-900"
+                                    style={{ borderColor: focusedField === 'brand' ? theme.colors.primary : '#e5e7eb' }}
                                     placeholder="Masukkan nama merek"
                                     value={formData.nm_product_brand}
                                     onChangeText={(text) => setFormData({ ...formData, nm_product_brand: text })}
+                                    onFocus={() => setFocusedField('brand')}
+                                    onBlur={() => setFocusedField(null)}
                                 />
                             </View>
                         </Animated.View>
 
-                        <Animated.View 
+                        <Animated.View
                             entering={FadeInUp.delay(100)}
                             layout={LinearTransition.springify()}
                             className="flex-row mt-4 gap-3"
                         >
-                            <Button
-                                variant="outline"
-                                onPress={() => navigation.goBack()}
-                                disabled={isLoading}
-                                className="flex-1 h-14 rounded-xl flex-row items-center justify-center"
-                            >
-                                <ArrowLeft color={theme.colors.primary} size={20} className="mr-2" />
-                                <Text className="font-bold text-lg" style={{ color: theme.colors.primary }}>Kembali</Text>
-                            </Button>
-                            
+
                             <Button
                                 onPress={handleSave}
                                 disabled={isLoading}
