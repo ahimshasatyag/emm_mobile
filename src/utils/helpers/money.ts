@@ -9,3 +9,15 @@ export const formatUsd = (value: string | number) => {
     if (isNaN(num)) return '$ 0.00';
     return '$ ' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
+
+export const formatInputNumber = (value: string) => {
+    if (!value) return '';
+    const numeric = value.replace(/[^0-9]/g, '');
+    if (!numeric) return '';
+    return parseInt(numeric, 10).toLocaleString('id-ID');
+};
+
+export const parseInputNumber = (value: string) => {
+    if (!value) return '';
+    return value.replace(/\./g, '');
+};
