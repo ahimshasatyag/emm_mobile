@@ -10,7 +10,7 @@ import { theme } from '../../../theme/theme';
 import Animated, { FadeInUp, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
-import { ProductFormSkeleton } from '../skeleton/ProductFormSkeleton';
+import { ProductEditSkeleton } from '../skeleton/ProductEditSkeleton';
 
 export function ProductEditScreen() {
     const navigation = useNavigation();
@@ -115,7 +115,7 @@ export function ProductEditScreen() {
                 >
                     {isLoading ? (
                         <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
-                            <ProductFormSkeleton />
+                            <ProductEditSkeleton />
                         </Animated.View>
                     ) : (
                         <>
