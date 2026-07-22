@@ -115,34 +115,40 @@ export function useProductForm(productId?: string) {
         });
     };
 
-    const validate = (): boolean => {
-        if (!formData.code_product || !formData.nm_product || !formData.id_product_kategori || !formData.id_product_sub_kategori || !formData.id_product_brand || !formData.id_product_satuan || !formData.product_deskripsi) {
-            setError('Semua field wajib diisi');
-            return false;
+    const validateForm = (): string | null => {
+        if (!formData.code_product && !formData.nm_product && !formData.id_product_kategori && !formData.id_product_sub_kategori && !formData.id_product_brand && !formData.id_product_satuan && !formData.product_deskripsi) {
+            return 'Semua field wajib diisi';
         }
+        
+        if (!formData.code_product) return 'Product Code harus diisi';
+        if (!formData.nm_product) return 'Product Name harus diisi';
+        if (!formData.id_product_kategori) return 'Category harus diisi';
+        if (!formData.id_product_sub_kategori) return 'Sub Category harus diisi';
+        if (!formData.id_product_brand) return 'Brand harus diisi';
+        if (!formData.id_product_satuan) return 'Satuan harus diisi';
+        if (!formData.product_deskripsi) return 'Deskripsi harus diisi';
         
         // Validate options
         const hasEmptyOption = formData.options.some(opt => !opt.nm_product_opt.trim());
         if (hasEmptyOption) {
-            setError('Terdapat nama opsi yang kosong');
-            return false;
+            return 'Terdapat nama opsi yang kosong';
         }
 
-        setError(null);
-        return true;
+        return null;
     };
 
-    const save = async (): Promise<boolean> => {
-        if (!validate()) return false;
-
+    const save = async (): Promise<any> => {
         try {
             setIsSaving(true);
+            setError(null);
+            let res;
             if (productId) {
-                await productsApi.updateProduct(productId, formData);
+                res = await productsApi.updateProduct(productId, formData);
             } else {
-                await productsApi.createProduct(formData);
+                res = await productsApi.createProduct(formData);
             }
-            return true;
+            setIsSaving(false);
+            return res;
         } catch (err: any) {
             setError(err.message || 'Gagal menyimpan data');
             return false;
@@ -178,6 +184,7 @@ export function useProductForm(productId?: string) {
         updateOption,
         loadInitialData,
         refreshOptions,
+        validateForm,
         save,
         deleteProduct
     };

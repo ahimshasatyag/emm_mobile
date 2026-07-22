@@ -12,6 +12,9 @@ import { SpeedDial } from '../../../components/ui/SpeedDial';
 import { FileUp } from 'lucide-react-native';
 import { ErrorState } from '../../../components/shared/ErrorState';
 import { EmptyState } from '../../../components/shared/EmptyState';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages } from '../../../components/ui/ToastMessages';
+import { productsApi } from '../api/products.api';
 
 export function ProductListScreen() {
     const navigation = useNavigation<any>();
@@ -51,48 +54,70 @@ export function ProductListScreen() {
 
     const firstSelectedProduct = products.find(p => p.id_product === selectedProductIds[0]);
 
+    const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
+    const [modalActionWord, setModalActionWord] = useState('');
+    const [modalNewStatus, setModalNewStatus] = useState('');
+    
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+
     const handleToggleStatus = () => {
         if (selectedProductIds.length === 0) return;
         const isCurrentlyInactive = firstSelectedProduct?.f_status === 'f';
         const newStatus = isCurrentlyInactive ? 't' : 'f';
         const actionWord = isCurrentlyInactive ? 'Mengaktifkan' : 'Menonaktifkan';
+        
+        setModalActionWord(actionWord);
+        setModalNewStatus(newStatus);
+        setIsModalConfirmVisible(true);
+    };
 
-        Alert.alert(
-            'Konfirmasi',
-            `Apakah Anda yakin ingin ${actionWord.toLowerCase()} ${selectedProductIds.length} produk terpilih?`,
-            [
-                { text: 'Batal', style: 'cancel' },
-                {
-                    text: 'Ya',
-                    onPress: () => {
-                        // Dummy local update for UI demonstration
-                        products.forEach(p => {
-                            if (selectedProductIds.includes(p.id_product)) {
-                                p.f_status = newStatus;
-                            }
-                        });
-                        setSelectedProductIds([]);
-                        // In a real app, you would call an API and then refreshData()
-                        Alert.alert('Sukses', `${selectedProductIds.length} produk berhasil di${actionWord.toLowerCase()}.`);
-                    }
-                }
-            ]
+    const confirmToggleStatus = async () => {
+        setIsModalConfirmVisible(false);
+        
+        await Promise.all(
+            selectedProductIds.map(id => 
+                productsApi.updateProduct(id, { f_status: modalNewStatus } as any)
+            )
         );
+        
+        refreshData();
+        
+        setToastMessage(`${selectedProductIds.length} produk berhasil di${modalActionWord.toLowerCase()}.`);
+        setToastVisible(true);
+        setSelectedProductIds([]);
     };
 
     return (
         <View className="flex-1 bg-gray-50">
             <HeaderNavigator title="DATA PRODUCT" />
 
+            <ToastMessages
+                visible={toastVisible}
+                type="success"
+                title="Success"
+                message={toastMessage}
+                onClose={() => setToastVisible(false)}
+            />
+
+            <ModalConfirm
+                visible={isModalConfirmVisible}
+                title="Konfirmasi"
+                message={`Apakah Anda yakin ingin ${modalActionWord.toLowerCase()} ${selectedProductIds.length} produk terpilih?`}
+                onCancel={() => setIsModalConfirmVisible(false)}
+                onConfirm={confirmToggleStatus}
+            />
+
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
                 <View className="flex-row items-center justify-between">
-                    <View className="flex-1 bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2">
+                    <View className="flex-1 bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2 shadow-sm">
                         <Search color="#9ca3af" size={20} />
                         <TextInput
-                            className="flex-1 ml-2 text-gray-900"
+                            className="flex-1 ml-2 text-gray-900 h-full"
                             placeholder="Cari nama atau kode produk..."
                             value={searchQuery}
                             onChangeText={setSearchQuery}
+                            placeholderTextColor="#9ca3af"
                         />
                     </View>
                     {selectedProductIds.length > 0 && firstSelectedProduct && (
@@ -111,9 +136,8 @@ export function ProductListScreen() {
             </Animated.View>
 
             <View className="flex-1">
-                <Animated.FlatList
-                    entering={FadeInDown}
-                    data={(isLoading || isInitializing) ? [] : products}
+                <FlatList
+                    data={(isInitializing || (isLoading && products.length === 0)) ? [] : products}
                     keyExtractor={(item) => item.id_product}
                     renderItem={({ item, index }) => (
                         <ProductCard
@@ -160,7 +184,7 @@ export function ProductListScreen() {
                                 />
                             );
                         }
-                        if (isLoading || isInitializing) {
+                        if (isInitializing || (isLoading && products.length === 0)) {
                             return (
                                 <View style={{ marginHorizontal: -16 }}>
                                     <ProductListSkeleton />

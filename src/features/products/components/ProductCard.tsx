@@ -15,7 +15,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product, onPress, onLongPress, isSelected, index }: ProductCardProps) {
     return (
-        <Animated.View entering={FadeInUp.delay(index * 100)}>
+        <Animated.View entering={FadeInUp.delay(index < 12 ? index * 100 : 0)}>
             <TouchableOpacity 
             activeOpacity={0.7}
             onPress={onPress}
