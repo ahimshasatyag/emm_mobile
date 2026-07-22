@@ -83,6 +83,11 @@ export function useInventory() {
         return await inventoryApi.getAssetSerials(assetId);
     }, []);
 
+    const validateForm = (data: Partial<InventoryFormData>): string | null => {
+        if (!data.name?.trim()) return 'Harap isi nama aset.';
+        return null;
+    };
+
     return {
         assets,
         types,
@@ -94,6 +99,7 @@ export function useInventory() {
         createAsset,
         editAsset,
         removeAsset,
-        getAssetSerials
+        getAssetSerials,
+        validateForm
     };
 }

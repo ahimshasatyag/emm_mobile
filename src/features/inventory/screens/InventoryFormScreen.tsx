@@ -1,31 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Save, ChevronLeft, Plus, Trash2, CheckCircle2, Circle } from 'lucide-react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import { Save } from 'lucide-react-native';
+import Animated, { FadeInUp, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { Dropdown } from 'react-native-element-dropdown';
 import { theme } from '../../../theme/theme';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useInventory } from '../hooks/useInventory';
-import { InventoryStatus } from '../types/inventory.types';
 import { Button } from '../../../components/ui/button';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { InventoryFormSkeleton } from '../skeleton/InventoryFormSkeleton';
+import { useProducts } from '../../products/hooks/useProducts';
 
 export function InventoryFormScreen() {
     const navigation = useNavigation();
-    const { types, categories, createAsset, fetchInitialData } = useInventory();
+    const { types, categories, createAsset, fetchInitialData, isLoading, validateForm } = useInventory();
+    const { products } = useProducts();
 
     const [isSaving, setIsSaving] = useState(false);
     const [name, setName] = useState('');
-    const [typeId, setTypeId] = useState('');
-    const [categoryId, setCategoryId] = useState('');
-    const [procuredDate, setProcuredDate] = useState(new Date().toISOString().split('T')[0]);
-    const [purchasedDate, setPurchasedDate] = useState(new Date().toISOString().split('T')[0]);
-    const [deskripsi, setDeskripsi] = useState('');
+    const [typeId] = useState('');
+    const [categoryId] = useState('');
+    const [procuredDate] = useState(new Date().toISOString().split('T')[0]);
+    const [purchasedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [deskripsi] = useState('');
     const [serial, setSerial] = useState('');
     const [status, setStatus] = useState<InventoryStatus>('active');
-
-    const [serialNumbers, setSerialNumbers] = useState([{ name_sn: '', serial_number: '' }]);
-    const [fPrint, setFPrint] = useState('');
+    const [focusedField, setFocusedField] = useState<string | null>(null);
+    const [serialNumbers] = useState([{ name_sn: '', serial_number: '' }]);
+    const [fPrint] = useState('');
+    const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
+    const [toastState, setToastState] = useState({
+        visible: false,
+        type: 'success' as ToastType,
+        message: ''
+    });
 
     useEffect(() => {
         if (types.length === 0 || categories.length === 0) {
@@ -33,37 +43,24 @@ export function InventoryFormScreen() {
         }
     }, []);
 
-    const selectedCategoryName = categories.find(c => c.id === categoryId)?.name || '';
-    const isVehicle = selectedCategoryName === 'Mobil' || selectedCategoryName === 'Motor';
-    const labelProcured = isVehicle ? 'BPKB Date' : 'Procured Date';
-    const labelPurchased = isVehicle ? 'STNK Date' : 'Purchase Date';
-
-    const handleAddSerialNumber = () => {
-        setSerialNumbers([...serialNumbers, { name_sn: '', serial_number: '' }]);
-    };
-
-    const handleRemoveSerialNumber = (index: number) => {
-        const newSerials = [...serialNumbers];
-        if (fPrint === newSerials[index].serial_number) setFPrint('');
-        newSerials.splice(index, 1);
-        setSerialNumbers(newSerials);
-    };
-
-    const handleSerialNumberChange = (index: number, field: 'name_sn' | 'serial_number', value: string) => {
-        const newSerials = [...serialNumbers];
-        newSerials[index][field] = value;
-        setSerialNumbers(newSerials);
-    };
-
-    const handleSave = async () => {
-        if (!name) {
-            Alert.alert('Error', 'Harap isi nama aset.');
+    const handleSave = () => {
+        const validationError = validateForm({ name });
+        if (validationError) {
+            setToastState({
+                visible: true,
+                type: 'error',
+                message: validationError
+            });
             return;
         }
+        setIsModalConfirmVisible(true);
+    };
 
+    const confirmSave = async () => {
+        setIsModalConfirmVisible(false);
         setIsSaving(true);
         try {
-            await createAsset({
+            const result = await createAsset({
                 name,
                 inventory_type_id: typeId,
                 inventory_category_id: categoryId,
@@ -75,11 +72,17 @@ export function InventoryFormScreen() {
                 f_print: fPrint,
                 serialNumbers: serialNumbers.filter(sn => sn.name_sn && sn.serial_number)
             });
-            Alert.alert('Sukses', 'Data inventaris berhasil ditambahkan', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+
+            navigation.replace('InventoryEdit', {
+                id: result.id,
+                showSuccessToast: true
+            });
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Gagal menyimpan data');
+            setToastState({
+                visible: true,
+                type: 'error',
+                message: error.message || 'Gagal menyimpan data'
+            });
         } finally {
             setIsSaving(false);
         }
@@ -87,70 +90,121 @@ export function InventoryFormScreen() {
 
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-gray-50">
-            <HeaderNavigator title="TAMBAH INVENTARIS" showBackButton={true} onBackPress={() => navigation.goBack()} />
+            <HeaderNavigator
+                title={isLoading ? "MEMUAT DATA..." : "TAMBAH SERIAL NUMBER"}
+                showBackButton={true}
+                onBackPress={() => navigation.goBack()}
+            />
 
-            <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-                <Animated.View entering={FadeInUp.delay(100).springify()}>
-                    <View className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6">
-                        <View className="mb-5">
-                            <Text className="text-sm font-bold text-gray-700 mb-2">Assets Name <Text className="text-red-500">*</Text></Text>
-                            <TextInput
-                                className="bg-gray-50 border border-gray-200 rounded-xl px-4 h-14 text-gray-900 font-medium"
-                                value={name}
-                                onChangeText={setName}
-                                placeholder="Masukkan nama aset"
-                            />
-                        </View>
+            <ToastMessages
+                visible={toastState.visible}
+                type={toastState.type}
+                title={toastState.type === 'success' ? 'Sukses' : 'Validasi'}
+                message={toastState.message}
+                onClose={() => setToastState({ ...toastState, visible: false })}
+            />
 
-                        <View className="mb-5">
-                            <Text className="text-sm font-bold text-gray-700 mb-2">Serial Number</Text>
-                            <TextInput
-                                className="bg-gray-50 border border-gray-200 rounded-xl px-4 h-14 text-gray-900 font-medium"
-                                value={serial}
-                                onChangeText={setSerial}
-                                placeholder="Induk Serial Number"
-                            />
-                        </View>
-                        <View className="mb-5">
-                            <Text className="text-sm font-bold text-gray-700 mb-2">Status <Text className="text-red-500">*</Text></Text>
-                            <View className="border border-gray-200 rounded-xl bg-gray-50">
-                                <Dropdown
-                                    style={{ height: 56, paddingHorizontal: 16 }}
-                                    data={[
-                                        { label: 'Active', value: 'active' },
-                                        { label: 'Normal', value: 'normal' },
-                                        { label: 'Not Assigned', value: 'not_assigned' },
-                                        { label: 'Sold', value: 'sold' },
-                                        { label: 'Rusak', value: 'rusak' }
-                                    ]}
-                                    labelField="label"
-                                    valueField="value"
-                                    placeholder="Select Status"
-                                    value={status}
-                                    onChange={item => setStatus(item.value as InventoryStatus)}
-                                    placeholderStyle={{ color: '#9CA3AF' }}
-                                />
+            <ModalConfirm
+                visible={isModalConfirmVisible}
+                title="Konfirmasi Simpan"
+                message="Apakah Anda yakin ingin menyimpan aset ini?"
+                confirmText="Ya, Simpan"
+                cancelText="Batal"
+                onCancel={() => setIsModalConfirmVisible(false)}
+                onConfirm={confirmSave}
+            />
+
+            <ScrollView
+                className="flex-1"
+                contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl refreshing={isLoading} onRefresh={fetchInitialData} colors={[theme.colors.primary]} />
+                }
+            >
+                {isLoading ? (
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                        <InventoryFormSkeleton />
+                    </Animated.View>
+                ) : (
+                    <Animated.View key="content" entering={FadeIn.duration(600)}>
+                        <Animated.View entering={FadeInUp.delay(50)} layout={LinearTransition.springify()}>
+                            <View className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6">
+                                <View className="mb-5">
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Product Name <Text className="text-red-500">*</Text></Text>
+                                    <View className="border rounded-xl bg-gray-50" style={{ borderColor: focusedField === 'name' ? theme.colors.primary : '#E5E7EB' }}>
+                                        <Dropdown
+                                            style={{ height: 56, paddingHorizontal: 16 }}
+                                            data={products.map(p => ({ label: p.nm_product, value: p.nm_product }))}
+                                            labelField="label"
+                                            valueField="value"
+                                            placeholder="Select Product"
+                                            value={name}
+                                            onChange={item => setName(item.value)}
+                                            onFocus={() => setFocusedField('name')}
+                                            onBlur={() => setFocusedField(null)}
+                                            placeholderStyle={{ color: '#9CA3AF' }}
+                                            search
+                                            searchPlaceholder="Search product..."
+                                        />
+                                    </View>
+                                </View>
+
+                                <View className="mb-5">
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Serial Number</Text>
+                                    <TextInput
+                                        className="bg-gray-50 border rounded-xl px-4 h-14 text-gray-900 font-medium"
+                                        style={{ borderColor: focusedField === 'serial' ? theme.colors.primary : '#E5E7EB' }}
+                                        value={serial}
+                                        onChangeText={setSerial}
+                                        onFocus={() => setFocusedField('serial')}
+                                        onBlur={() => setFocusedField(null)}
+                                        placeholder="Induk Serial Number"
+                                    />
+                                </View>
+                                <View className="mb-5">
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Status <Text className="text-red-500">*</Text></Text>
+                                    <View className="border rounded-xl bg-gray-50" style={{ borderColor: focusedField === 'status' ? theme.colors.primary : '#E5E7EB' }}>
+                                        <Dropdown
+                                            style={{ height: 56, paddingHorizontal: 16 }}
+                                            data={[
+                                                { label: 'Active', value: 'active' },
+                                                { label: 'Normal', value: 'normal' },
+                                                { label: 'Not Assigned', value: 'not_assigned' },
+                                                { label: 'Sold', value: 'sold' },
+                                                { label: 'Rusak', value: 'rusak' }
+                                            ]}
+                                            labelField="label"
+                                            valueField="value"
+                                            placeholder="Select Status"
+                                            value={status}
+                                            onChange={item => setStatus(item.value as InventoryStatus)}
+                                            onFocus={() => setFocusedField('status')}
+                                            onBlur={() => setFocusedField(null)}
+                                            placeholderStyle={{ color: '#9CA3AF' }}
+                                        />
+                                    </View>
+                                </View>
                             </View>
-                        </View>
-                    </View>
 
-
-                    <Button
-                        onPress={handleSave}
-                        disabled={isSaving}
-                        className="h-14 rounded-2xl flex-row items-center justify-center bg-indigo-600 mb-8"
-                        style={{ elevation: 2, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
-                    >
-                        {isSaving ? (
-                            <ActivityIndicator color="white" />
-                        ) : (
-                            <>
-                                <CheckCircle2 color="white" size={20} className="mr-2" />
-                                <Text className="text-white font-bold text-lg">Simpan Aset</Text>
-                            </>
-                        )}
-                    </Button>
-                </Animated.View>
+                            <Button
+                                onPress={handleSave}
+                                disabled={isSaving || isLoading}
+                                className="h-14 rounded-2xl flex-row items-center justify-center bg-indigo-600 mb-8"
+                                style={{ elevation: 2, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
+                            >
+                                {isSaving ? (
+                                    <ActivityIndicator color="white" />
+                                ) : (
+                                    <>
+                                        <Save color="white" size={20} className="mr-2" />
+                                        <Text className="text-white font-bold text-lg">Simpan</Text>
+                                    </>
+                                )}
+                            </Button>
+                        </Animated.View>
+                    </Animated.View>
+                )}
             </ScrollView>
         </KeyboardAvoidingView>
     );

@@ -6,7 +6,7 @@ export function InventoryListSkeleton() {
     return (
         <Animated.View entering={FadeIn} exiting={FadeOut} className="px-3 pt-6 pb-20">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-                <View key={i} className="bg-white rounded-2xl p-4 mb-4 border border-gray-100 shadow-sm flex-row items-center">
+                <View key={i} className="bg-white rounded-2xl p-4 mb-2 border border-gray-100 shadow-sm flex-row items-center">
                     <View className="w-12 h-12 rounded-xl bg-gray-200 mr-4 animate-pulse" />
                     <View className="flex-1">
                         <View className="flex-row justify-between items-start mb-2">

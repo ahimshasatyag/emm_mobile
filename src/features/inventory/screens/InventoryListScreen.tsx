@@ -54,11 +54,11 @@ export function InventoryListScreen() {
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
                 <View className="flex-row items-center justify-between">
-                    <View className="flex-1 bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2">
+                    <View className="flex-1 bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 shadow-sm">
                         <Search color="#9CA3AF" size={20} />
                         <TextInput
-                            className="flex-1 ml-2 text-gray-900"
-                            placeholder="Cari aset atau serial..."
+                            className="flex-1 ml-2 text-gray-900 h-full"
+                            placeholder="Search serial number..."
                             placeholderTextColor="#9CA3AF"
                             value={searchQuery}
                             onChangeText={setSearchQuery}
@@ -95,9 +95,9 @@ export function InventoryListScreen() {
                                 <View className="w-24 h-24 bg-gray-100 rounded-full items-center justify-center mb-4">
                                     <Search color="#9CA3AF" size={40} />
                                 </View>
-                                <Text className="text-lg font-bold text-gray-800 mb-2">Aset Tidak Ditemukan</Text>
+                                <Text className="text-lg font-bold text-gray-800 mb-2">Serial Number Tidak Ditemukan</Text>
                                 <Text className="text-sm text-gray-500 text-center px-10">
-                                    {searchQuery ? `Tidak ada aset yang cocok dengan "${searchQuery}"` : "Belum ada data inventaris aset."}
+                                    {searchQuery ? `Tidak ada Serial Number yang cocok dengan "${searchQuery}"` : "Belum ada data inventaris Serial Number."}
                                 </Text>
                             </Animated.View>
                         )}
