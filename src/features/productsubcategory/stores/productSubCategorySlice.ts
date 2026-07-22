@@ -73,7 +73,6 @@ const productSubCategorySlice = createSlice({
             })
             .addCase(createSubCategory.fulfilled, (state, action) => {
                 state.isLoading = false;
-                state.successMessage = 'Sub Kategori berhasil ditambahkan';
                 state.data.unshift(action.payload);
             })
             .addCase(createSubCategory.rejected, (state, action) => {
@@ -87,7 +86,6 @@ const productSubCategorySlice = createSlice({
             })
             .addCase(updateSubCategory.fulfilled, (state, action) => {
                 state.isLoading = false;
-                state.successMessage = 'Sub Kategori berhasil diperbarui';
                 const index = state.data.findIndex(c => c.id_product_sub_kategori === action.payload.id_product_sub_kategori);
                 if (index !== -1) {
                     state.data[index] = action.payload;

@@ -5,24 +5,29 @@ import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Save, ArrowLeft } from 'lucide-react-native';
 import { theme } from '../../../theme/theme';
 import { useProductSubCategories } from '../hooks/useProductSubCategories';
-import { ProductSubCategoryFormData } from '../types/productsubcategory.types';
 import { Dropdown } from 'react-native-element-dropdown';
 import { Button } from '../../../components/ui/button';
 import Animated, { FadeInUp, LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
 import { useDispatch } from 'react-redux';
 import { fetchCategories } from '../../productcategory/stores/productCategorySlice';
 import { ProductSubCategoryFormSkeleton } from '../skeleton/ProductSubCategoryFormSkeleton';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export function ProductSubCategoryFormScreen() {
     const navigation = useNavigation<any>();
     const dispatch = useDispatch<any>();
-    
-    const { addSubCategory, isLoading, categories, loadSubCategories } = useProductSubCategories();
-    
-    const [formData, setFormData] = useState<ProductSubCategoryFormData>({
-        id_product_kategori: '',
-        nm_product_sub_kategori: ''
+
+    const { addSubCategory, isLoading, categories, loadSubCategories, formData, setFormData, validateForm } = useProductSubCategories();
+
+    const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
+    const [toastState, setToastState] = useState({
+        visible: false,
+        type: 'success' as ToastType,
+        message: ''
     });
+
+    const [focusedField, setFocusedField] = useState<string | null>(null);
 
     useEffect(() => {
         if (categories.length === 0) {
@@ -30,38 +35,67 @@ export function ProductSubCategoryFormScreen() {
         }
     }, [dispatch, categories.length]);
 
-    const handleSave = async () => {
-        if (!formData.id_product_kategori) {
-            Alert.alert('Error', 'Kategori wajib dipilih!');
-            return;
-        }
-        if (!formData.nm_product_sub_kategori.trim()) {
-            Alert.alert('Error', 'Nama Sub Kategori wajib diisi!');
+    const handleSavePress = () => {
+        const error = validateForm();
+        if (error) {
+            setToastState({
+                visible: true,
+                type: 'error',
+                message: error
+            });
             return;
         }
 
+        setIsModalConfirmVisible(true);
+    };
+
+    const confirmSave = async () => {
+        setIsModalConfirmVisible(false);
         try {
-            await addSubCategory(formData);
-            Alert.alert('Sukses', 'Sub Kategori berhasil ditambahkan', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+            const newSubCategory = await addSubCategory(formData);
+            navigation.replace('ProductSubCategoryEdit', {
+                id: newSubCategory.id_product_sub_kategori,
+                showSuccessToast: true
+            });
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Gagal menyimpan sub kategori');
+            setToastState({
+                visible: true,
+                type: 'error',
+                message: error.message || 'Gagal menyimpan sub kategori'
+            });
         }
     };
 
     return (
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             className="flex-1 bg-gray-50"
         >
-            <HeaderNavigator 
-                title={isLoading ? "MEMUAT DATA..." : "TAMBAH SUB KATEGORI"} 
-                showBackButton={true} 
-                onBackPress={() => navigation.goBack()} 
+            <HeaderNavigator
+                title={isLoading ? "MEMUAT DATA..." : "TAMBAH SUB CATEGORY"}
+                showBackButton={true}
+                onBackPress={() => navigation.goBack()}
             />
 
-            <ScrollView 
+            <ToastMessages
+                visible={toastState.visible}
+                type={toastState.type}
+                title={toastState.type === 'success' ? 'Sukses' : 'Validasi'}
+                message={toastState.message}
+                onClose={() => setToastState({ ...toastState, visible: false })}
+            />
+
+            <ModalConfirm
+                visible={isModalConfirmVisible}
+                title="Konfirmasi"
+                message="Apakah Anda yakin ingin menyimpan sub kategori produk ini?"
+                confirmText="Ya, Simpan"
+                cancelText="Batal"
+                onCancel={() => setIsModalConfirmVisible(false)}
+                onConfirm={confirmSave}
+            />
+
+            <ScrollView
                 className="flex-1"
                 contentContainerStyle={{ padding: 16, paddingTop: 24, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
@@ -75,7 +109,7 @@ export function ProductSubCategoryFormScreen() {
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
-                        <Animated.View 
+                        <Animated.View
                             entering={FadeInUp.delay(50)}
                             layout={LinearTransition.springify()}
                             className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-4"
@@ -83,7 +117,10 @@ export function ProductSubCategoryFormScreen() {
                         >
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Category <Text className="text-red-500">*</Text></Text>
-                                <View className="border border-gray-200 rounded-xl bg-gray-50">
+                                <View
+                                    className="border rounded-xl bg-gray-50"
+                                    style={{ borderColor: focusedField === 'category' ? theme.colors.primary : '#e5e7eb' }}
+                                >
                                     <Dropdown
                                         style={{ height: 48, paddingHorizontal: 16 }}
                                         data={categories.map(c => ({ label: c.nm_product_kategori, value: c.id_product_kategori }))}
@@ -92,38 +129,33 @@ export function ProductSubCategoryFormScreen() {
                                         placeholder="Select Category"
                                         value={formData.id_product_kategori}
                                         onChange={item => setFormData({ ...formData, id_product_kategori: item.value })}
-                                        selectedTextStyle={{ color: theme.colors.primary, fontWeight: 'bold' }}
+                                        onFocus={() => setFocusedField('category')}
+                                        onBlur={() => setFocusedField(null)}
                                     />
                                 </View>
                             </View>
                             <View>
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Sub Category Name <Text className="text-red-500">*</Text></Text>
                                 <TextInput
-                                    className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 text-gray-900"
-                                    placeholder="Masukkan nama sub kategori"
+                                    className="bg-gray-50 px-4 py-3 rounded-xl border text-gray-900"
+                                    style={{ borderColor: focusedField === 'name' ? theme.colors.primary : '#e5e7eb' }}
+                                    placeholder="Enter sub category"
                                     value={formData.nm_product_sub_kategori}
                                     onChangeText={(text) => setFormData({ ...formData, nm_product_sub_kategori: text })}
+                                    onFocus={() => setFocusedField('name')}
+                                    onBlur={() => setFocusedField(null)}
                                 />
                             </View>
                         </Animated.View>
 
-                        <Animated.View 
+                        <Animated.View
                             entering={FadeInUp.delay(100)}
                             layout={LinearTransition.springify()}
                             className="flex-row mt-4 gap-3"
                         >
+
                             <Button
-                                variant="outline"
-                                onPress={() => navigation.goBack()}
-                                disabled={isLoading}
-                                className="flex-1 h-14 rounded-xl flex-row items-center justify-center"
-                            >
-                                <ArrowLeft color={theme.colors.primary} size={20} className="mr-2" />
-                                <Text className="font-bold text-lg" style={{ color: theme.colors.primary }}>Kembali</Text>
-                            </Button>
-                            
-                            <Button
-                                onPress={handleSave}
+                                onPress={handleSavePress}
                                 disabled={isLoading}
                                 className="flex-1 h-14 rounded-xl flex-row items-center justify-center"
                                 style={{ elevation: 2, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}

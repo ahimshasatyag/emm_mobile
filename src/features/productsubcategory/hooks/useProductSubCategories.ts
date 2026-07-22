@@ -24,6 +24,22 @@ export function useProductSubCategories() {
 
     const [searchQuery, setSearchQuery] = useState('');
 
+    const [formData, setFormData] = useState<ProductSubCategoryFormData>({
+        id_product_kategori: '',
+        nm_product_sub_kategori: ''
+    });
+
+    const validateForm = (): string | null => {
+        if (!formData.id_product_kategori && !formData.nm_product_sub_kategori.trim()) {
+            return 'Semua field harus diisi!';
+        }
+
+        if (!formData.id_product_kategori) return 'Kategori wajib dipilih!';
+        if (!formData.nm_product_sub_kategori.trim()) return 'Nama Sub Kategori wajib diisi!';
+
+        return null;
+    };
+
     const filteredSubCategories = useMemo(() => {
         if (!searchQuery) return subCategories;
         const lowerQuery = searchQuery.toLowerCase();
@@ -63,6 +79,9 @@ export function useProductSubCategories() {
         loadSubCategories,
         addSubCategory,
         editSubCategory,
-        clearStatusMessages
+        clearStatusMessages,
+        formData,
+        setFormData,
+        validateForm
     };
 }

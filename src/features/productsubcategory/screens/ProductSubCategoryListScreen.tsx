@@ -83,15 +83,17 @@ export function ProductSubCategoryListScreen() {
             <HeaderNavigator title="SUB KATEGORI PRODUK" isLoading={isLoading} />
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
-                <View className="bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2">
-                    <Search color="#9ca3af" size={20} />
-                    <TextInput
-                        className="flex-1 ml-2 text-gray-700 h-full"
-                        placeholder="Cari sub kategori..."
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                        placeholderTextColor="#9ca3af"
-                    />
+                <View className="flex-row items-center justify-between">
+                    <View className="flex-1 bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2 shadow-sm">
+                        <Search color="#9ca3af" size={20} />
+                        <TextInput
+                            className="flex-1 ml-2 text-gray-900 h-full"
+                            placeholder="Cari sub kategori..."
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            placeholderTextColor="#9ca3af"
+                        />
+                    </View>
                 </View>
             </Animated.View>
 

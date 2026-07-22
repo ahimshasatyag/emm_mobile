@@ -11,22 +11,43 @@ import { Button } from '../../../components/ui/button';
 import { Dropdown } from 'react-native-element-dropdown';
 import { useDispatch } from 'react-redux';
 import { fetchCategories } from '../../productcategory/stores/productCategorySlice';
-import { ProductSubCategoryFormSkeleton } from '../skeleton/ProductSubCategoryFormSkeleton';
+import { ProductSubCategoryEditSkeleton } from '../skeleton/ProductSubCategoryEditSkeleton';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 export function ProductSubCategoryEditScreen() {
     const route = useRoute<any>();
     const navigation = useNavigation<any>();
     const dispatch = useDispatch<any>();
-    
-    const { subCategories, editSubCategory, isLoading, categories, loadSubCategories } = useProductSubCategories();
-    
+
+    const { subCategories, editSubCategory, isLoading, categories, loadSubCategories, formData, setFormData, validateForm } = useProductSubCategories();
+
     const subCategoryId = route.params?.id;
-    const [formData, setFormData] = useState<ProductSubCategoryFormData>({
-        id_product_kategori: '',
-        nm_product_sub_kategori: ''
-    });
     const [isInitializing, setIsInitializing] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
+
+    const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
+    const [toastState, setToastState] = useState({
+        visible: false,
+        type: 'success' as ToastType,
+        message: ''
+    });
+
+    const [focusedField, setFocusedField] = useState<string | null>(null);
+
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    useEffect(() => {
+        if (!isLoading) {
+            setIsRefreshing(false);
+        }
+    }, [isLoading]);
+
+    const handleRefresh = () => {
+        setIsRefreshing(true);
+        loadSubCategories();
+        dispatch(fetchCategories());
+    };
 
     useEffect(() => {
         if (categories.length === 0) {
@@ -42,6 +63,15 @@ export function ProductSubCategoryEditScreen() {
                 nm_product_sub_kategori: subCategory.nm_product_sub_kategori
             });
             setIsInitializing(false);
+
+            if (route.params?.showSuccessToast) {
+                setToastState({
+                    visible: true,
+                    type: 'success',
+                    message: 'Sub Kategori berhasil ditambahkan'
+                });
+                navigation.setParams({ showSuccessToast: undefined });
+            }
         } else if (!isLoading) {
             Alert.alert('Error', 'Sub Kategori tidak ditemukan', [
                 { text: 'OK', onPress: () => navigation.goBack() }
@@ -49,23 +79,36 @@ export function ProductSubCategoryEditScreen() {
         }
     }, [subCategoryId, subCategories, isLoading, navigation]);
 
-    const handleSave = async () => {
-        if (!formData.id_product_kategori) {
-            Alert.alert('Error', 'Kategori wajib dipilih!');
-            return;
-        }
-        if (!formData.nm_product_sub_kategori.trim()) {
-            Alert.alert('Error', 'Nama Sub Kategori wajib diisi!');
+    const handleSavePress = () => {
+        const error = validateForm();
+        if (error) {
+            setToastState({
+                visible: true,
+                type: 'error',
+                message: error
+            });
             return;
         }
 
+        setIsModalConfirmVisible(true);
+    };
+
+    const confirmSave = async () => {
+        setIsModalConfirmVisible(false);
         try {
             await editSubCategory(subCategoryId, formData);
-            Alert.alert('Sukses', 'Sub Kategori berhasil diperbarui', [
-                { text: 'OK', onPress: () => setIsEditing(false) }
-            ]);
+            setToastState({
+                visible: true,
+                type: 'success',
+                message: 'Sub Kategori berhasil diperbarui'
+            });
+            setIsEditing(false);
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Gagal menyimpan sub kategori');
+            setToastState({
+                visible: true,
+                type: 'error',
+                message: error.message || 'Gagal menyimpan sub kategori'
+            });
         }
     };
 
@@ -85,49 +128,62 @@ export function ProductSubCategoryEditScreen() {
     const currentSubCategory = subCategories.find(c => c.id_product_sub_kategori === subCategoryId);
 
     return (
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             className="flex-1 bg-gray-50"
         >
-            <HeaderNavigator 
-                title={isInitializing || isLoading ? "MEMUAT DATA..." : (isEditing ? "EDIT SUB KATEGORI" : "DETAIL SUB KATEGORI")} 
-                showBackButton={true} 
-                onBackPress={() => navigation.goBack()} 
+            <HeaderNavigator
+                title={isInitializing || isLoading ? "MEMUAT DATA..." : (isEditing ? "EDIT SUB KATEGORI" : "DETAIL SUB KATEGORI")}
+                showBackButton={true}
+                onBackPress={() => navigation.goBack()}
             />
 
-            <ScrollView 
+            <ToastMessages
+                visible={toastState.visible}
+                type={toastState.type}
+                title={toastState.type === 'success' ? 'Sukses' : 'Validasi'}
+                message={toastState.message}
+                onClose={() => setToastState({ ...toastState, visible: false })}
+            />
+
+            <ModalConfirm
+                visible={isModalConfirmVisible}
+                title="Konfirmasi"
+                message="Apakah Anda yakin ingin menyimpan perubahan sub kategori produk ini?"
+                confirmText="Ya, Simpan"
+                cancelText="Batal"
+                onCancel={() => setIsModalConfirmVisible(false)}
+                onConfirm={confirmSave}
+            />
+
+            <ScrollView
                 className="flex-1"
                 contentContainerStyle={{ padding: 16, paddingTop: 24, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={isLoading} onRefresh={() => { loadSubCategories(); dispatch(fetchCategories()); }} colors={[theme.colors.primary]} />
+                    <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
                 }
             >
-                {isInitializing || isLoading ? (
+                {isInitializing || isRefreshing ? (
                     <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
-                        <ProductSubCategoryFormSkeleton />
+                        <ProductSubCategoryEditSkeleton />
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
-                        <Animated.View 
+                        <Animated.View
                             key={`form-container-${isEditing}`}
                             entering={FadeInUp.delay(50)}
                             layout={LinearTransition.springify()}
                             className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-4"
                             style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}
                         >
-                            <View className="mb-4">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Kode Sub Kategori</Text>
-                                <TextInput
-                                    className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 text-gray-500"
-                                    value={currentSubCategory?.kode_product_sub_kategori || ''}
-                                    editable={false}
-                                />
-                            </View>
-                            
+
                             <View className="mb-4">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Category <Text className="text-red-500">*</Text></Text>
-                                <View className={`border border-gray-200 rounded-xl bg-gray-50 ${!isEditing && 'opacity-70'}`}>
+                                <View
+                                    className={`border rounded-xl bg-gray-50 ${!isEditing && 'opacity-70'}`}
+                                    style={{ borderColor: focusedField === 'category' ? theme.colors.primary : '#e5e7eb' }}
+                                >
                                     <Dropdown
                                         style={{ height: 48, paddingHorizontal: 16 }}
                                         data={categories.map(c => ({ label: c.nm_product_kategori, value: c.id_product_kategori }))}
@@ -136,8 +192,9 @@ export function ProductSubCategoryEditScreen() {
                                         placeholder="Select Category"
                                         value={formData.id_product_kategori}
                                         onChange={item => setFormData({ ...formData, id_product_kategori: item.value })}
-                                        selectedTextStyle={{ color: theme.colors.primary, fontWeight: 'bold' }}
                                         disable={!isEditing}
+                                        onFocus={() => isEditing && setFocusedField('category')}
+                                        onBlur={() => setFocusedField(null)}
                                     />
                                 </View>
                             </View>
@@ -145,21 +202,27 @@ export function ProductSubCategoryEditScreen() {
                             <View>
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Sub Category Name <Text className="text-red-500">*</Text></Text>
                                 <TextInput
-                                    className={`px-4 py-3 rounded-xl border ${isEditing ? 'bg-gray-50 border-gray-200 focus:border-indigo-500 text-gray-900' : 'bg-gray-100 border-gray-200 text-gray-500'}`}
+                                    className={`px-4 py-3 rounded-xl border ${isEditing ? 'bg-gray-50 text-gray-900' : 'bg-gray-100 text-gray-500'}`}
+                                    style={{ borderColor: focusedField === 'name' ? theme.colors.primary : '#e5e7eb' }}
                                     placeholder="Masukkan nama sub kategori"
                                     value={formData.nm_product_sub_kategori}
                                     onChangeText={(text) => setFormData({ ...formData, nm_product_sub_kategori: text })}
                                     editable={isEditing}
+                                    onFocus={() => isEditing && setFocusedField('name')}
+                                    onBlur={() => setFocusedField(null)}
                                 />
                             </View>
                         </Animated.View>
+                    </Animated.View>
+                )}
 
-                        <Animated.View 
-                            key={`actions-${isEditing}`}
-                            entering={FadeInUp.delay(100)}
-                            layout={LinearTransition.springify()}
-                            className="flex-row mt-4 gap-3"
-                        >
+                {!isInitializing && (
+                    <Animated.View
+                        key={`actions-${isEditing}`}
+                        entering={FadeInUp.delay(100)}
+                        layout={LinearTransition.springify()}
+                        className="flex-row mt-4 gap-3"
+                    >
                             {!isEditing ? (
                                 <Button
                                     onPress={() => setIsEditing(true)}
@@ -179,9 +242,9 @@ export function ProductSubCategoryEditScreen() {
                                         <X color={theme.colors.primary} size={20} className="mr-2" />
                                         <Text className="font-bold text-lg" style={{ color: theme.colors.primary }}>Batal</Text>
                                     </Button>
-                                    
+
                                     <Button
-                                        onPress={handleSave}
+                                        onPress={handleSavePress}
                                         disabled={isLoading}
                                         className="flex-1 h-14 rounded-xl flex-row items-center justify-center"
                                         style={{ elevation: 2, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
@@ -197,7 +260,6 @@ export function ProductSubCategoryEditScreen() {
                                     </Button>
                                 </>
                             )}
-                        </Animated.View>
                     </Animated.View>
                 )}
             </ScrollView>

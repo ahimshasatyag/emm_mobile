@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 
-export function ProductSubCategoryFormSkeleton() {
+export function ProductSubCategoryEditSkeleton() {
     const opacity = useSharedValue(0.5);
 
     useEffect(() => {
@@ -22,7 +22,7 @@ export function ProductSubCategoryFormSkeleton() {
 
     return (
         <Animated.View style={animatedStyle}>
-            <View
+            <View 
                 className="bg-white p-5 rounded-3xl border border-gray-100"
                 style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}
             >
