@@ -8,6 +8,22 @@ export function useProductCategories() {
     const dispatch = useAppDispatch();
     const { categories, loading, error, successMessage } = useAppSelector((state) => state.productCategory);
     const [searchQuery, setSearchQuery] = useState('');
+    const [formData, setFormData] = useState<ProductCategoryFormData>({
+        nm_product_kategori: ''
+    });
+
+    const validateForm = () => {
+        const errors: string[] = [];
+        if (!formData.nm_product_kategori.trim()) {
+            errors.push('Category Name wajib diisi!');
+        }
+
+        if (errors.length > 0) {
+            return { isValid: false, message: errors.join('\n') };
+        }
+
+        return { isValid: true };
+    };
 
     useEffect(() => {
         dispatch(fetchCategories());
@@ -15,9 +31,9 @@ export function useProductCategories() {
 
     const filteredCategories = useMemo(() => {
         if (!searchQuery.trim()) return categories;
-        
+
         const lowerQuery = searchQuery.toLowerCase();
-        return categories.filter(category => 
+        return categories.filter(category =>
             category.nm_product_kategori.toLowerCase().includes(lowerQuery) ||
             category.kode_product_kategori.toLowerCase().includes(lowerQuery)
         );
@@ -50,6 +66,9 @@ export function useProductCategories() {
         searchQuery,
         setSearchQuery,
         refreshData,
+        formData,
+        setFormData,
+        validateForm,
         addCategory,
         editCategory,
         removeCategory,

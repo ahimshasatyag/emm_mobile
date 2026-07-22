@@ -91,7 +91,6 @@ const productCategorySlice = createSlice({
             .addCase(createCategory.fulfilled, (state, action) => {
                 state.loading = false;
                 state.categories.push(action.payload);
-                state.successMessage = 'Kategori berhasil ditambahkan';
             })
             .addCase(createCategory.rejected, (state, action) => {
                 state.loading = false;
@@ -108,7 +107,6 @@ const productCategorySlice = createSlice({
                 if (index !== -1) {
                     state.categories[index] = action.payload;
                 }
-                state.successMessage = 'Kategori berhasil diubah';
             })
             .addCase(updateCategory.rejected, (state, action) => {
                 state.loading = false;
