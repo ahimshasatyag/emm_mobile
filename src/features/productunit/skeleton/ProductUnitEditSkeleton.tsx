@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
-export function ProductUnitFormSkeleton() {
+export function ProductUnitEditSkeleton() {
     return (
         <Animated.View entering={FadeIn} exiting={FadeOut}>
             <View className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6">

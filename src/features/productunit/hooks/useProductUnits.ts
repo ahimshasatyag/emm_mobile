@@ -6,15 +6,25 @@ import {
     createUnit, 
     updateUnit, 
     deleteUnit,
-    clearError,
-    clearSuccessMessage 
+    clearError
 } from '../stores/productUnitSlice';
 import { ProductUnitFormData } from '../types/productunit.types';
 
 export function useProductUnits() {
     const dispatch = useDispatch<AppDispatch>();
-    const { units, isLoading, error, successMessage } = useSelector((state: RootState) => state.productUnit);
+    const { units, isLoading, error } = useSelector((state: RootState) => state.productUnit);
     const [searchQuery, setSearchQuery] = useState('');
+
+    const [formData, setFormData] = useState<ProductUnitFormData>({
+        nm_product_satuan: ''
+    });
+
+    const validateForm = (): string | null => {
+        if (!formData.nm_product_satuan.trim()) {
+            return 'Nama Satuan wajib diisi!';
+        }
+        return null;
+    };
 
     const filteredUnits = units.filter(unit => 
         unit.nm_product_satuan.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -44,23 +54,20 @@ export function useProductUnits() {
         dispatch(clearError());
     }, [dispatch]);
 
-    const dismissSuccess = useCallback(() => {
-        dispatch(clearSuccessMessage());
-    }, [dispatch]);
-
     return {
         units: filteredUnits,
         allUnits: units,
         isLoading,
         error,
-        successMessage,
         searchQuery,
         setSearchQuery,
+        formData,
+        setFormData,
+        validateForm,
         loadUnits,
         addUnit,
         editUnit,
         removeUnit,
-        dismissError,
-        dismissSuccess
+        dismissError
     };
 }

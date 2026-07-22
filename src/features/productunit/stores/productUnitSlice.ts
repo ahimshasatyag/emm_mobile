@@ -6,14 +6,12 @@ interface ProductUnitState {
     units: ProductUnit[];
     isLoading: boolean;
     error: string | null;
-    successMessage: string | null;
 }
 
 const initialState: ProductUnitState = {
     units: [],
     isLoading: false,
     error: null,
-    successMessage: null,
 };
 
 export const fetchUnits = createAsyncThunk(
@@ -82,9 +80,6 @@ const productUnitSlice = createSlice({
     reducers: {
         clearError: (state) => {
             state.error = null;
-        },
-        clearSuccessMessage: (state) => {
-            state.successMessage = null;
         }
     },
     extraReducers: (builder) => {
@@ -111,7 +106,6 @@ const productUnitSlice = createSlice({
             .addCase(createUnit.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.units.push(action.payload.unit);
-                state.successMessage = action.payload.message || 'Berhasil disimpan';
             })
             .addCase(createUnit.rejected, (state, action) => {
                 state.isLoading = false;
@@ -129,7 +123,6 @@ const productUnitSlice = createSlice({
                 if (index !== -1) {
                     state.units[index] = action.payload.unit;
                 }
-                state.successMessage = action.payload.message || 'Berhasil diperbarui';
             })
             .addCase(updateUnit.rejected, (state, action) => {
                 state.isLoading = false;
@@ -144,7 +137,6 @@ const productUnitSlice = createSlice({
             .addCase(deleteUnit.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.units = state.units.filter(u => u.id_product_satuan !== action.payload.id);
-                state.successMessage = action.payload.message || 'Berhasil dihapus';
             })
             .addCase(deleteUnit.rejected, (state, action) => {
                 state.isLoading = false;
@@ -153,5 +145,5 @@ const productUnitSlice = createSlice({
     }
 });
 
-export const { clearError, clearSuccessMessage } = productUnitSlice.actions;
+export const { clearError } = productUnitSlice.actions;
 export default productUnitSlice.reducer;

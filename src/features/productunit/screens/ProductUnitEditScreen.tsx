@@ -7,28 +7,37 @@ import { theme } from '../../../theme/theme';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Button } from '../../../components/ui/button';
 import { useProductUnits } from '../hooks/useProductUnits';
-import { ProductUnitFormData } from '../types/productunit.types';
-import { ProductUnitFormSkeleton } from '../skeleton/ProductUnitFormSkeleton';
+import { ProductUnitEditSkeleton } from '../skeleton/ProductUnitEditSkeleton';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 export function ProductUnitEditScreen() {
     const route = useRoute<any>();
     const navigation = useNavigation<any>();
-    const { allUnits, editUnit, loadUnits, isLoading } = useProductUnits();
-    
+    const { allUnits, editUnit, loadUnits, isLoading, formData, setFormData, validateForm } = useProductUnits();
+
     const unitId = route.params?.id;
-    const [formData, setFormData] = useState<ProductUnitFormData>({
-        nm_product_satuan: ''
-    });
 
     const [isEditing, setIsEditing] = useState(false);
     const [isInitializing, setIsInitializing] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [errors, setErrors] = useState<{ nm_product_satuan?: string }>({});
+    const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
 
-    const handleRefresh = async () => {
+    const [toastState, setToastState] = useState({
+        visible: false,
+        type: 'success' as ToastType,
+        message: ''
+    });
+
+    useEffect(() => {
+        if (!isLoading) {
+            setIsRefreshing(false);
+        }
+    }, [isLoading]);
+
+    const handleRefresh = () => {
         setIsRefreshing(true);
-        await loadUnits();
-        setIsRefreshing(false);
+        loadUnits();
     };
 
     useEffect(() => {
@@ -36,29 +45,50 @@ export function ProductUnitEditScreen() {
         if (unit) {
             setFormData({ nm_product_satuan: unit.nm_product_satuan });
             setIsInitializing(false);
+
+            if (route.params?.showSuccessToast) {
+                setToastState({
+                    visible: true,
+                    type: 'success',
+                    message: 'Satuan berhasil ditambahkan'
+                });
+                navigation.setParams({ showSuccessToast: undefined });
+            }
         } else {
             // Wait for units to load if not available
             loadUnits();
         }
-    }, [unitId, allUnits, loadUnits]);
+    }, [unitId, allUnits, loadUnits, route.params?.showSuccessToast, navigation]);
 
-    const validateForm = () => {
-        const newErrors: any = {};
-        if (!formData.nm_product_satuan.trim()) {
-            newErrors.nm_product_satuan = 'Nama Satuan wajib diisi';
+    const handleSave = () => {
+        const error = validateForm();
+        if (error) {
+            setToastState({
+                visible: true,
+                type: 'error',
+                message: error
+            });
+            return;
         }
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        setIsModalConfirmVisible(true);
     };
 
-    const handleSave = async () => {
-        if (!validateForm()) return;
-
+    const confirmSave = async () => {
+        setIsModalConfirmVisible(false);
         try {
             await editUnit(unitId, formData);
+            setToastState({
+                visible: true,
+                type: 'success',
+                message: 'Satuan berhasil diperbarui'
+            });
             setIsEditing(false);
-        } catch (error) {
-            Alert.alert('Error', 'Gagal memperbarui satuan');
+        } catch (error: any) {
+            setToastState({
+                visible: true,
+                type: 'error',
+                message: error.message || 'Gagal memperbarui satuan'
+            });
         }
     };
 
@@ -66,22 +96,39 @@ export function ProductUnitEditScreen() {
         const unit = allUnits.find(u => u.id_product_satuan === unitId);
         if (unit) {
             setFormData({ nm_product_satuan: unit.nm_product_satuan });
-            setErrors({});
             setIsEditing(false);
         }
     };
 
     return (
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             className="flex-1 bg-gray-50"
         >
-            <HeaderNavigator 
+            <HeaderNavigator
                 title={isInitializing || isLoading ? "MEMUAT DATA..." : (isEditing ? "EDIT SATUAN" : "DETAIL SATUAN")}
-                showBackButton={true} 
+                showBackButton={true}
             />
 
-            <ScrollView 
+            <ToastMessages
+                visible={toastState.visible}
+                type={toastState.type}
+                title={toastState.type === 'success' ? 'Sukses' : 'Error'}
+                message={toastState.message}
+                onClose={() => setToastState({ ...toastState, visible: false })}
+            />
+
+            <ModalConfirm
+                visible={isModalConfirmVisible}
+                title="Konfirmasi Edit"
+                message="Apakah Anda yakin ingin menyimpan perubahan pada satuan ini?"
+                confirmText="Ya, Simpan"
+                cancelText="Batal"
+                onCancel={() => setIsModalConfirmVisible(false)}
+                onConfirm={confirmSave}
+            />
+
+            <ScrollView
                 className="flex-1"
                 contentContainerStyle={{ padding: 16, paddingTop: 24, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
@@ -91,11 +138,11 @@ export function ProductUnitEditScreen() {
             >
                 {(isInitializing || isRefreshing) ? (
                     <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
-                        <ProductUnitFormSkeleton />
+                        <ProductUnitEditSkeleton />
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
-                        <Animated.View 
+                        <Animated.View
                             key={`form-container-${isEditing}`}
                             entering={FadeInUp.delay(50)}
                             layout={LinearTransition.springify()}
@@ -107,32 +154,24 @@ export function ProductUnitEditScreen() {
                                     Nama Satuan <Text className="text-red-500">*</Text>
                                 </Text>
                                 <TextInput
-                                    className={`bg-gray-50 border ${errors.nm_product_satuan ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 h-14 text-gray-900 font-medium ${!isEditing ? 'opacity-70 bg-gray-100' : ''}`}
+                                    className={`bg-gray-50 border border-gray-200 rounded-xl px-4 h-14 text-gray-900 font-medium ${!isEditing ? 'opacity-70 bg-gray-100' : ''}`}
                                     placeholder="Contoh: PCS, LITER, KG"
                                     value={formData.nm_product_satuan}
-                                    onChangeText={(text) => {
-                                        setFormData({ ...formData, nm_product_satuan: text });
-                                        if (errors.nm_product_satuan) {
-                                            setErrors({ ...errors, nm_product_satuan: undefined });
-                                        }
-                                    }}
+                                    onChangeText={(text) => setFormData({ ...formData, nm_product_satuan: text })}
                                     editable={isEditing && !isLoading}
                                 />
-                                {errors.nm_product_satuan && (
-                                    <Text className="text-red-500 text-xs mt-1 ml-1">{errors.nm_product_satuan}</Text>
-                                )}
                             </View>
                         </Animated.View>
 
-                        <Animated.View 
+                        <Animated.View
                             key={`actions-${isEditing}`}
                             entering={FadeInUp.delay(100)}
                             layout={LinearTransition.springify()}
                             className="flex-row space-x-3"
                         >
                             {!isEditing ? (
-                                <Button 
-                                    onPress={() => setIsEditing(true)} 
+                                <Button
+                                    onPress={() => setIsEditing(true)}
                                     className="flex-1 h-14 rounded-2xl flex-row items-center justify-center bg-indigo-600"
                                     style={{ elevation: 2, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
                                 >
@@ -141,8 +180,8 @@ export function ProductUnitEditScreen() {
                                 </Button>
                             ) : (
                                 <>
-                                    <Button 
-                                        variant="outline" 
+                                    <Button
+                                        variant="outline"
                                         onPress={handleCancel}
                                         className="flex-1 h-14 rounded-xl flex-row items-center justify-center"
                                     >
@@ -150,8 +189,8 @@ export function ProductUnitEditScreen() {
                                         <Text className="font-bold text-lg" style={{ color: theme.colors.primary }}>Batal</Text>
                                     </Button>
 
-                                    <Button 
-                                        onPress={handleSave} 
+                                    <Button
+                                        onPress={handleSave}
                                         disabled={isLoading}
                                         className="flex-1 h-14 rounded-xl flex-row items-center justify-center bg-indigo-600"
                                     >
