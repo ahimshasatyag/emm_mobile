@@ -89,7 +89,7 @@ export function ProductPriceMktListScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator title="PRODUCT PRICE MKT" />
+            <HeaderNavigator title="PRODUCT PRICE MARKETING" />
 
             {/* Search / Dropdown */}
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-5 pb-2 z-50" style={{ zIndex: 50, elevation: 50 }}>
