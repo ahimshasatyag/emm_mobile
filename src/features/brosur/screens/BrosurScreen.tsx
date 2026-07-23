@@ -7,8 +7,7 @@ import { theme } from '../../../theme/theme';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useBrosur } from '../hooks/useBrosur';
 import { BrosurSkeleton } from '../skeleton/BrosurSkeleton';
-import { BrosurProductSelector } from '../components/BrosurProductSelector';
-import { BrosurProduct } from '../types/brosur.types';
+import { Dropdown } from 'react-native-element-dropdown';
 import { ToastMessages } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
@@ -27,8 +26,6 @@ export function BrosurScreen() {
     } = useBrosur();
 
     const [isCoverChecked, setIsCoverChecked] = useState(true);
-    const [selectorVisible, setSelectorVisible] = useState(false);
-    const [activeRowId, setActiveRowId] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isInitializing, setIsInitializing] = useState(true);
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -93,19 +90,6 @@ export function BrosurScreen() {
 
     const handleRemoveRow = (id: string) => {
         removeRow(id);
-    };
-
-    const handleOpenSelector = (rowId: string) => {
-        setActiveRowId(rowId);
-        setSelectorVisible(true);
-    };
-
-    const handleSelectProduct = (product: BrosurProduct) => {
-        if (activeRowId) {
-            updateRowProduct(activeRowId, product);
-        }
-        setSelectorVisible(false);
-        setActiveRowId(null);
     };
 
     const handleGenerate = () => {
@@ -198,7 +182,7 @@ export function BrosurScreen() {
                         </View>
 
                         <View className="flex-1 px-4 py-4">
-                            <View className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm mb-10">
+                            <View className="bg-white rounded-xl border border-gray-200 shadow-sm mb-10">
                                 {/* Table Header */}
                                 <View className="flex-row bg-gray-50 border-b border-gray-200 px-4 py-3">
                                     <Text className="flex-1 font-bold text-gray-600 text-center uppercase text-xs tracking-wider">Nama Barang</Text>
@@ -219,18 +203,26 @@ export function BrosurScreen() {
                                             layout={Layout.springify()}
                                             className={`flex-row items-center px-4 py-3 ${index < rows.length - 1 ? 'border-b border-gray-100' : ''
                                                 }`}
+                                            style={{ zIndex: rows.length - index, elevation: rows.length - index }}
                                         >
-                                            {/* Product Select Button */}
-                                            <TouchableOpacity
-                                                activeOpacity={0.7}
-                                                onPress={() => handleOpenSelector(row.id)}
-                                                className="flex-1 flex-row items-center justify-between border border-gray-300 rounded-lg px-3 py-2.5 mr-4 bg-gray-50"
-                                            >
-                                                <Text className={`text-sm ${row.product ? 'text-gray-800 font-semibold' : 'text-gray-400'}`} numberOfLines={1}>
-                                                    {row.product ? `${row.product.code_product} - ${row.product.nm_product}` : 'Pilih Barang...'}
-                                                </Text>
-                                                <ChevronDown color="#9ca3af" size={16} />
-                                            </TouchableOpacity>
+                                            {/* Product Select Dropdown */}
+                                            <View className="flex-1 border border-gray-300 rounded-lg bg-gray-50 mr-4 justify-center">
+                                                <Dropdown
+                                                    style={{ height: 42, paddingHorizontal: 12 }}
+                                                    data={availableProducts.map(p => ({ label: `${p.code_product} | ${p.nm_product}`, value: p.id_product, original: p }))}
+                                                    search
+                                                    searchPlaceholder="Cari kode atau nama..."
+                                                    labelField="label"
+                                                    valueField="value"
+                                                    placeholder="Pilih Barang..."
+                                                    value={row.product?.id_product}
+                                                    onChange={item => updateRowProduct(row.id, item.original)}
+                                                    selectedTextStyle={{ color: '#1f2937', fontSize: 13, fontWeight: '600' }}
+                                                    placeholderStyle={{ color: '#9ca3af', fontSize: 13 }}
+                                                    inputSearchStyle={{ height: 40, fontSize: 13, borderRadius: 8 }}
+                                                    dropdownPosition={index >= 4 ? 'top' : 'auto'}
+                                                />
+                                            </View>
 
                                             {/* Delete Button */}
                                             <TouchableOpacity
@@ -248,14 +240,6 @@ export function BrosurScreen() {
                     </View>
                 )}
             </ScrollView>
-
-            <BrosurProductSelector
-                visible={selectorVisible}
-                products={availableProducts}
-                onClose={() => setSelectorVisible(false)}
-                onSelect={handleSelectProduct}
-            />
-
             <ToastMessages
                 visible={toast.show}
                 title='Validasi'
