@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Linking, ActivityIndicator, ScrollView, Alert, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, ActivityIndicator, ScrollView, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { ProductPriceUploadSkeleton } from '../skeleton/ProductPriceUploadSkeleton';
@@ -10,9 +10,11 @@ import { dummyProductPrices } from '../data/dummy';
 import { formatRp } from '../../../utils/helpers/money';
 import Animated, { FadeOut, LinearTransition, FadeInUp } from 'react-native-reanimated';
 import { useProductPrice } from '../hooks/useProductPrice';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 export function ProductPriceUploadScreen() {
-    const navigation = useNavigation();
+    const navigation = useNavigation<any>();
     const { validateForm } = useProductPrice();
     
     // Dummy states simulating a hook
@@ -22,6 +24,8 @@ export function ProductPriceUploadScreen() {
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<{ name: string; uri: string } | null>(null);
+    const [toastConfig, setToastConfig] = useState({ visible: false, message: '', type: 'success' as ToastType });
+    const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
 
     const pickDocument = () => {
         // Dummy document picker
@@ -48,20 +52,21 @@ export function ProductPriceUploadScreen() {
         }, 1000);
     };
 
-    const saveData = () => {
-        const errorMsg = validateForm(previewData);
-        if (errorMsg) {
-            Alert.alert("Error", errorMsg);
-            return;
-        }
+    const handleSave = () => {
+        setIsModalConfirmVisible(true);
+    };
 
+    const confirmSave = () => {
+        setIsModalConfirmVisible(false);
         setIsSaving(true);
         // Simulate saving
         setTimeout(() => {
             setIsSaving(false);
-            Alert.alert("Success", "Berhasil mengunggah dan menyimpan data!", [
-                { text: "OK", onPress: () => navigation.goBack() }
-            ]);
+            navigation.navigate('ProductPriceList', {
+                showToast: true,
+                toastMessage: 'Berhasil mengunggah dan menyimpan data!',
+                toastType: 'success'
+            });
         }, 1500);
     };
 
@@ -199,7 +204,7 @@ export function ProductPriceUploadScreen() {
 
                     <TouchableOpacity 
                         className="flex-1 rounded-2xl p-4 items-center flex-row justify-center shadow-sm"
-                        onPress={saveData}
+                        onPress={handleSave}
                         disabled={isSaving}
                         style={{ backgroundColor: theme.colors.primary }}
                     >
@@ -215,6 +220,23 @@ export function ProductPriceUploadScreen() {
                 </Animated.View>
             )}
             </ScrollView>
+
+            <ModalConfirm
+                visible={isModalConfirmVisible}
+                title="Konfirmasi Upload"
+                message="Apakah Anda yakin ingin mengunggah dan menyimpan data harga ini?"
+                onConfirm={confirmSave}
+                onCancel={() => setIsModalConfirmVisible(false)}
+                confirmText="Ya, Upload"
+                cancelText="Batal"
+            />
+
+            <ToastMessages
+                visible={toastConfig.visible}
+                type={toastConfig.type}
+                message={toastConfig.message}
+                onClose={() => setToastConfig(prev => ({ ...prev, visible: false }))}
+            />
         </View>
     );
 }
