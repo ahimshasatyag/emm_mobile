@@ -9,11 +9,14 @@ import { ProductPriceReqEditSkeleton } from '../skeleton/ProductPriceReqEditSkel
 import { Dropdown } from 'react-native-element-dropdown';
 import Animated, { FadeInUp, LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
+import { ToastMessages } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ModalCancel } from '../../../components/ui/ModalCancel';
 
 export function ProductPriceReqEditScreen() {
     const route = useRoute<any>();
     const navigation = useNavigation<any>();
-    const { id } = route.params || {};
+    const { id, showSuccessToast } = route.params || {};
 
     const {
         selectedRequest,
@@ -24,14 +27,27 @@ export function ProductPriceReqEditScreen() {
         loadProducts,
         resetDetail,
         updateExistingRequest,
-        changeRequestStatus
+        changeRequestStatus,
+        validateForm
     } = useProductPriceReq();
 
     const [isInitializing, setIsInitializing] = useState(true);
     const [selectedProductId, setSelectedProductId] = useState<string>('');
     const [isEditing, setIsEditing] = useState(false);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [modalType, setModalType] = useState<'save' | 'confirm' | 'delete' | null>(null);
 
     const [priceAcc, setPriceAcc] = useState('');
+
+    const [toast, setToast] = useState<{ show: boolean, message: string, type: 'success' | 'error' | 'warning' }>({
+        show: false,
+        message: '',
+        type: 'success'
+    });
+
+    const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
+        setToast({ show: true, message, type });
+    };
 
     const isDraft = selectedRequest?.status === 'DRAFT';
     const isConfirm = selectedRequest?.status === 'CONFIRM';
@@ -44,13 +60,19 @@ export function ProductPriceReqEditScreen() {
             if (id) {
                 await loadRequestDetail(id);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            showToast(error.message, 'error');
         }
     };
 
     useEffect(() => {
         const init = async () => {
+            if (showSuccessToast) {
+                showToast('Berhasil membuat pengajuan', 'success');
+                navigation.setParams({ showSuccessToast: undefined });
+            }
+
             setIsInitializing(true);
             await loadData();
             await new Promise(res => setTimeout(res, 600));
@@ -70,10 +92,16 @@ export function ProductPriceReqEditScreen() {
     }, [selectedRequest, products]);
 
     const handleSave = async () => {
-        if (!selectedProductId) {
-            Alert.alert('Perhatian', 'Silakan pilih produk terlebih dahulu');
+        const errorMsg = validateForm(selectedProductId);
+        if (errorMsg) {
+            showToast(errorMsg, 'error');
             return;
         }
+        setModalType('save');
+        setIsModalVisible(true);
+    };
+
+    const executeSave = async () => {
 
         const payload: any = { id_product: selectedProductId };
         if (isConfirm && priceAcc) {
@@ -81,54 +109,42 @@ export function ProductPriceReqEditScreen() {
         }
 
         try {
-            const success = await updateExistingRequest(id, payload);
-            if (success) {
-                Alert.alert('Sukses', 'Berhasil memperbarui pengajuan');
-                setIsEditing(false);
-            }
-        } catch (error) {
-            // Handled by hook
+            await updateExistingRequest(id, payload);
+            showToast('Berhasil memperbarui pengajuan', 'success');
+            setIsEditing(false);
+        } catch (error: any) {
+            showToast(error.message, 'error');
         }
     };
 
     const handleConfirm = () => {
-        Alert.alert(
-            'Konfirmasi',
-            'Apakah anda yakin ingin mengonfirmasi pengajuan ini?',
-            [
-                { text: 'Tidak, batalkan!', style: 'cancel' },
-                {
-                    text: 'Ya, confirm!',
-                    onPress: async () => {
-                        const success = await changeRequestStatus(id, 'CONFIRM');
-                        if (success) {
-                            Alert.alert('Sukses', 'Status diubah menjadi CONFIRM');
-                            setIsEditing(false);
-                        }
-                    }
-                }
-            ]
-        );
+        setModalType('confirm');
+        setIsModalVisible(true);
+    };
+
+    const executeConfirm = async () => {
+        try {
+            await changeRequestStatus(id, 'CONFIRM');
+            showToast('Status diubah menjadi CONFIRM', 'success');
+            setIsEditing(false);
+        } catch (error: any) {
+            showToast(error.message, 'error');
+        }
     };
 
     const handleDelete = () => {
-        Alert.alert(
-            'Hapus',
-            'Apakah anda yakin ingin menghapus/cancel pengajuan ini?',
-            [
-                { text: 'Tidak, batalkan!', style: 'cancel' },
-                {
-                    text: 'Ya, hapus!',
-                    style: 'destructive',
-                    onPress: async () => {
-                        const success = await changeRequestStatus(id, 'CANCEL');
-                        if (success) {
-                            navigation.goBack();
-                        }
-                    }
-                }
-            ]
-        );
+        setModalType('delete');
+        setIsModalVisible(true);
+    };
+
+    const executeDelete = async () => {
+        try {
+            await changeRequestStatus(id, 'CANCEL');
+            showToast('Status diubah menjadi CANCEL', 'success');
+            setIsEditing(false);
+        } catch (error: any) {
+            showToast(error.message, 'error');
+        }
     };
 
     const handleCancelEdit = () => {
@@ -305,6 +321,43 @@ export function ProductPriceReqEditScreen() {
                     </Animated.View>
                 )}
             </ScrollView>
+
+            <ToastMessages
+                visible={toast.show}
+                title='Validasi'
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, show: false }))}
+            />
+
+            {modalType === 'delete' ? (
+                <ModalCancel
+                    visible={isModalVisible}
+                    title="Konfirmasi Hapus"
+                    message="Apakah anda yakin ingin menghapus/cancel pengajuan ini?"
+                    confirmText="Ya!"
+                    cancelText="Batal!"
+                    onConfirm={async () => {
+                        setIsModalVisible(false);
+                        await executeDelete();
+                    }}
+                    onCancel={() => setIsModalVisible(false)}
+                />
+            ) : (
+                <ModalConfirm
+                    visible={isModalVisible}
+                    title={modalType === 'save' ? "Konfirmasi Simpan" : "Konfirmasi Pengajuan"}
+                    message={modalType === 'save' ? "Apakah Anda yakin ingin menyimpan perubahan pengajuan ini?" : "Apakah anda yakin ingin mengonfirmasi pengajuan ini?"}
+                    confirmText="Ya!"
+                    cancelText="Batal!"
+                    onConfirm={async () => {
+                        if (modalType === 'save') await executeSave();
+                        else if (modalType === 'confirm') await executeConfirm();
+                        setIsModalVisible(false);
+                    }}
+                    onCancel={() => setIsModalVisible(false)}
+                />
+            )}
         </KeyboardAvoidingView>
     );
 }

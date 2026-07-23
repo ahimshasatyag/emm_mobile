@@ -12,7 +12,6 @@ import {
     clearError
 } from '../stores/productPriceReqSlice';
 import { ProductPriceReqPayload } from '../types/productpricereq.types';
-import { Alert } from 'react-native';
 
 export function useProductPriceReq() {
     const dispatch = useAppDispatch();
@@ -22,7 +21,8 @@ export function useProductPriceReq() {
         try {
             await dispatch(fetchRequests()).unwrap();
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Gagal mengambil data permintaan harga');
+            const msg = typeof error === 'string' ? error : error.message;
+            throw new Error(msg || 'Gagal mengambil data permintaan harga');
         }
     }, [dispatch]);
 
@@ -30,7 +30,8 @@ export function useProductPriceReq() {
         try {
             await dispatch(fetchProducts()).unwrap();
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Gagal mengambil data produk');
+            const msg = typeof error === 'string' ? error : error.message;
+            throw new Error(msg || 'Gagal mengambil data produk');
         }
     }, [dispatch]);
 
@@ -38,17 +39,18 @@ export function useProductPriceReq() {
         try {
             await dispatch(fetchRequestById(id)).unwrap();
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Gagal mengambil detail pengajuan');
+            const msg = typeof error === 'string' ? error : error.message;
+            throw new Error(msg || 'Gagal mengambil detail pengajuan');
         }
     }, [dispatch]);
 
     const createNewRequest = useCallback(async (payload: ProductPriceReqPayload) => {
         try {
-            await dispatch(createRequest(payload)).unwrap();
-            return true;
+            const result = await dispatch(createRequest(payload)).unwrap();
+            return result.id;
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Gagal membuat pengajuan');
-            return false;
+            const msg = typeof error === 'string' ? error : error.message;
+            throw new Error(msg || 'Gagal membuat pengajuan');
         }
     }, [dispatch]);
 
@@ -57,8 +59,8 @@ export function useProductPriceReq() {
             await dispatch(updateRequest({ id, payload })).unwrap();
             return true;
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Gagal memperbarui pengajuan');
-            return false;
+            const msg = typeof error === 'string' ? error : error.message;
+            throw new Error(msg || 'Gagal memperbarui pengajuan');
         }
     }, [dispatch]);
 
@@ -67,8 +69,8 @@ export function useProductPriceReq() {
             await dispatch(changeStatus({ id, status })).unwrap();
             return true;
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Gagal memperbarui status');
-            return false;
+            const msg = typeof error === 'string' ? error : error.message;
+            throw new Error(msg || 'Gagal memperbarui status');
         }
     }, [dispatch]);
 
@@ -80,6 +82,11 @@ export function useProductPriceReq() {
         dispatch(clearError());
     }, [dispatch]);
 
+    const validateForm = useCallback((productId?: string): string | null => {
+        if (!productId) return 'Silakan pilih produk terlebih dahulu';
+        return null;
+    }, []);
+
     return {
         ...state,
         loadRequests,
@@ -90,5 +97,6 @@ export function useProductPriceReq() {
         changeRequestStatus,
         resetDetail,
         resetError,
+        validateForm,
     };
 }

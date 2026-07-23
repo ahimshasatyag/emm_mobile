@@ -36,8 +36,8 @@ export const ModalCancel: React.FC<ModalCancelProps> = ({
                 >
                     {/* Top Icon */}
                     <View className="absolute -top-10 self-center">
-                        <View className="w-20 h-20 rounded-full bg-red-400 justify-center items-center border-[6px] border-gray-100">
-                            <AlertCircle color="white" size={40} strokeWidth={2.5} />
+                        <View className="w-20 h-20 rounded-full bg-red-500 justify-center items-center border-[6px] border-gray-100">
+                            <X color="white" size={40} strokeWidth={3} />
                         </View>
                     </View>
 

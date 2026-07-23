@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Save, ArrowLeft } from 'lucide-react-native';
+import { Save } from 'lucide-react-native';
 import { theme } from '../../../theme/theme';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useProductPriceReq } from '../hooks/useProductPriceReq';
@@ -9,20 +9,34 @@ import { ProductPriceReqFormSkeleton } from '../skeleton/ProductPriceReqFormSkel
 import { Dropdown } from 'react-native-element-dropdown';
 import Animated, { FadeInUp, LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
+import { ToastMessages } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 export function ProductPriceReqFormScreen() {
     const navigation = useNavigation<any>();
 
-    const { 
+    const {
         isActionLoading,
         products,
         loadProducts,
         resetDetail,
-        createNewRequest
+        createNewRequest,
+        validateForm
     } = useProductPriceReq();
 
     const [isInitializing, setIsInitializing] = useState(true);
     const [selectedProductId, setSelectedProductId] = useState<string>('');
+    const [isModalVisible, setIsModalVisible] = useState(false);
+
+    const [toast, setToast] = useState<{ show: boolean, message: string, type: 'success' | 'error' | 'warning' }>({
+        show: false,
+        message: '',
+        type: 'success'
+    });
+
+    const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
+        setToast({ show: true, message, type });
+    };
 
     useEffect(() => {
         const init = async () => {
@@ -31,6 +45,8 @@ export function ProductPriceReqFormScreen() {
                 await loadProducts();
                 resetDetail();
                 await new Promise(res => setTimeout(res, 600));
+            } catch (error: any) {
+                showToast(error.message, 'error');
             } finally {
                 setIsInitializing(false);
             }
@@ -40,36 +56,43 @@ export function ProductPriceReqFormScreen() {
     }, []);
 
     const handleSave = async () => {
-        if (!selectedProductId) {
-            Alert.alert('Perhatian', 'Silakan pilih produk terlebih dahulu');
+        const errorMsg = validateForm(selectedProductId);
+        if (errorMsg) {
+            showToast(errorMsg, 'error');
             return;
         }
+        setIsModalVisible(true);
+    };
 
+    const confirmSave = async () => {
+        setIsModalVisible(false);
         try {
-            const success = await createNewRequest({ id_product: selectedProductId });
-            if (success) {
-                Alert.alert('Sukses', 'Berhasil membuat pengajuan');
-                navigation.goBack();
+            const newId = await createNewRequest({ id_product: selectedProductId });
+            if (newId) {
+                navigation.replace('ProductPriceReqEditScreen', {
+                    id: newId,
+                    showSuccessToast: true
+                });
             }
-        } catch (error) {
-            // Error handled by hook
+        } catch (error: any) {
+            showToast(error.message, 'error');
         }
     };
 
     const isLoading = isInitializing;
 
     return (
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             className="flex-1 bg-gray-50"
         >
-            <HeaderNavigator 
-                title={isLoading ? "MEMUAT DATA..." : "TAMBAH PRODUCT PRICE REQUEST"} 
+            <HeaderNavigator
+                title={isLoading ? "MEMUAT DATA..." : "TAMBAH PRODUCT PRICE REQUEST"}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
             />
 
-            <ScrollView 
+            <ScrollView
                 className="flex-1"
                 contentContainerStyle={{ padding: 16, paddingTop: 24, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
@@ -81,7 +104,7 @@ export function ProductPriceReqFormScreen() {
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
-                        <Animated.View 
+                        <Animated.View
                             entering={FadeInUp.delay(50)}
                             layout={LinearTransition.springify()}
                             className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-4"
@@ -108,21 +131,12 @@ export function ProductPriceReqFormScreen() {
                             </View>
                         </Animated.View>
 
-                        <Animated.View 
+                        <Animated.View
                             entering={FadeInUp.delay(100)}
                             layout={LinearTransition.springify()}
                             className="flex-row mt-4 gap-3"
                         >
-                            <Button
-                                variant="outline"
-                                onPress={() => navigation.goBack()}
-                                disabled={isActionLoading}
-                                className="flex-1 h-14 rounded-xl flex-row items-center justify-center"
-                            >
-                                <ArrowLeft color={theme.colors.primary} size={20} className="mr-2" />
-                                <Text className="font-bold text-lg" style={{ color: theme.colors.primary }}>Kembali</Text>
-                            </Button>
-                            
+
                             <Button
                                 onPress={handleSave}
                                 disabled={isActionLoading}
@@ -142,6 +156,24 @@ export function ProductPriceReqFormScreen() {
                     </Animated.View>
                 )}
             </ScrollView>
+
+            <ToastMessages
+                visible={toast.show}
+                title='Validasi'
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, show: false }))}
+            />
+
+            <ModalConfirm
+                visible={isModalVisible}
+                title="Konfirmasi"
+                message="Apakah Anda yakin ingin membuat pengajuan harga untuk produk ini?"
+                confirmText="Ya!"
+                cancelText="Batal!"
+                onConfirm={confirmSave}
+                onCancel={() => setIsModalVisible(false)}
+            />
         </KeyboardAvoidingView>
     );
 }
