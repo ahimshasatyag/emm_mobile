@@ -9,14 +9,12 @@ import { ProductPrice } from '../types/productprice.types';
 import { dummyProductPrices } from '../data/dummy';
 import { formatRp } from '../../../utils/helpers/money';
 import Animated, { FadeOut, LinearTransition, FadeInUp } from 'react-native-reanimated';
-import { useProductPrice } from '../hooks/useProductPrice';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 export function ProductPriceUploadScreen() {
     const navigation = useNavigation<any>();
-    const { validateForm } = useProductPrice();
-    
+
     // Dummy states simulating a hook
     const [previewData, setPreviewData] = useState<ProductPrice[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -62,10 +60,13 @@ export function ProductPriceUploadScreen() {
         // Simulate saving
         setTimeout(() => {
             setIsSaving(false);
-            navigation.navigate('ProductPriceList', {
-                showToast: true,
-                toastMessage: 'Berhasil mengunggah dan menyimpan data!',
-                toastType: 'success'
+            navigation.navigate('Drawer', {
+                screen: 'ProductPriceList',
+                params: {
+                    showToast: true,
+                    toastMessage: 'Berhasil mengunggah dan menyimpan data!',
+                    toastType: 'success'
+                }
             });
         }, 1500);
     };
@@ -83,13 +84,13 @@ export function ProductPriceUploadScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator 
-                title={(isLoading || isRefreshing) ? "MEMUAT DATA..." : "UPLOAD PRODUCT PRICE"} 
-                showBackButton={true} 
-                onBackPress={() => navigation.goBack()} 
+            <HeaderNavigator
+                title={(isLoading || isRefreshing) ? "MEMUAT DATA..." : "UPLOAD PRODUCT PRICE"}
+                showBackButton={true}
+                onBackPress={() => navigation.goBack()}
             />
 
-            <ScrollView 
+            <ScrollView
                 className="flex-1"
                 contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
@@ -100,7 +101,7 @@ export function ProductPriceUploadScreen() {
                 <Animated.View entering={FadeInUp.delay(100).springify()}>
                     <View className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-6">
                         <View className="flex-row justify-between mb-4">
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 className="flex-1 bg-white border border-gray-200 rounded-xl p-3 mr-2 items-center flex-row justify-center shadow-sm"
                                 onPress={pickDocument}
                                 disabled={isLoading || isSaving}
@@ -109,7 +110,7 @@ export function ProductPriceUploadScreen() {
                                 <Text className="ml-2 font-semibold text-gray-800 text-xs">Pilih File</Text>
                             </TouchableOpacity>
 
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 className="flex-1 bg-gray-800 rounded-xl p-3 ml-2 items-center flex-row justify-center shadow-sm"
                                 onPress={handleDownloadTemplate}
                             >
@@ -126,7 +127,7 @@ export function ProductPriceUploadScreen() {
                                     {selectedFile ? selectedFile.name : 'Belum ada file'}
                                 </Text>
                             </View>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 className="bg-blue-600 rounded-lg px-4 py-2 flex-row items-center"
                                 onPress={viewFile}
                                 disabled={!selectedFile || isLoading || isSaving}
@@ -150,36 +151,36 @@ export function ProductPriceUploadScreen() {
                                 </Animated.View>
                             ) : previewData.length > 0 ? (
                                 <Animated.View layout={LinearTransition.springify()}>
-                                    <ScrollView horizontal showsHorizontalScrollIndicator={false} className="border border-gray-200 rounded-2xl bg-white" contentContainerStyle={{flexGrow: 1}}>
+                                    <ScrollView horizontal showsHorizontalScrollIndicator={false} className="border border-gray-200 rounded-2xl bg-white" contentContainerStyle={{ flexGrow: 1 }}>
                                         <View>
                                             {/* Table Header */}
-                                <View className="flex-row bg-gray-100 p-3 border-b border-gray-200">
-                                    <Text className="w-10 text-center font-bold text-gray-700 text-xs">No</Text>
-                                    <Text className="w-32 font-bold text-gray-700 text-xs">Product Code</Text>
-                                    <Text className="w-48 font-bold text-gray-700 text-xs">Product Name</Text>
-                                    <Text className="w-32 font-bold text-gray-700 text-xs text-right">Price (USD)</Text>
-                                    <Text className="w-32 font-bold text-gray-700 text-xs text-right">Agent Price (USD)</Text>
-                                    <Text className="w-32 font-bold text-gray-700 text-xs text-right">Kurs</Text>
-                                    <Text className="w-40 font-bold text-gray-700 text-xs text-right">Est. IDR</Text>
-                                    <Text className="w-32 font-bold text-gray-700 text-xs ml-4">Delivery Term</Text>
-                                </View>
-                                
-                                {/* Table Body */}
-                                {previewData.map((item, index) => (
-                                    <View key={item.id_product} className="flex-row p-3 border-b border-gray-100 bg-white items-center">
-                                        <Text className="w-10 text-center text-gray-600 text-xs">{index + 1}</Text>
-                                        <Text className="w-32 text-gray-800 text-xs font-bold">{item.code_product}</Text>
-                                        <Text className="w-48 text-gray-800 text-xs" numberOfLines={2}>{item.nm_product}</Text>
-                                        <Text className="w-32 text-gray-600 text-xs text-right font-medium">${item.product_price}</Text>
-                                        <Text className="w-32 text-gray-600 text-xs text-right font-medium">${item.product_price_agent}</Text>
-                                        <Text className="w-32 text-gray-600 text-xs text-right font-medium">Rp {item.kurs}</Text>
-                                        <Text className="w-40 text-emerald-600 text-xs text-right font-bold">{formatRp(item.est_idr || '0')}</Text>
-                                        <Text className="w-32 text-gray-600 text-xs ml-4" numberOfLines={1}>{item.delivery_term || 'FRANCO JKT'}</Text>
-                                    </View>
-                                ))}
-                            </View>
-                        </ScrollView>
-                    </Animated.View>
+                                            <View className="flex-row bg-gray-100 p-3 border-b border-gray-200">
+                                                <Text className="w-10 text-center font-bold text-gray-700 text-xs">No</Text>
+                                                <Text className="w-32 font-bold text-gray-700 text-xs">Product Code</Text>
+                                                <Text className="w-48 font-bold text-gray-700 text-xs">Product Name</Text>
+                                                <Text className="w-32 font-bold text-gray-700 text-xs text-right">Price (USD)</Text>
+                                                <Text className="w-32 font-bold text-gray-700 text-xs text-right">Agent Price (USD)</Text>
+                                                <Text className="w-32 font-bold text-gray-700 text-xs text-right">Kurs</Text>
+                                                <Text className="w-40 font-bold text-gray-700 text-xs text-right">Est. IDR</Text>
+                                                <Text className="w-32 font-bold text-gray-700 text-xs ml-4">Delivery Term</Text>
+                                            </View>
+
+                                            {/* Table Body */}
+                                            {previewData.map((item, index) => (
+                                                <View key={item.id_product} className="flex-row p-3 border-b border-gray-100 bg-white items-center">
+                                                    <Text className="w-10 text-center text-gray-600 text-xs">{index + 1}</Text>
+                                                    <Text className="w-32 text-gray-800 text-xs font-bold">{item.code_product}</Text>
+                                                    <Text className="w-48 text-gray-800 text-xs" numberOfLines={2}>{item.nm_product}</Text>
+                                                    <Text className="w-32 text-gray-600 text-xs text-right font-medium">${item.product_price}</Text>
+                                                    <Text className="w-32 text-gray-600 text-xs text-right font-medium">${item.product_price_agent}</Text>
+                                                    <Text className="w-32 text-gray-600 text-xs text-right font-medium">Rp {item.kurs}</Text>
+                                                    <Text className="w-40 text-emerald-600 text-xs text-right font-bold">{formatRp(item.est_idr || '0')}</Text>
+                                                    <Text className="w-32 text-gray-600 text-xs ml-4" numberOfLines={1}>{item.delivery_term || 'FRANCO JKT'}</Text>
+                                                </View>
+                                            ))}
+                                        </View>
+                                    </ScrollView>
+                                </Animated.View>
                             ) : (
                                 <View className="items-center justify-center py-8">
                                     <FileUp color="#d1d5db" size={48} />
@@ -192,33 +193,33 @@ export function ProductPriceUploadScreen() {
                     </View>
                 </Animated.View>
 
-            {previewData.length > 0 && !isLoading && !isRefreshing && (
-                <Animated.View entering={FadeInUp.duration(300)} className="flex-row pb-6">
-                    <TouchableOpacity 
-                        className="bg-red-50 p-4 rounded-2xl mr-3"
-                        onPress={resetPreview}
-                        disabled={isSaving}
-                    >
-                        <RefreshCcw color="#ef4444" size={24} />
-                    </TouchableOpacity>
+                {previewData.length > 0 && !isLoading && !isRefreshing && (
+                    <Animated.View entering={FadeInUp.duration(300)} className="flex-row pb-6">
+                        <TouchableOpacity
+                            className="bg-red-50 p-4 rounded-2xl mr-3"
+                            onPress={resetPreview}
+                            disabled={isSaving}
+                        >
+                            <RefreshCcw color="#ef4444" size={24} />
+                        </TouchableOpacity>
 
-                    <TouchableOpacity 
-                        className="flex-1 rounded-2xl p-4 items-center flex-row justify-center shadow-sm"
-                        onPress={handleSave}
-                        disabled={isSaving}
-                        style={{ backgroundColor: theme.colors.primary }}
-                    >
-                        {isSaving ? (
-                            <ActivityIndicator color="white" />
-                        ) : (
-                            <>
-                                <Save color="white" size={20} />
-                                <Text className="ml-2 font-bold text-white text-lg">Upload Data</Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
-                </Animated.View>
-            )}
+                        <TouchableOpacity
+                            className="flex-1 rounded-2xl p-4 items-center flex-row justify-center shadow-sm"
+                            onPress={handleSave}
+                            disabled={isSaving}
+                            style={{ backgroundColor: theme.colors.primary }}
+                        >
+                            {isSaving ? (
+                                <ActivityIndicator color="white" />
+                            ) : (
+                                <>
+                                    <Save color="white" size={20} />
+                                    <Text className="ml-2 font-bold text-white text-lg">Upload Data</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    </Animated.View>
+                )}
             </ScrollView>
 
             <ModalConfirm

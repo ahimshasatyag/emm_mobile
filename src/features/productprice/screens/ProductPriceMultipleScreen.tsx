@@ -63,7 +63,7 @@ export function ProductPriceMultipleScreen() {
             const price = parseFloat(newItems[index].product_price || '0');
             const kurs = parseFloat(newItems[index].kurs || '0');
             if (!isNaN(price) && !isNaN(kurs)) {
-                // PHP calculation: bulatkanKeAtas1JT(price * kurs)
+                // calculation: bulatkanKeAtas1JT(price * kurs)
                 let hasil = price * kurs;
                 hasil = Math.ceil(hasil / 1000000) * 1000000;
                 newItems[index].est_idr = hasil.toString();
@@ -86,10 +86,13 @@ export function ProductPriceMultipleScreen() {
     const confirmSave = () => {
         setIsModalVisible(false);
 
-        navigation.navigate('ProductPriceList', {
-            showToast: true,
-            toastMessage: 'Data berhasil disimpan!',
-            toastType: 'success'
+        navigation.navigate('Drawer', {
+            screen: 'ProductPriceList',
+            params: {
+                showToast: true,
+                toastMessage: 'Data berhasil disimpan!',
+                toastType: 'success'
+            }
         });
     };
 
