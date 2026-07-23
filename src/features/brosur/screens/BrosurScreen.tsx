@@ -1,32 +1,47 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Animated as RNAnimated, Alert, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Animated as RNAnimated, RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { useNavigation } from '@react-navigation/native';
 import { Plus, FileText, Trash2, CheckSquare, Square, ChevronDown } from 'lucide-react-native';
 import Animated, { FadeIn, FadeOut, Layout } from 'react-native-reanimated';
-
 import { theme } from '../../../theme/theme';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useBrosur } from '../hooks/useBrosur';
 import { BrosurSkeleton } from '../skeleton/BrosurSkeleton';
 import { BrosurProductSelector } from '../components/BrosurProductSelector';
 import { BrosurProduct } from '../types/brosur.types';
-
-interface SelectedRow {
-    id: string; // Unique ID for the row (since multiple of the same product might be added or we need keys)
-    product: BrosurProduct | null;
-}
+import { ToastMessages } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 export function BrosurScreen() {
-    const navigation = useNavigation<any>();
-    const { availableProducts, isLoading, loadProducts, generateBrosur } = useBrosur();
+    const {
+        availableProducts,
+        isLoading,
+        loadProducts,
+        rows,
+        addRow,
+        removeRow,
+        updateRowProduct,
+        resetRows,
+        validateForm,
+        generateBrosur
+    } = useBrosur();
 
-    const [rows, setRows] = useState<SelectedRow[]>([]);
     const [isCoverChecked, setIsCoverChecked] = useState(true);
     const [selectorVisible, setSelectorVisible] = useState(false);
     const [activeRowId, setActiveRowId] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isInitializing, setIsInitializing] = useState(true);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+
+    const [toast, setToast] = useState<{ show: boolean, message: string, type: 'success' | 'error' | 'error' }>({
+        show: false,
+        message: '',
+        type: 'success'
+    });
+
+    const showToast = (message: string, type: 'success' | 'error' | 'error') => {
+        setToast({ show: true, message, type });
+    };
 
     useFocusEffect(
         useCallback(() => {
@@ -34,6 +49,7 @@ export function BrosurScreen() {
 
             const initialize = async () => {
                 setIsInitializing(true);
+                resetRows(); // Reset 
                 try {
                     await Promise.all([
                         loadProducts(),
@@ -62,20 +78,21 @@ export function BrosurScreen() {
                 new Promise(resolve => setTimeout(resolve, 600))
             ]);
         } finally {
+            // console.error("Failed to load:", error);
             setIsInitializing(false);
         }
     };
 
     const handleAddRow = () => {
         if (availableProducts.length === 0) {
-            Alert.alert('Perhatian', 'Data Barang Kosong atau masih dimuat.');
+            showToast('Data Barang Kosong atau masih dimuat.', 'error');
             return;
         }
-        setRows(prev => [...prev, { id: Date.now().toString(), product: null }]);
+        addRow();
     };
 
     const handleRemoveRow = (id: string) => {
-        setRows(prev => prev.filter(row => row.id !== id));
+        removeRow(id);
     };
 
     const handleOpenSelector = (rowId: string) => {
@@ -85,43 +102,43 @@ export function BrosurScreen() {
 
     const handleSelectProduct = (product: BrosurProduct) => {
         if (activeRowId) {
-            setRows(prev => prev.map(row => {
-                if (row.id === activeRowId) {
-                    return { ...row, product };
-                }
-                return row;
-            }));
+            updateRowProduct(activeRowId, product);
         }
         setSelectorVisible(false);
         setActiveRowId(null);
     };
 
-    const handleGenerate = async () => {
-        const selectedIds = rows
-            .filter(r => r.product !== null)
-            .map(r => r.product!.id_product);
-
-        // Remove duplicates to match PHP logic (if $.inArray(val, id_product) == -1)
-        const uniqueIds = Array.from(new Set(selectedIds));
-
-        if (uniqueIds.length === 0) {
-            Alert.alert('Perhatian', 'Data Barang Kosong. Silakan pilih barang terlebih dahulu.');
+    const handleGenerate = () => {
+        const errorMsg = validateForm();
+        if (errorMsg) {
+            showToast(errorMsg, 'error');
             return;
         }
+        setIsModalVisible(true);
+    };
 
+    const confirmGenerate = async () => {
+        setIsModalVisible(false);
         setIsGenerating(true);
-        await generateBrosur(uniqueIds, isCoverChecked);
+        const res = await generateBrosur(isCoverChecked);
         setIsGenerating(false);
+
+        if (res.success) {
+            showToast(res.message, 'success');
+            resetRows(); // Reset table
+        } else {
+            showToast(res.message, 'error');
+        }
     };
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator 
-                title="BROSUR" 
+            <HeaderNavigator
+                title="BROSUR"
             />
 
             {/* Content Area */}
-            <ScrollView 
+            <ScrollView
                 className="flex-1"
                 contentContainerStyle={{ paddingBottom: 40 }}
                 showsVerticalScrollIndicator={false}
@@ -156,9 +173,8 @@ export function BrosurScreen() {
                                     onPress={handleGenerate}
                                     disabled={isGenerating}
                                     activeOpacity={0.7}
-                                    className={`flex-row items-center px-4 py-2.5 rounded-lg flex-1 justify-center ${
-                                        isGenerating ? 'bg-gray-400' : 'bg-green-500'
-                                    }`}
+                                    className={`flex-row items-center px-4 py-2.5 rounded-lg flex-1 justify-center ${isGenerating ? 'bg-gray-400' : 'bg-green-500'
+                                        }`}
                                 >
                                     <FileText color="#fff" size={18} />
                                     <Text className="ml-2 font-bold text-white">
@@ -167,7 +183,7 @@ export function BrosurScreen() {
                                 </TouchableOpacity>
                             </View>
 
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 onPress={() => setIsCoverChecked(!isCoverChecked)}
                                 activeOpacity={0.7}
                                 className="flex-row items-center py-2"
@@ -184,61 +200,76 @@ export function BrosurScreen() {
                         <View className="flex-1 px-4 py-4">
                             <View className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm mb-10">
                                 {/* Table Header */}
-                            <View className="flex-row bg-gray-50 border-b border-gray-200 px-4 py-3">
-                                <Text className="flex-1 font-bold text-gray-600 text-center uppercase text-xs tracking-wider">Nama Barang</Text>
-                                <Text className="w-16 font-bold text-gray-600 text-center uppercase text-xs tracking-wider">Aksi</Text>
-                            </View>
-
-                            {/* Table Body */}
-                            {rows.length === 0 ? (
-                                <View className="p-8 items-center justify-center">
-                                    <Text className="text-gray-400 text-center">Belum ada barang yang ditambahkan. Klik 'Tambah' untuk memulai.</Text>
+                                <View className="flex-row bg-gray-50 border-b border-gray-200 px-4 py-3">
+                                    <Text className="flex-1 font-bold text-gray-600 text-center uppercase text-xs tracking-wider">Nama Barang</Text>
+                                    <Text className="w-16 font-bold text-gray-600 text-center uppercase text-xs tracking-wider">Aksi</Text>
                                 </View>
-                            ) : (
-                                rows.map((row, index) => (
-                                    <Animated.View 
-                                        key={row.id}
-                                        entering={FadeIn.duration(300)}
-                                        exiting={FadeOut.duration(200)}
-                                        layout={Layout.springify()}
-                                        className={`flex-row items-center px-4 py-3 ${
-                                            index < rows.length - 1 ? 'border-b border-gray-100' : ''
-                                        }`}
-                                    >
-                                        {/* Product Select Button */}
-                                        <TouchableOpacity 
-                                            activeOpacity={0.7}
-                                            onPress={() => handleOpenSelector(row.id)}
-                                            className="flex-1 flex-row items-center justify-between border border-gray-300 rounded-lg px-3 py-2.5 mr-4 bg-gray-50"
-                                        >
-                                            <Text className={`text-sm ${row.product ? 'text-gray-800 font-semibold' : 'text-gray-400'}`} numberOfLines={1}>
-                                                {row.product ? `${row.product.code_product} - ${row.product.nm_product}` : 'Pilih Barang...'}
-                                            </Text>
-                                            <ChevronDown color="#9ca3af" size={16} />
-                                        </TouchableOpacity>
 
-                                        {/* Delete Button */}
-                                        <TouchableOpacity 
-                                            activeOpacity={0.7}
-                                            onPress={() => handleRemoveRow(row.id)}
-                                            className="w-10 h-10 bg-red-50 rounded-lg items-center justify-center border border-red-100"
+                                {/* Table Body */}
+                                {rows.length === 0 ? (
+                                    <View className="p-8 items-center justify-center">
+                                        <Text className="text-gray-400 text-center">Belum ada barang yang ditambahkan. Klik 'Tambah' untuk memulai.</Text>
+                                    </View>
+                                ) : (
+                                    rows.map((row, index) => (
+                                        <Animated.View
+                                            key={row.id}
+                                            entering={FadeIn.duration(300)}
+                                            exiting={FadeOut.duration(200)}
+                                            layout={Layout.springify()}
+                                            className={`flex-row items-center px-4 py-3 ${index < rows.length - 1 ? 'border-b border-gray-100' : ''
+                                                }`}
                                         >
-                                            <Trash2 color="#ef4444" size={18} />
-                                        </TouchableOpacity>
-                                    </Animated.View>
-                                ))
-                            )}
+                                            {/* Product Select Button */}
+                                            <TouchableOpacity
+                                                activeOpacity={0.7}
+                                                onPress={() => handleOpenSelector(row.id)}
+                                                className="flex-1 flex-row items-center justify-between border border-gray-300 rounded-lg px-3 py-2.5 mr-4 bg-gray-50"
+                                            >
+                                                <Text className={`text-sm ${row.product ? 'text-gray-800 font-semibold' : 'text-gray-400'}`} numberOfLines={1}>
+                                                    {row.product ? `${row.product.code_product} - ${row.product.nm_product}` : 'Pilih Barang...'}
+                                                </Text>
+                                                <ChevronDown color="#9ca3af" size={16} />
+                                            </TouchableOpacity>
+
+                                            {/* Delete Button */}
+                                            <TouchableOpacity
+                                                activeOpacity={0.7}
+                                                onPress={() => handleRemoveRow(row.id)}
+                                                className="w-10 h-10 bg-red-50 rounded-lg items-center justify-center border border-red-100"
+                                            >
+                                                <Trash2 color="#ef4444" size={18} />
+                                            </TouchableOpacity>
+                                        </Animated.View>
+                                    ))
+                                )}
+                            </View>
                         </View>
                     </View>
-                </View>
-            )}
+                )}
             </ScrollView>
 
-            <BrosurProductSelector 
+            <BrosurProductSelector
                 visible={selectorVisible}
                 products={availableProducts}
                 onClose={() => setSelectorVisible(false)}
                 onSelect={handleSelectProduct}
+            />
+
+            <ToastMessages
+                visible={toast.show}
+                title='Validasi'
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, show: false }))}
+            />
+
+            <ModalConfirm
+                visible={isModalVisible}
+                title="Konfirmasi"
+                message="Apakah Anda yakin ingin men-generate brosur untuk barang-barang yang dipilih?"
+                onConfirm={confirmGenerate}
+                onCancel={() => setIsModalVisible(false)}
             />
         </View>
     );
