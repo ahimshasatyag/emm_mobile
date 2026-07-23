@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Save, CheckCircle2, Plus, Trash2 } from 'lucide-react-native';
-import Animated, { FadeInUp, FadeOut, FadeIn } from 'react-native-reanimated';
+import { Save, Plus, Trash2 } from 'lucide-react-native';
+import Animated, { FadeOut, FadeIn } from 'react-native-reanimated';
 import { Dropdown } from 'react-native-element-dropdown';
 import { theme } from '../../../theme/theme';
+import { formatRp, formatUsd, formatInputNumber, parseInputNumber } from '../../../utils/helpers/money';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Button } from '../../../components/ui/button';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { useProductPrice } from '../hooks/useProductPrice';
-import { ProductPriceMultipleSkeleton } from '../skeleton/ProductPriceMultipleSkeleton';
+import { ProductPriceFormSkeleton } from '../skeleton/ProductPriceFormSkeleton';
 
 type TableItem = {
     id: string;
@@ -34,10 +37,16 @@ const DELIVERY_OPTIONS = [
 
 export function ProductPriceFormScreen() {
     const navigation = useNavigation<any>();
-    const { addPrice } = useProductPrice();
+    const { addPrice, validateForm } = useProductPrice();
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
+    const [toastState, setToastState] = useState({
+        visible: false,
+        type: 'success' as ToastType,
+        message: ''
+    });
 
     const [items, setItems] = useState<TableItem[]>([
         {
@@ -98,19 +107,18 @@ export function ProductPriceFormScreen() {
         }));
     };
 
-    const handleSave = async () => {
-        if (items.length === 0) {
-            Alert.alert('Error', 'Tambahkan minimal 1 barang.');
+    const handleSave = () => {
+        const errorMsg = validateForm(items);
+        if (errorMsg) {
+            setToastState({ visible: true, type: 'error', message: errorMsg });
             return;
         }
 
-        const isValid = items.every(item => item.idProduct.trim() && item.price.trim() && item.agentPrice.trim() && item.kurs.trim() && item.deliveryTerm.trim());
+        setIsModalConfirmVisible(true);
+    };
 
-        if (!isValid) {
-            Alert.alert('Error', 'Harap isi semua field yang wajib pada semua baris.');
-            return;
-        }
-
+    const confirmSave = async () => {
+        setIsModalConfirmVisible(false);
         setIsSaving(true);
         try {
             for (const item of items) {
@@ -124,11 +132,17 @@ export function ProductPriceFormScreen() {
                     delivery_term: item.deliveryTerm
                 });
             }
-            Alert.alert('Sukses', 'Harga produk berhasil ditambahkan', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+            navigation.replace('ProductPriceEdit', {
+                id: items[0].idProduct,
+                showSuccessToast: true,
+                successMessage: 'Harga produk berhasil ditambahkan'
+            });
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Gagal menyimpan harga produk');
+            setToastState({
+                visible: true,
+                type: 'error',
+                message: error.message || 'Gagal menyimpan harga produk'
+            });
         } finally {
             setIsSaving(false);
         }
@@ -149,9 +163,27 @@ export function ProductPriceFormScreen() {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-gray-50">
             <HeaderNavigator title={isLoading ? "MEMUAT DATA..." : "TAMBAH PRODUCT PRICE"} showBackButton={true} onBackPress={() => navigation.goBack()} />
 
-            <ScrollView 
-                className="flex-1" 
-                contentContainerStyle={{ padding: 16, paddingBottom: 100 }} 
+            <ToastMessages
+                visible={toastState.visible}
+                type={toastState.type}
+                title={toastState.type === 'success' ? 'Berhasil' : 'Validasi'}
+                message={toastState.message}
+                onClose={() => setToastState(prev => ({ ...prev, visible: false }))}
+            />
+
+            <ModalConfirm
+                visible={isModalConfirmVisible}
+                title="Konfirmasi"
+                message="Apakah Anda yakin ingin menyimpan semua harga ini?"
+                confirmText="Ya, Simpan"
+                cancelText="Batal"
+                onCancel={() => setIsModalConfirmVisible(false)}
+                onConfirm={confirmSave}
+            />
+
+            <ScrollView
+                className="flex-1"
+                contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl refreshing={isLoading} onRefresh={onRefresh} colors={[theme.colors.primary]} />
@@ -159,149 +191,149 @@ export function ProductPriceFormScreen() {
             >
                 {isLoading ? (
                     <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
-                        <ProductPriceMultipleSkeleton />
+                        <ProductPriceFormSkeleton />
                     </Animated.View>
                 ) : (
-                <Animated.View key="content" entering={FadeIn.duration(600)}>
+                    <Animated.View key="content" entering={FadeIn.duration(600)}>
 
-                    <View className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-6">
-                        <View className="flex-row justify-between items-center mb-4">
-                            <Text className="text-lg font-bold text-gray-800">Daftar Barang</Text>
-                            <TouchableOpacity
-                                onPress={handleAddItem}
-                                className="flex-row items-center px-4 py-2 rounded-full shadow-sm"
-                                style={{ backgroundColor: theme.colors.primary }}
-                            >
-                                <Plus color="white" size={16} />
-                                <Text className="text-white font-bold ml-1">Tambah Barang</Text>
-                            </TouchableOpacity>
+                        <View className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-6">
+                            <View className="flex-row justify-between items-center mb-4">
+                                <Text className="text-lg font-bold text-gray-800">Daftar Barang</Text>
+                                <TouchableOpacity
+                                    onPress={handleAddItem}
+                                    className="flex-row items-center px-4 py-2 rounded-full shadow-sm"
+                                    style={{ backgroundColor: theme.colors.primary }}
+                                >
+                                    <Plus color="white" size={16} />
+                                    <Text className="text-white font-bold ml-1">Tambah Barang</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="border border-gray-200 rounded-2xl bg-white" contentContainerStyle={{ flexGrow: 1 }}>
+                                <View>
+                                    {/* Table Header */}
+                                    <View className="flex-row border-b border-gray-200 bg-gray-50 p-4 rounded-t-2xl">
+                                        <View className="border-r border-gray-200" style={{ width: COL_WIDTH.name, paddingRight: 8 }}><Text className="font-bold text-gray-700 text-xs pl-2">Product Name</Text></View>
+                                        <View className="border-r border-gray-200" style={{ width: COL_WIDTH.priceNow, paddingHorizontal: 8 }}><Text className="font-bold text-gray-700 text-xs pl-2">Price Now</Text></View>
+                                        <View className="border-r border-gray-200" style={{ width: COL_WIDTH.priceUpdate, paddingHorizontal: 8 }}><Text className="font-bold text-gray-700 text-xs pl-2">Price Update</Text></View>
+                                        <View className="border-r border-gray-200" style={{ width: COL_WIDTH.priceAgent, paddingHorizontal: 8 }}><Text className="font-bold text-gray-700 text-xs pl-2">Price Agent</Text></View>
+                                        <View className="border-r border-gray-200" style={{ width: COL_WIDTH.kurs, paddingHorizontal: 8 }}><Text className="font-bold text-gray-700 text-xs pl-2">Kurs</Text></View>
+                                        <View className="border-r border-gray-200" style={{ width: COL_WIDTH.estimation, paddingHorizontal: 8 }}><Text className="font-bold text-gray-700 text-xs pl-2">Estimation IDR</Text></View>
+                                        <View className="border-r border-gray-200" style={{ width: COL_WIDTH.delivery, paddingHorizontal: 8 }}><Text className="font-bold text-gray-700 text-xs pl-2">Delivery Term</Text></View>
+                                        <View style={{ width: COL_WIDTH.action }}><Text className="font-bold text-gray-700 text-xs text-center">Aksi</Text></View>
+                                    </View>
+
+                                    {/* Table Body */}
+                                    {items.map((item, index) => (
+                                        <View key={item.id} className="flex-row border-b border-gray-100 p-4 items-center">
+                                            <View className="border-r border-gray-200" style={{ width: COL_WIDTH.name, paddingRight: 8 }}>
+                                                <View className="border border-gray-200 rounded-lg bg-gray-50">
+                                                    <Dropdown
+                                                        style={{ height: 40, paddingHorizontal: 12 }}
+                                                        data={PRODUCT_OPTIONS}
+                                                        labelField="label"
+                                                        valueField="value"
+                                                        placeholder="Pilih Barang"
+                                                        value={item.idProduct}
+                                                        onChange={(val) => {
+                                                            updateItem(item.id, 'idProduct', val.value);
+                                                            updateItem(item.id, 'priceNow', val.priceNow);
+                                                            updateItem(item.id, 'deliveryTerm', val.delivery);
+                                                        }}
+                                                        selectedTextStyle={{ color: '#111827', fontSize: 12 }}
+                                                        placeholderStyle={{ color: '#9CA3AF', fontSize: 12 }}
+                                                    />
+                                                </View>
+                                            </View>
+                                            <View className="border-r border-gray-200" style={{ width: COL_WIDTH.priceNow, paddingHorizontal: 8 }}>
+                                                <TextInput
+                                                    className="bg-gray-100 border border-gray-200 rounded-lg px-3 h-10 text-gray-500 text-xs"
+                                                    value={item.priceNow ? formatUsd(item.priceNow) : ''}
+                                                    editable={false}
+                                                    placeholder="Otomatis"
+                                                />
+                                            </View>
+                                            <View className="border-r border-gray-200" style={{ width: COL_WIDTH.priceUpdate, paddingHorizontal: 8 }}>
+                                                <TextInput
+                                                    className="bg-gray-50 border border-gray-200 rounded-lg px-3 h-10 text-gray-900 text-xs"
+                                                    value={item.price ? formatInputNumber(item.price) : ''}
+                                                    onChangeText={(val) => updateItem(item.id, 'price', parseInputNumber(val))}
+                                                    keyboardType="numeric"
+                                                    placeholder="0"
+                                                />
+                                            </View>
+                                            <View className="border-r border-gray-200" style={{ width: COL_WIDTH.priceAgent, paddingHorizontal: 8 }}>
+                                                <TextInput
+                                                    className="bg-gray-50 border border-gray-200 rounded-lg px-3 h-10 text-gray-900 text-xs"
+                                                    value={item.agentPrice ? formatInputNumber(item.agentPrice) : ''}
+                                                    onChangeText={(val) => updateItem(item.id, 'agentPrice', parseInputNumber(val))}
+                                                    keyboardType="numeric"
+                                                    placeholder="0"
+                                                />
+                                            </View>
+                                            <View className="border-r border-gray-200" style={{ width: COL_WIDTH.kurs, paddingHorizontal: 8 }}>
+                                                <TextInput
+                                                    className="bg-gray-100 border border-gray-200 rounded-lg px-3 h-10 text-gray-500 text-xs"
+                                                    value={item.kurs ? formatRp(item.kurs) : ''}
+                                                    editable={false}
+                                                />
+                                            </View>
+                                            <View className="border-r border-gray-200" style={{ width: COL_WIDTH.estimation, paddingHorizontal: 8 }}>
+                                                <TextInput
+                                                    className="bg-gray-100 border border-gray-200 rounded-lg px-3 h-10 text-gray-500 text-xs"
+                                                    value={item.estimationIdr ? formatRp(item.estimationIdr) : ''}
+                                                    editable={false}
+                                                    placeholder="0"
+                                                />
+                                            </View>
+                                            <View className="border-r border-gray-200" style={{ width: COL_WIDTH.delivery, paddingHorizontal: 8 }}>
+                                                <View className="border border-gray-200 rounded-lg bg-gray-50">
+                                                    <Dropdown
+                                                        style={{ height: 40, paddingHorizontal: 12 }}
+                                                        data={DELIVERY_OPTIONS}
+                                                        labelField="label"
+                                                        valueField="value"
+                                                        placeholder="Pilih"
+                                                        value={item.deliveryTerm}
+                                                        onChange={(val) => updateItem(item.id, 'deliveryTerm', val.value)}
+                                                        selectedTextStyle={{ color: '#111827', fontSize: 12 }}
+                                                        placeholderStyle={{ color: '#9CA3AF', fontSize: 12 }}
+                                                    />
+                                                </View>
+                                            </View>
+                                            <View style={{ width: COL_WIDTH.action, alignItems: 'center' }}>
+                                                <TouchableOpacity onPress={() => handleRemoveItem(item.id)} className="bg-red-50 p-2 rounded-full">
+                                                    <Trash2 color="red" size={16} />
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    ))}
+
+                                    {items.length === 0 && (
+                                        <View className="p-8 items-center justify-center">
+                                            <Text className="text-gray-400">Belum ada barang, silakan tambah barang.</Text>
+                                        </View>
+                                    )}
+                                </View>
+                            </ScrollView>
                         </View>
 
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="border border-gray-200 rounded-2xl bg-white" contentContainerStyle={{ flexGrow: 1 }}>
-                            <View>
-                                {/* Table Header */}
-                                <View className="flex-row border-b border-gray-200 bg-gray-50 p-4 rounded-t-2xl">
-                                    <View className="border-r border-gray-200" style={{ width: COL_WIDTH.name, paddingRight: 8 }}><Text className="font-bold text-gray-700 text-xs pl-2">Product Name</Text></View>
-                                    <View className="border-r border-gray-200" style={{ width: COL_WIDTH.priceNow, paddingHorizontal: 8 }}><Text className="font-bold text-gray-700 text-xs pl-2">Price Now</Text></View>
-                                    <View className="border-r border-gray-200" style={{ width: COL_WIDTH.priceUpdate, paddingHorizontal: 8 }}><Text className="font-bold text-gray-700 text-xs pl-2">Price Update</Text></View>
-                                    <View className="border-r border-gray-200" style={{ width: COL_WIDTH.priceAgent, paddingHorizontal: 8 }}><Text className="font-bold text-gray-700 text-xs pl-2">Price Agent</Text></View>
-                                    <View className="border-r border-gray-200" style={{ width: COL_WIDTH.kurs, paddingHorizontal: 8 }}><Text className="font-bold text-gray-700 text-xs pl-2">Kurs</Text></View>
-                                    <View className="border-r border-gray-200" style={{ width: COL_WIDTH.estimation, paddingHorizontal: 8 }}><Text className="font-bold text-gray-700 text-xs pl-2">Estimation IDR</Text></View>
-                                    <View className="border-r border-gray-200" style={{ width: COL_WIDTH.delivery, paddingHorizontal: 8 }}><Text className="font-bold text-gray-700 text-xs pl-2">Delivery Term</Text></View>
-                                    <View style={{ width: COL_WIDTH.action }}><Text className="font-bold text-gray-700 text-xs text-center">Aksi</Text></View>
-                                </View>
-
-                                {/* Table Body */}
-                                {items.map((item, index) => (
-                                    <View key={item.id} className="flex-row border-b border-gray-100 p-4 items-center">
-                                        <View className="border-r border-gray-200" style={{ width: COL_WIDTH.name, paddingRight: 8 }}>
-                                            <View className="border border-gray-200 rounded-lg bg-gray-50">
-                                                <Dropdown
-                                                    style={{ height: 40, paddingHorizontal: 12 }}
-                                                    data={PRODUCT_OPTIONS}
-                                                    labelField="label"
-                                                    valueField="value"
-                                                    placeholder="Pilih Barang"
-                                                    value={item.idProduct}
-                                                    onChange={(val) => {
-                                                        updateItem(item.id, 'idProduct', val.value);
-                                                        updateItem(item.id, 'priceNow', val.priceNow);
-                                                        updateItem(item.id, 'deliveryTerm', val.delivery);
-                                                    }}
-                                                    selectedTextStyle={{ color: '#111827', fontSize: 12 }}
-                                                    placeholderStyle={{ color: '#9CA3AF', fontSize: 12 }}
-                                                />
-                                            </View>
-                                        </View>
-                                        <View className="border-r border-gray-200" style={{ width: COL_WIDTH.priceNow, paddingHorizontal: 8 }}>
-                                            <TextInput
-                                                className="bg-gray-100 border border-gray-200 rounded-lg px-3 h-10 text-gray-500 text-xs"
-                                                value={item.priceNow}
-                                                editable={false}
-                                                placeholder="Otomatis"
-                                            />
-                                        </View>
-                                        <View className="border-r border-gray-200" style={{ width: COL_WIDTH.priceUpdate, paddingHorizontal: 8 }}>
-                                            <TextInput
-                                                className="bg-gray-50 border border-gray-200 rounded-lg px-3 h-10 text-gray-900 text-xs"
-                                                value={item.price}
-                                                onChangeText={(val) => updateItem(item.id, 'price', val)}
-                                                keyboardType="numeric"
-                                                placeholder="0"
-                                            />
-                                        </View>
-                                        <View className="border-r border-gray-200" style={{ width: COL_WIDTH.priceAgent, paddingHorizontal: 8 }}>
-                                            <TextInput
-                                                className="bg-gray-50 border border-gray-200 rounded-lg px-3 h-10 text-gray-900 text-xs"
-                                                value={item.agentPrice}
-                                                onChangeText={(val) => updateItem(item.id, 'agentPrice', val)}
-                                                keyboardType="numeric"
-                                                placeholder="0"
-                                            />
-                                        </View>
-                                        <View className="border-r border-gray-200" style={{ width: COL_WIDTH.kurs, paddingHorizontal: 8 }}>
-                                            <TextInput
-                                                className="bg-gray-100 border border-gray-200 rounded-lg px-3 h-10 text-gray-500 text-xs"
-                                                value={item.kurs}
-                                                editable={false}
-                                            />
-                                        </View>
-                                        <View className="border-r border-gray-200" style={{ width: COL_WIDTH.estimation, paddingHorizontal: 8 }}>
-                                            <TextInput
-                                                className="bg-gray-100 border border-gray-200 rounded-lg px-3 h-10 text-gray-500 text-xs"
-                                                value={item.estimationIdr}
-                                                editable={false}
-                                                placeholder="0"
-                                            />
-                                        </View>
-                                        <View className="border-r border-gray-200" style={{ width: COL_WIDTH.delivery, paddingHorizontal: 8 }}>
-                                            <View className="border border-gray-200 rounded-lg bg-gray-50">
-                                                <Dropdown
-                                                    style={{ height: 40, paddingHorizontal: 12 }}
-                                                    data={DELIVERY_OPTIONS}
-                                                    labelField="label"
-                                                    valueField="value"
-                                                    placeholder="Pilih"
-                                                    value={item.deliveryTerm}
-                                                    onChange={(val) => updateItem(item.id, 'deliveryTerm', val.value)}
-                                                    selectedTextStyle={{ color: '#111827', fontSize: 12 }}
-                                                    placeholderStyle={{ color: '#9CA3AF', fontSize: 12 }}
-                                                />
-                                            </View>
-                                        </View>
-                                        <View style={{ width: COL_WIDTH.action, alignItems: 'center' }}>
-                                            <TouchableOpacity onPress={() => handleRemoveItem(item.id)} className="bg-red-50 p-2 rounded-full">
-                                                <Trash2 color="red" size={16} />
-                                            </TouchableOpacity>
-                                        </View>
-                                    </View>
-                                ))}
-
-                                {items.length === 0 && (
-                                    <View className="p-8 items-center justify-center">
-                                        <Text className="text-gray-400">Belum ada barang, silakan tambah barang.</Text>
-                                    </View>
-                                )}
-                            </View>
-                        </ScrollView>
-                    </View>
-
-                    <Button
-                        onPress={handleSave}
-                        disabled={isSaving}
-                        className="h-14 rounded-2xl flex-row items-center justify-center bg-indigo-600 mb-8"
-                        style={{ elevation: 2, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
-                    >
-                        {isSaving ? (
-                            <ActivityIndicator color="white" />
-                        ) : (
-                            <>
-                                <CheckCircle2 color="white" size={20} className="mr-2" />
-                                <Text className="text-white font-bold text-lg">Simpan Semua Harga</Text>
-                            </>
-                        )}
-                    </Button>
-                </Animated.View>
+                        <Button
+                            onPress={handleSave}
+                            disabled={isSaving}
+                            className="h-14 rounded-2xl flex-row items-center justify-center bg-indigo-600 mb-8"
+                            style={{ elevation: 2, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
+                        >
+                            {isSaving ? (
+                                <ActivityIndicator color="white" />
+                            ) : (
+                                <>
+                                    <Save color="white" size={20} className="mr-2" />
+                                    <Text className="text-white font-bold text-lg">Simpan</Text>
+                                </>
+                            )}
+                        </Button>
+                    </Animated.View>
                 )}
             </ScrollView>
         </KeyboardAvoidingView>

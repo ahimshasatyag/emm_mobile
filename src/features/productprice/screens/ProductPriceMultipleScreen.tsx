@@ -4,25 +4,36 @@ import { Save, ArrowLeft, RefreshCcw, DollarSign, Building, Truck } from 'lucide
 import Animated, { FadeOut, LinearTransition, FadeInUp } from 'react-native-reanimated';
 import { Dropdown } from 'react-native-element-dropdown';
 import { theme } from '../../../theme/theme';
-import { formatRp } from '../../../utils/helpers/money';
+import { formatRp, formatInputNumber, parseInputNumber } from '../../../utils/helpers/money';
 import { dummyProductPrices } from '../data/dummy';
 import { ProductPrice } from '../types/productprice.types';
 import { useNavigation } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { ProductPriceMultipleSkeleton } from '../skeleton/ProductPriceMultipleSkeleton';
+import { useProductPrice } from '../hooks/useProductPrice';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export function ProductPriceMultipleScreen() {
-    const navigation = useNavigation();
+    const navigation = useNavigation<any>();
+    const { validateForm } = useProductPrice();
 
     const [items, setItems] = useState<ProductPrice[]>([]);
     const [isInitializing, setIsInitializing] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [toastConfig, setToastConfig] = useState({ visible: false, message: '', type: 'success' as ToastType });
+
     const loadData = async () => {
         // Simulate network request
         return new Promise<void>((resolve) => {
             setTimeout(() => {
-                setItems(dummyProductPrices);
+                const initData = dummyProductPrices.map(item => ({
+                    ...item,
+                    delivery_term: item.delivery_term || 'FRANCO JKT'
+                }));
+                setItems(initData);
                 resolve();
             }, 1000);
         });
@@ -63,10 +74,23 @@ export function ProductPriceMultipleScreen() {
     };
 
     const handleSave = () => {
-        // Show success alert
-        Alert.alert("Success", "Multiple prices updated successfully!", [
-            { text: "OK", onPress: () => navigation.goBack() }
-        ]);
+        const errorMsg = validateForm(items);
+        if (errorMsg) {
+            setToastConfig({ visible: true, message: errorMsg, type: 'error' });
+            return;
+        }
+
+        setIsModalVisible(true);
+    };
+
+    const confirmSave = () => {
+        setIsModalVisible(false);
+
+        navigation.navigate('ProductPriceList', {
+            showToast: true,
+            toastMessage: 'Data berhasil disimpan!',
+            toastType: 'success'
+        });
     };
 
     const deliveryTermData = [
@@ -77,17 +101,17 @@ export function ProductPriceMultipleScreen() {
     const COL_WIDTH = {
         no: 40,
         name: 220,
-        priceUpdate: 140,
-        priceAgent: 140,
+        priceUpdate: 160,
+        priceAgent: 160,
         kurs: 120,
-        estimation: 140,
+        estimation: 180,
         delivery: 140
     };
 
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-gray-50">
             <HeaderNavigator
-                title={(isInitializing || isRefreshing) ? "MEMUAT DATA..." : "EDIT MULTIPLE UPDATE"}
+                title={(isInitializing || isRefreshing) ? "MEMUAT DATA..." : "EDIT MULTIPLE UPDATE PRODUCT PRICE"}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
             />
@@ -105,15 +129,15 @@ export function ProductPriceMultipleScreen() {
                         <ProductPriceMultipleSkeleton />
                     </Animated.View>
                 ) : (
-                <Animated.View key="content" entering={FadeInUp.delay(100).springify()}>
-                    <View className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-6">
-                        <View className="mb-4">
-                            <Text className="text-lg font-bold text-gray-800">Daftar Barang (Multiple)</Text>
-                        </View>
+                    <Animated.View key="content" entering={FadeInUp.delay(100).springify()}>
+                        <View className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-6">
+                            <View className="mb-4">
+                                <Text className="text-lg font-bold text-gray-800">Daftar Barang (Multiple)</Text>
+                            </View>
 
-                        <Animated.View layout={LinearTransition.springify()}>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="border border-gray-200 rounded-2xl bg-white" contentContainerStyle={{ flexGrow: 1 }}>
-                                <View>
+                            <Animated.View layout={LinearTransition.springify()}>
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="border border-gray-200 rounded-2xl bg-white" contentContainerStyle={{ flexGrow: 1 }}>
+                                    <View>
                                         {/* Table Header */}
                                         <View className="flex-row border-b border-gray-200 bg-gray-50 p-4 rounded-t-2xl">
                                             <View className="border-r border-gray-200" style={{ width: COL_WIDTH.no, paddingRight: 8 }}><Text className="font-bold text-gray-700 text-xs pl-2 text-center">No</Text></View>
@@ -138,8 +162,8 @@ export function ProductPriceMultipleScreen() {
                                                 <View className="border-r border-gray-200" style={{ width: COL_WIDTH.priceUpdate, paddingHorizontal: 8 }}>
                                                     <TextInput
                                                         className="bg-gray-50 border border-gray-200 rounded-lg px-3 h-10 text-gray-900 text-xs"
-                                                        value={item.product_price}
-                                                        onChangeText={(val) => handleChange(index, 'product_price', val)}
+                                                        value={formatInputNumber(item.product_price || '')}
+                                                        onChangeText={(val) => handleChange(index, 'product_price', parseInputNumber(val))}
                                                         keyboardType="numeric"
                                                         placeholder="0"
                                                     />
@@ -147,8 +171,8 @@ export function ProductPriceMultipleScreen() {
                                                 <View className="border-r border-gray-200" style={{ width: COL_WIDTH.priceAgent, paddingHorizontal: 8 }}>
                                                     <TextInput
                                                         className="bg-gray-50 border border-gray-200 rounded-lg px-3 h-10 text-gray-900 text-xs"
-                                                        value={item.product_price_agent}
-                                                        onChangeText={(val) => handleChange(index, 'product_price_agent', val)}
+                                                        value={formatInputNumber(item.product_price_agent || '')}
+                                                        onChangeText={(val) => handleChange(index, 'product_price_agent', parseInputNumber(val))}
                                                         keyboardType="numeric"
                                                         placeholder="0"
                                                     />
@@ -187,11 +211,40 @@ export function ProductPriceMultipleScreen() {
                                         ))}
                                     </View>
                                 </ScrollView>
-                        </Animated.View>
-                    </View>
-                </Animated.View>
+                            </Animated.View>
+                        </View>
+
+                        <TouchableOpacity
+                            className="flex-row items-center justify-center py-3.5 rounded-xl mb-6"
+                            style={{ backgroundColor: theme.colors.primary, elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
+                            onPress={handleSave}
+                            activeOpacity={0.8}
+                        >
+                            <Save color="white" size={20} className="mr-2" />
+                            <Text className="text-white font-bold text-[16px]">Simpan Perubahan</Text>
+                        </TouchableOpacity>
+                    </Animated.View>
                 )}
             </ScrollView>
+
+
+            <ModalConfirm
+                visible={isModalVisible}
+                title="Konfirmasi"
+                message="Apakah Anda yakin ingin menyimpan perubahan harga?"
+                onConfirm={confirmSave}
+                onCancel={() => setIsModalVisible(false)}
+                confirmText="Ya, Simpan"
+                cancelText="Batal"
+            />
+
+            <ToastMessages
+                visible={toastConfig.visible}
+                title='Validasi'
+                type={toastConfig.type}
+                message={toastConfig.message}
+                onClose={() => setToastConfig(prev => ({ ...prev, visible: false }))}
+            />
         </KeyboardAvoidingView>
     );
 }

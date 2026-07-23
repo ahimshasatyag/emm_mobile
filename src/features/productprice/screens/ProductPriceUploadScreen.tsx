@@ -9,9 +9,11 @@ import { ProductPrice } from '../types/productprice.types';
 import { dummyProductPrices } from '../data/dummy';
 import { formatRp } from '../../../utils/helpers/money';
 import Animated, { FadeOut, LinearTransition, FadeInUp } from 'react-native-reanimated';
+import { useProductPrice } from '../hooks/useProductPrice';
 
 export function ProductPriceUploadScreen() {
     const navigation = useNavigation();
+    const { validateForm } = useProductPrice();
     
     // Dummy states simulating a hook
     const [previewData, setPreviewData] = useState<ProductPrice[]>([]);
@@ -47,6 +49,12 @@ export function ProductPriceUploadScreen() {
     };
 
     const saveData = () => {
+        const errorMsg = validateForm(previewData);
+        if (errorMsg) {
+            Alert.alert("Error", errorMsg);
+            return;
+        }
+
         setIsSaving(true);
         // Simulate saving
         setTimeout(() => {

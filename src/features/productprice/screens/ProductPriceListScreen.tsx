@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, RefreshControl, TextInput, TouchableOpacity } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { Plus, Search, FileUp, RefreshCcw, Copy, Edit } from 'lucide-react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, RefreshControl, TextInput, TouchableOpacity } from 'react-native';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
+import { Plus, Search, FileUp, RefreshCcw, Edit } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeInUp, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { useProductPrice } from '../hooks/useProductPrice';
 import { ProductPriceCard } from '../components/ProductPriceCard';
@@ -12,15 +12,38 @@ import { SpeedDial } from '../../../components/ui/SpeedDial';
 import { ErrorState } from '../../../components/shared/ErrorState';
 import { EmptyState } from '../../../components/shared/EmptyState';
 import { ProductPrice } from '../types/productprice.types';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 export function ProductPriceListScreen() {
     const navigation = useNavigation<any>();
+    const route = useRoute<any>();
     const { prices, isLoading, error, loadPrices } = useProductPrice();
 
     const [isInitializing, setIsInitializing] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+    const [toastConfig, setToastConfig] = useState({ visible: false, message: '', type: 'success' as ToastType });
+    const [isKursModalVisible, setIsKursModalVisible] = useState(false);
+
+    const handleKursConfirm = () => {
+        setIsKursModalVisible(false);
+        setToastConfig({ visible: true, message: 'Update kurs berhasil!', type: 'success' });
+        loadPrices(); // Refresh data
+    };
+
+    useEffect(() => {
+        if (route.params?.showToast) {
+            setToastConfig({
+                visible: true,
+                message: route.params.toastMessage || 'Berhasil',
+                type: route.params.toastType || 'success'
+            });
+            navigation.setParams({ showToast: undefined, toastMessage: undefined, toastType: undefined });
+        }
+    }, [route.params?.showToast]);
 
     useFocusEffect(
         useCallback(() => {
@@ -70,10 +93,10 @@ export function ProductPriceListScreen() {
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
                 <Animated.View layout={LinearTransition.springify()} className="flex-row items-center justify-between">
-                    <Animated.View layout={LinearTransition.springify()} className="flex-1 bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2 overflow-hidden">
+                    <Animated.View layout={LinearTransition.springify()} className="flex-1 bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2 shadow-sm">
                         <Search color="#9ca3af" size={20} />
                         <TextInput
-                            className="flex-1 ml-2 text-gray-900"
+                            className="flex-1 ml-2 text-gray-900 h-full"
                             placeholder="Cari nama atau kode produk..."
                             value={searchQuery}
                             onChangeText={setSearchQuery}
@@ -187,11 +210,28 @@ export function ProductPriceListScreen() {
                         {
                             icon: <RefreshCcw color="white" size={20} />,
                             label: "KURS",
-                            onPress: () => navigation.navigate('ProductPriceKurs')
+                            onPress: () => setIsKursModalVisible(true)
                         }
                     ]}
                 />
             )}
+
+            <ModalConfirm
+                visible={isKursModalVisible}
+                title="Update Kurs"
+                message="Apakah Anda yakin ingin memperbarui data KURS sekarang?"
+                onConfirm={handleKursConfirm}
+                onCancel={() => setIsKursModalVisible(false)}
+                confirmText="Ya, Update"
+                cancelText="Batal"
+            />
+
+            <ToastMessages
+                visible={toastConfig.visible}
+                type={toastConfig.type}
+                message={toastConfig.message}
+                onClose={() => setToastConfig(prev => ({ ...prev, visible: false }))}
+            />
         </View>
     );
 }

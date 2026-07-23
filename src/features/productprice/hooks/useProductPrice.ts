@@ -28,6 +28,33 @@ export const useProductPrice = () => {
         dispatch(clearError());
     };
 
+    const validateForm = (data: any): string | null => {
+        if (Array.isArray(data)) {
+            if (data.length === 0) return 'Tambahkan minimal 1 data.';
+            
+            const isValid = data.every(item => {
+                const idProd = item.idProduct ?? item.id_product ?? item.code_product ?? 'valid';
+                const price = item.price ?? item.product_price ?? '';
+                const agentPrice = item.agentPrice ?? item.product_price_agent ?? '';
+                const kurs = item.kurs ?? item.kurs_bank ?? '';
+                const deliveryTerm = item.deliveryTerm ?? item.delivery_term ?? '';
+                
+                return String(idProd).trim() && String(price).trim() && String(agentPrice).trim() && String(kurs).trim() && String(deliveryTerm).trim();
+            });
+            
+            return isValid ? null : 'Harap isi semua field yang wajib pada semua baris.';
+        }
+
+        const price = data.price ?? data.product_price ?? '';
+        const agentPrice = data.agentPrice ?? data.product_price_agent ?? '';
+        
+        if (!String(price).trim() || !String(agentPrice).trim()) {
+            return 'Harga Jual dan Harga Agen wajib diisi.';
+        }
+
+        return null;
+    };
+
     return {
         prices,
         isLoading,
@@ -35,6 +62,7 @@ export const useProductPrice = () => {
         loadPrices,
         addPrice,
         editPrice,
-        resetError
+        resetError,
+        validateForm
     };
 };
