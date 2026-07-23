@@ -24,14 +24,14 @@ export function ProductPriceAgentDetailScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator 
-                title="DETAIL PRODUCT AGENT" 
+            <HeaderNavigator
+                title="DETAIL PRODUCT PRICE AGENT"
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
             />
 
-            <ScrollView 
-                className="flex-1" 
+            <ScrollView
+                className="flex-1"
                 contentContainerStyle={{ padding: 16 }}
                 refreshControl={
                     <RefreshControl refreshing={isDetailLoading} onRefresh={() => { if (id_product) loadDetail(id_product); }} colors={[theme.colors.primary]} />
@@ -43,7 +43,7 @@ export function ProductPriceAgentDetailScreen() {
                     </Animated.View>
                 ) : selectedDetail ? (
                     <Animated.View entering={FadeInUp.duration(400)}>
-                        
+
                         {/* Identitas Produk */}
                         <View className="bg-white rounded-xl overflow-hidden border border-gray-200 mb-4 shadow-sm" style={{ elevation: 2 }}>
                             <View className="px-4 py-3 bg-gray-50 border-b border-gray-200">
@@ -80,7 +80,7 @@ export function ProductPriceAgentDetailScreen() {
                                         const diffTime = Math.abs(new Date().getTime() - wkt.getTime());
                                         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                                         const isGreen = diffDays <= 90;
-                                        
+
                                         const formattedDateText = formatDate(wkt);
 
                                         return (
