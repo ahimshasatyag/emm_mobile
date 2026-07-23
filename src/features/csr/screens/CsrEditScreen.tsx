@@ -7,16 +7,40 @@ import { useCsr } from '../hooks/useCsr';
 import { Button } from '../../../components/ui/button';
 import { theme } from '../../../theme/theme';
 import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
-import { CsrFormSkeleton } from '../skeleton/CsrFormSkeleton';
+import { CsrEditSkeleton } from '../skeleton/CsrEditSkeleton';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ModalCancel } from '../../../components/ui/ModalCancel';
+import { formatDate } from '../../../utils/helpers/date';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Calendar } from 'lucide-react-native';
+import { Dropdown } from 'react-native-element-dropdown';
 
 export function CsrEditScreen() {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
-    const { id } = route.params || {};
+    const { id, showSuccessToast, successMessage } = route.params || {};
 
-    const { currentRequest, loadRequestById, editRequest, submitConfirmCsr, submitCancelCsr, isLoading, resetCurrentRequest } = useCsr();
+    const [toast, setToast] = useState<{ visible: boolean; type: ToastType; message: string }>({
+        visible: false,
+        type: 'success',
+        message: ''
+    });
 
+    const { currentRequest, loadRequestById, editRequest, submitConfirmCsr, submitCancelCsr, isLoading, resetCurrentRequest, validateForm } = useCsr();
     const [isEditing, setIsEditing] = useState(false);
+    const [modalUpdateVisible, setModalUpdateVisible] = useState(false);
+    const [modalConfirmVisible, setModalConfirmVisible] = useState(false);
+    const [modalCancelVisible, setModalCancelVisible] = useState(false);
+    const [showDatePicker, setShowDatePicker] = useState<{ field: string, visible: boolean }>({ field: '', visible: false });
+
+    const handleDateChange = (event: any, selectedDate?: Date) => {
+        const field = showDatePicker.field;
+        setShowDatePicker({ field: '', visible: false });
+        if (event.type === 'set' && selectedDate && field) {
+            handleChange(field, selectedDate.toISOString().split('T')[0]);
+        }
+    };
 
     const [formData, setFormData] = useState({
         customers: '',
@@ -31,12 +55,31 @@ export function CsrEditScreen() {
         lap_kerusakan: '',
     });
 
+    const DUMMY_CUSTOMERS = [
+        { label: 'PT Maju Bersama', value: 'C001' },
+        { label: 'CV Makmur Jaya', value: 'C002' },
+        { label: 'Toko Budi', value: 'C003' },
+    ];
+
+    const DUMMY_KARYAWAN = [
+        { label: 'Budi Santoso', value: 'K001' },
+        { label: 'Andi Hermawan', value: 'K002' },
+        { label: 'Siti Aminah', value: 'K003' },
+    ];
+
     useEffect(() => {
         if (id) {
             loadRequestById(id);
         }
         return () => resetCurrentRequest();
     }, [id, loadRequestById, resetCurrentRequest]);
+
+    useEffect(() => {
+        if (showSuccessToast && successMessage) {
+            setToast({ visible: true, type: 'success', message: successMessage });
+            navigation.setParams({ showSuccessToast: undefined, successMessage: undefined });
+        }
+    }, [showSuccessToast, successMessage, navigation]);
 
     useEffect(() => {
         if (currentRequest) {
@@ -59,51 +102,65 @@ export function CsrEditScreen() {
         setFormData(prev => ({ ...prev, [key]: value }));
     };
 
+    const handlePreUpdate = () => {
+        const errorMsg = validateForm(formData);
+        if (errorMsg) {
+            setToast({ visible: true, type: 'error', message: errorMsg });
+            return;
+        }
+        setModalUpdateVisible(true);
+    };
+
     const handleUpdate = async () => {
         try {
             await editRequest(id, formData);
-            Alert.alert('Sukses', 'Data CSR berhasil diupdate.', [
-                { text: 'OK' }
-            ]);
+            setModalUpdateVisible(false);
+            setIsEditing(false);
+            setToast({ visible: true, type: 'success', message: 'Data CSR berhasil diupdate' });
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Gagal mengupdate data');
+            setModalUpdateVisible(false);
+            setToast({ visible: true, type: 'error', message: error.message || 'Gagal mengupdate data' });
         }
     };
 
     const handleConfirm = () => {
-        Alert.alert('Konfirmasi CSR', 'Apakah Anda yakin ingin mengkonfirmasi CSR ini?', [
-            { text: 'Batal', style: 'cancel' },
-            {
-                text: 'Ya, Konfirmasi',
-                onPress: async () => {
-                    try {
-                        await submitConfirmCsr(id);
-                        Alert.alert('Sukses', 'CSR berhasil dikonfirmasi.');
-                        navigation.goBack();
-                    } catch (error: any) {
-                        Alert.alert('Error', error.message);
-                    }
-                }
-            }
-        ]);
+        setModalConfirmVisible(true);
+    };
+
+    const executeConfirm = async () => {
+        try {
+            await submitConfirmCsr(id);
+            setModalConfirmVisible(false);
+
+            setTimeout(() => {
+                navigation.navigate('CstEditScreen', {
+                    id: 'CST/2026/06/0001', // Using a valid dummy CST ID
+                    showSuccessToast: true,
+                    successMessage: 'CSR berhasil dikonfirmasi.'
+                });
+            }, 300);
+        } catch (error: any) {
+            setModalConfirmVisible(false);
+            const errMsg = typeof error === 'string' ? error : (error?.message || 'Terjadi kesalahan saat konfirmasi');
+            setToast({ visible: true, type: 'error', message: errMsg });
+        }
     };
 
     const handleCancel = () => {
-        Alert.alert('Cancel CSR', 'Masukkan alasan pembatalan (opsional):', [
-            { text: 'Batal', style: 'cancel' },
-            {
-                text: 'Batalkan CSR',
-                onPress: async () => {
-                    try {
-                        await submitCancelCsr(id, 'Dibatalkan oleh user');
-                        Alert.alert('Sukses', 'CSR berhasil dibatalkan.');
-                        navigation.goBack();
-                    } catch (error: any) {
-                        Alert.alert('Error', error.message);
-                    }
-                }
-            }
-        ]);
+        setModalCancelVisible(true);
+    };
+
+    const executeCancel = async () => {
+        try {
+            await submitCancelCsr(id, 'Dibatalkan oleh user');
+            setModalCancelVisible(false);
+            setToast({ visible: true, type: 'success', message: 'CSR berhasil dibatalkan.' });
+            setIsEditing(false);
+        } catch (error: any) {
+            setModalCancelVisible(false);
+            const errMsg = typeof error === 'string' ? error : (error?.message || 'Terjadi kesalahan saat membatalkan CSR');
+            setToast({ visible: true, type: 'error', message: errMsg });
+        }
     };
 
     const isReadOnly = !isEditing;
@@ -137,214 +194,198 @@ export function CsrEditScreen() {
             >
                 {isLoading ? (
                     <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
-                        <CsrFormSkeleton />
+                        <CsrEditSkeleton />
                     </Animated.View>
                 ) : (
                     currentRequest && (
                         <>
                             <Animated.View key="content" entering={FadeIn.duration(600)}>
                                 <View className="space-y-4">
-                                    {/* Header Status */}
-                                    <View className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex-row justify-between items-center">
-                                        <View>
-                                            <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Nomor CSR</Text>
-                                            <Text className="text-gray-900 font-extrabold text-lg">{currentRequest.csr_code}</Text>
-                                        </View>
-                                        <View className={`px-3 py-1.5 rounded-full ${currentRequest.status === 'DRAFT' ? 'bg-yellow-100' : currentRequest.status === 'CANCEL' ? 'bg-red-100' : 'bg-gray-100'}`}>
-                                            <Text className={`text-xs font-bold ${currentRequest.status === 'DRAFT' ? 'text-yellow-700' : currentRequest.status === 'CANCEL' ? 'text-red-700' : 'text-gray-700'}`}>
-                                                {currentRequest.status}
-                                            </Text>
-                                        </View>
-                                    </View>
-
-                                    {/* SECTION: Customer */}
-                                    <View className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                                        <Text className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2">Customer</Text>
-
-                                        <View className="space-y-3">
+                                    <View className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
+                                        {/* Header Status */}
+                                        <View className="flex-row justify-between items-center border-b border-gray-100 pb-4 mb-4">
                                             <View>
-                                                <Text className="text-gray-500 text-xs mb-1">Customers Name</Text>
-                                                <TextInput
-                                                    className={`border border-gray-200 rounded-lg px-3 py-2 text-gray-800 ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50'}`}
+                                                <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Nomor CSR</Text>
+                                                <Text className="text-gray-900 font-extrabold text-lg">{currentRequest.csr_code}</Text>
+                                            </View>
+                                            <View className={`px-3 py-1.5 rounded-full ${currentRequest.status === 'DRAFT' ? 'bg-yellow-100' : currentRequest.status === 'CANCEL' ? 'bg-red-100' : 'bg-gray-100'}`}>
+                                                <Text className={`text-xs font-bold ${currentRequest.status === 'DRAFT' ? 'text-yellow-700' : currentRequest.status === 'CANCEL' ? 'text-red-700' : 'text-gray-700'}`}>
+                                                    {currentRequest.status}
+                                                </Text>
+                                            </View>
+                                        </View>
+
+                                        {/* --- Customer Fields --- */}
+                                        <Text className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2">Customer</Text>
+                                        <View className="mb-4">
+                                            <Text className="text-sm font-bold text-gray-700 mb-2 mt-2">Customers Name</Text>
+                                            <View className={`border border-gray-200 rounded-xl ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50'}`}>
+                                                <Dropdown
+                                                    style={{ height: 48, paddingHorizontal: 16 }}
+                                                    data={DUMMY_CUSTOMERS}
+                                                    labelField="label"
+                                                    valueField="value"
+                                                    placeholder="Select Customer"
                                                     value={formData.customers}
-                                                    onChangeText={(text) => handleChange('customers', text)}
-                                                    editable={!isReadOnly}
+                                                    onChange={item => !isReadOnly && handleChange('customers', item.value)}
+                                                    disable={isReadOnly}
+                                                    selectedTextStyle={{ color: isReadOnly ? '#6b7280' : '#111827', fontSize: 14 }}
+                                                    placeholderStyle={{ color: '#9ca3af', fontSize: 14 }}
                                                 />
                                             </View>
-                                            <View>
-                                                <Text className="text-gray-500 text-xs mb-1">Requestor <Text className="text-red-500">*</Text></Text>
+                                        </View>
+                                        <View className="mb-4">
+                                            <Text className="text-sm font-bold text-gray-700 mb-2">Requestor <Text className="text-red-500">*</Text></Text>
+                                            <View className={`border border-gray-200 rounded-xl ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50'}`}>
+                                                <Dropdown
+                                                    style={{ height: 48, paddingHorizontal: 16 }}
+                                                    data={DUMMY_KARYAWAN}
+                                                    labelField="label"
+                                                    valueField="value"
+                                                    placeholder="Select Requestor"
+                                                    value={formData.id_karyawan}
+                                                    onChange={item => !isReadOnly && handleChange('id_karyawan', item.value)}
+                                                    disable={isReadOnly}
+                                                    selectedTextStyle={{ color: isReadOnly ? '#6b7280' : '#111827', fontSize: 14 }}
+                                                    placeholderStyle={{ color: '#9ca3af', fontSize: 14 }}
+                                                />
+                                            </View>
+                                        </View>
+                                        <View className="mb-4 flex-row justify-between">
+                                            <View className="flex-1 mr-2">
+                                                <Text className="text-sm font-bold text-gray-700 mb-2">Created Date</Text>
                                                 <TextInput
-                                                    className={`border border-gray-200 rounded-lg px-3 py-2 text-gray-800 ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50'}`}
-                                                    value={currentRequest.nm_karyawan}
+                                                    className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 text-gray-500"
+                                                    value={currentRequest.csr_date ? formatDate(new Date(currentRequest.csr_date)) : ''}
                                                     editable={false}
                                                 />
                                             </View>
-                                            <View className="flex-row justify-between">
-                                                <View className="flex-1 mr-2">
-                                                    <Text className="text-gray-500 text-xs mb-1">Created Date</Text>
-                                                    <TextInput
-                                                        className="border border-gray-200 rounded-lg px-3 py-2 text-gray-800 bg-gray-100"
-                                                        value={currentRequest.csr_date}
-                                                        editable={false}
-                                                    />
-                                                </View>
-                                                <View className="flex-1 ml-2">
-                                                    <Text className="text-gray-500 text-xs mb-1">Date Request</Text>
-                                                    <TextInput
-                                                        className={`border border-gray-200 rounded-lg px-3 py-2 text-gray-800 ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50'}`}
-                                                        value={formData.date_request}
-                                                        onChangeText={(text) => handleChange('date_request', text)}
-                                                        editable={!isReadOnly}
-                                                    />
-                                                </View>
-                                            </View>
-                                            <View>
-                                                <Text className="text-gray-500 text-xs mb-1">Lokasi <Text className="text-red-500">*</Text></Text>
-                                                <View className="flex-row items-center space-x-4 mt-1">
-                                                    <TouchableOpacity className="flex-row items-center mr-4" onPress={() => !isReadOnly && handleChange('lokasi', 'Dalam Kota')}>
-                                                        <View className={`w-4 h-4 rounded-full border items-center justify-center mr-2 ${formData.lokasi === 'Dalam Kota' ? 'border-blue-500' : 'border-gray-300'}`}>
-                                                            {formData.lokasi === 'Dalam Kota' && <View className="w-2 h-2 rounded-full bg-blue-500" />}
-                                                        </View>
-                                                        <Text className="text-gray-700 text-sm">Dalam Kota</Text>
-                                                    </TouchableOpacity>
-                                                    <TouchableOpacity className="flex-row items-center" onPress={() => !isReadOnly && handleChange('lokasi', 'Luar Kota')}>
-                                                        <View className={`w-4 h-4 rounded-full border items-center justify-center mr-2 ${formData.lokasi === 'Luar Kota' ? 'border-blue-500' : 'border-gray-300'}`}>
-                                                            {formData.lokasi === 'Luar Kota' && <View className="w-2 h-2 rounded-full bg-blue-500" />}
-                                                        </View>
-                                                        <Text className="text-gray-700 text-sm">Luar Kota</Text>
-                                                    </TouchableOpacity>
-                                                </View>
-                                            </View>
-                                            <View>
-                                                <Text className="text-gray-500 text-xs mb-1">Status Pemasangan <Text className="text-red-500">*</Text></Text>
-                                                <View className="flex-row items-center space-x-4 mt-1">
-                                                    <TouchableOpacity className="flex-row items-center mr-4" onPress={() => !isReadOnly && handleChange('sts_pasang', 'Pasang Baru')}>
-                                                        <View className={`w-4 h-4 rounded-full border items-center justify-center mr-2 ${formData.sts_pasang === 'Pasang Baru' ? 'border-blue-500' : 'border-gray-300'}`}>
-                                                            {formData.sts_pasang === 'Pasang Baru' && <View className="w-2 h-2 rounded-full bg-blue-500" />}
-                                                        </View>
-                                                        <Text className="text-gray-700 text-sm">Pasang Baru</Text>
-                                                    </TouchableOpacity>
-                                                    <TouchableOpacity className="flex-row items-center" onPress={() => !isReadOnly && handleChange('sts_pasang', 'Service')}>
-                                                        <View className={`w-4 h-4 rounded-full border items-center justify-center mr-2 ${formData.sts_pasang === 'Service' ? 'border-blue-500' : 'border-gray-300'}`}>
-                                                            {formData.sts_pasang === 'Service' && <View className="w-2 h-2 rounded-full bg-blue-500" />}
-                                                        </View>
-                                                        <Text className="text-gray-700 text-sm">Service</Text>
-                                                    </TouchableOpacity>
-                                                </View>
+                                            <View className="flex-1 ml-2">
+                                                <Text className="text-sm font-bold text-gray-700 mb-2">Date Request</Text>
+                                                <TouchableOpacity
+                                                    className={`bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 flex-row items-center justify-between ${isReadOnly ? 'bg-gray-100' : ''}`}
+                                                    onPress={() => !isReadOnly && setShowDatePicker({ field: 'date_request', visible: true })}
+                                                    disabled={isReadOnly}
+                                                >
+                                                    <Text className={formData.date_request ? "text-gray-900" : "text-gray-400"}>
+                                                        {formData.date_request ? formatDate(new Date(formData.date_request)) : "Select Date"}
+                                                    </Text>
+                                                    <Calendar size={20} color="#9ca3af" />
+                                                </TouchableOpacity>
                                             </View>
                                         </View>
-                                    </View>
-
-                                    {/* SECTION: Laporan Kerusakan */}
-                                    <View className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                                        <Text className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2">Laporan Kerusakan</Text>
-
-                                        <View className="space-y-3">
-                                            <View>
-                                                <Text className="text-gray-500 text-xs mb-1">Catatan Kerusakan <Text className="text-red-500">*</Text></Text>
-                                                <TextInput
-                                                    className={`border border-gray-200 rounded-lg px-3 py-3 text-gray-800 ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50'}`}
-                                                    style={{ minHeight: 100 }}
-                                                    value={formData.lap_kerusakan}
-                                                    onChangeText={(text) => handleChange('lap_kerusakan', text)}
-                                                    multiline
-                                                    numberOfLines={5}
-                                                    textAlignVertical="top"
-                                                    editable={!isReadOnly}
-                                                />
-                                            </View>
-                                            <View>
-                                                <Text className="text-gray-500 text-xs mb-1">Images</Text>
-                                                <View className="w-16 h-16 bg-gray-100 border border-gray-200 rounded-lg items-center justify-center">
-                                                    <Text className="text-gray-400 text-xs">No Image</Text>
-                                                </View>
+                                        <View className="mb-4">
+                                            <Text className="text-sm font-bold text-gray-700 mb-2">Lokasi <Text className="text-red-500">*</Text></Text>
+                                            <View className="flex-row items-center mt-1">
+                                                <TouchableOpacity className="flex-row items-center mr-8" onPress={() => !isReadOnly && handleChange('lokasi', 'Dalam Kota')}>
+                                                    <View className={`w-5 h-5 rounded-full border items-center justify-center mr-2 ${formData.lokasi === 'Dalam Kota' ? 'border-[#9e0b0f]' : 'border-gray-300'}`}>
+                                                        {formData.lokasi === 'Dalam Kota' && <View className="w-2.5 h-2.5 rounded-full bg-[#9e0b0f]" />}
+                                                    </View>
+                                                    <Text className="text-gray-700 font-medium">Dalam Kota</Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity className="flex-row items-center" onPress={() => !isReadOnly && handleChange('lokasi', 'Luar Kota')}>
+                                                    <View className={`w-5 h-5 rounded-full border items-center justify-center mr-2 ${formData.lokasi === 'Luar Kota' ? 'border-[#9e0b0f]' : 'border-gray-300'}`}>
+                                                        {formData.lokasi === 'Luar Kota' && <View className="w-2.5 h-2.5 rounded-full bg-[#9e0b0f]" />}
+                                                    </View>
+                                                    <Text className="text-gray-700 font-medium">Luar Kota</Text>
+                                                </TouchableOpacity>
                                             </View>
                                         </View>
-                                    </View>
+                                        <View className="mb-4">
+                                            <Text className="text-sm font-bold text-gray-700 mb-2">Status Pemasangan <Text className="text-red-500">*</Text></Text>
+                                            <View className="flex-row items-center mt-1">
+                                                <TouchableOpacity className="flex-row items-center mr-8" onPress={() => !isReadOnly && handleChange('sts_pasang', 'Pasang Baru')}>
+                                                    <View className={`w-5 h-5 rounded-full border items-center justify-center mr-2 ${formData.sts_pasang === 'Pasang Baru' ? 'border-[#9e0b0f]' : 'border-gray-300'}`}>
+                                                        {formData.sts_pasang === 'Pasang Baru' && <View className="w-2.5 h-2.5 rounded-full bg-[#9e0b0f]" />}
+                                                    </View>
+                                                    <Text className="text-gray-700 font-medium">Pasang Baru</Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity className="flex-row items-center" onPress={() => !isReadOnly && handleChange('sts_pasang', 'Service')}>
+                                                    <View className={`w-5 h-5 rounded-full border items-center justify-center mr-2 ${formData.sts_pasang === 'Service' ? 'border-[#9e0b0f]' : 'border-gray-300'}`}>
+                                                        {formData.sts_pasang === 'Service' && <View className="w-2.5 h-2.5 rounded-full bg-[#9e0b0f]" />}
+                                                    </View>
+                                                    <Text className="text-gray-700 font-medium">Service</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
 
-                                    {/* SECTION: Product To Service */}
-                                    <View className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                                        <Text className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2">Product To Service</Text>
+                                        {/* --- Laporan Kerusakan Fields --- */}
+                                        <Text className="text-lg font-bold text-gray-800 mt-6 mb-4 border-b border-gray-100 pb-2">Laporan Kerusakan</Text>
+                                        <View className="mb-4">
+                                            <Text className="text-sm font-bold text-gray-700 mb-2 mt-2">Catatan Kerusakan <Text className="text-red-500">*</Text></Text>
+                                            <TextInput
+                                                className={`bg-gray-50 px-4 py-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900 ${isReadOnly ? 'bg-gray-100' : ''}`}
+                                                style={{ minHeight: 120 }}
+                                                value={formData.lap_kerusakan}
+                                                onChangeText={(text) => handleChange('lap_kerusakan', text)}
+                                                multiline
+                                                numberOfLines={5}
+                                                textAlignVertical="top"
+                                                editable={!isReadOnly}
+                                            />
+                                        </View>
+                                        <View className="mb-4">
+                                            <Text className="text-sm font-bold text-gray-700 mb-2">Images</Text>
+                                            <View className="w-24 h-24 bg-gray-50 border border-gray-300 border-dashed rounded-xl items-center justify-center">
+                                                <Text className="text-gray-400 text-xs font-medium">No Image</Text>
+                                            </View>
+                                        </View>
 
-                                        <View className="space-y-3">
-                                            <View className="flex-row">
-                                                <View className="flex-1 mr-2">
-                                                    <Text className="text-gray-500 text-xs mb-1">Serial Number</Text>
-                                                    <TextInput
-                                                        className={`border border-gray-200 rounded-lg px-3 py-2 text-gray-800 ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50'}`}
-                                                        value={formData.sn_number}
-                                                        onChangeText={(text) => handleChange('sn_number', text)}
-                                                        editable={!isReadOnly}
-                                                    />
+                                        {/* SECTION: Product To Service */}
+                                        <Text className="text-lg font-bold text-gray-800 mt-6 mb-4 border-b border-gray-100 pb-2">Product To Service</Text>
+
+                                        {/* Product & Warranty Info Box */}
+                                        <View className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-4 space-y-3">
+                                            {/* Product Details */}
+                                            <View className="space-y-2 border-b border-blue-200 pb-3 mb-1">
+                                                <View className="flex-row justify-between">
+                                                    <Text className="text-gray-600 text-xs">Serial Number</Text>
+                                                    <Text className="text-gray-800 text-xs">{formData.sn_number || '-'}</Text>
                                                 </View>
-                                                <View className="flex-1 ml-2">
-                                                    <Text className="text-gray-500 text-xs mb-1">Product Name</Text>
-                                                    <TextInput
-                                                        className={`border border-gray-200 rounded-lg px-3 py-2 text-gray-800 bg-gray-100`}
-                                                        value={currentRequest.nm_product}
-                                                        editable={false}
-                                                    />
+                                                <View className="flex-row justify-between">
+                                                    <Text className="text-gray-600 text-xs">Product Name</Text>
+                                                    <Text className="text-gray-800 text-xs">{currentRequest.nm_product || '-'}</Text>
+                                                </View>
+                                                <View className="flex-row justify-between">
+                                                    <Text className="text-gray-600 text-xs">Product Category</Text>
+                                                    <Text className="text-gray-800 text-xs">Graphic Machinery</Text>
+                                                </View>
+                                                <View className="flex-row justify-between">
+                                                    <Text className="text-gray-600 text-xs">Delivery Order</Text>
+                                                    <Text className="text-gray-800 text-xs">{formData.do_code || '-'}</Text>
+                                                </View>
+                                                <View className="flex-row justify-between">
+                                                    <Text className="text-gray-600 text-xs">Internal Notes SO</Text>
+                                                    <Text className="text-gray-800 text-xs">-</Text>
                                                 </View>
                                             </View>
 
-                                            <View className="flex-row">
-                                                <View className="flex-1 mr-2">
-                                                    <Text className="text-gray-500 text-xs mb-1">Product Category</Text>
-                                                    <TextInput
-                                                        className="border border-gray-200 rounded-lg px-3 py-2 text-gray-800 bg-gray-100"
-                                                        value="Graphic Machinery" // Dummy
-                                                        editable={false}
-                                                    />
-                                                </View>
-                                                <View className="flex-1 ml-2">
-                                                    <Text className="text-gray-500 text-xs mb-1">Delivery Order</Text>
-                                                    <TextInput
-                                                        className={`border border-gray-200 rounded-lg px-3 py-2 text-gray-800 ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50'}`}
-                                                        value={formData.do_code}
-                                                        onChangeText={(text) => handleChange('do_code', text)}
-                                                        editable={!isReadOnly}
-                                                    />
-                                                </View>
-                                            </View>
-
-                                            <View>
-                                                <Text className="text-gray-500 text-xs mb-1">Internal Notes SO</Text>
-                                                <TextInput
-                                                    className={`border border-gray-200 rounded-lg px-3 py-2 text-gray-800 ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50'}`}
-                                                    value="" // Dummy
-                                                    editable={!isReadOnly}
-                                                />
-                                            </View>
-
-                                            {/* Warranty Info Box */}
-                                            <View className="bg-blue-50 p-3 rounded-lg border border-blue-100 mt-2 space-y-2">
+                                            {/* Warranty Details */}
+                                            <View className="space-y-2">
                                                 <View className="flex-row justify-between">
                                                     <Text className="text-gray-600 text-xs">Warranty Start</Text>
-                                                    <Text className="text-gray-800 text-xs font-semibold">{currentRequest.csr_date}</Text>
+                                                    <Text className="text-gray-800 text-xs">{currentRequest.csr_date ? formatDate(new Date(currentRequest.csr_date)) : '-'}</Text>
                                                 </View>
                                                 <View className="flex-row justify-between">
                                                     <Text className="text-gray-600 text-xs">Warranty Time</Text>
-                                                    <Text className="text-gray-800 text-xs font-semibold">12 Months</Text>
+                                                    <Text className="text-gray-800 text-xs">12 Months</Text>
                                                 </View>
                                                 <View className="flex-row justify-between">
                                                     <Text className="text-gray-600 text-xs">Warranty End</Text>
-                                                    <Text className="text-gray-800 text-xs font-semibold">2027-05-06</Text>
+                                                    <Text className="text-gray-800 text-xs">2027-05-06</Text>
                                                 </View>
                                                 <View className="flex-row justify-between">
                                                     <Text className="text-gray-600 text-xs">Warranty Status</Text>
-                                                    <Text className="text-green-600 text-xs font-bold">GARANSI</Text>
+                                                    <Text className="text-green-600 text-xs">GARANSI</Text>
                                                 </View>
                                                 <View className="flex-row justify-between">
                                                     <Text className="text-gray-600 text-xs">Keterangan SO</Text>
-                                                    <Text className="text-gray-800 text-xs font-semibold">-</Text>
+                                                    <Text className="text-gray-800 text-xs">-</Text>
                                                 </View>
                                             </View>
                                         </View>
-                                    </View>
-
-                                    {/* SECTION: CST List */}
-                                    <View className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                                        <Text className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2">CST List</Text>
+                                        {/* SECTION: CST List */}
+                                        <Text className="text-lg font-bold text-gray-800 mt-6 mb-4 border-b border-gray-100 pb-2">CST List</Text>
                                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                                             <View className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden min-w-[500px]">
                                                 <View className="flex-row bg-gray-200 p-2 border-b border-gray-300">
@@ -372,7 +413,7 @@ export function CsrEditScreen() {
                                             <>
                                                 <Button
                                                     onPress={() => setIsEditing(true)}
-                                                    className="w-full h-14 rounded-2xl flex-row items-center justify-center bg-indigo-600"
+                                                    className="w-full h-14 rounded-2xl flex-row items-center justify-center bg-[#9e0b0f]"
                                                     style={{ elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
                                                 >
                                                     <Edit3 color="white" size={20} className="mr-2" />
@@ -426,10 +467,7 @@ export function CsrEditScreen() {
                                                 <Text className="font-bold text-lg" style={{ color: theme.colors.primary }}>Batal</Text>
                                             </Button>
                                             <Button
-                                                onPress={async () => {
-                                                    await handleUpdate();
-                                                    setIsEditing(false);
-                                                }}
+                                                onPress={handlePreUpdate}
                                                 className="flex-1 h-14 rounded-2xl flex-row items-center justify-center bg-green-600"
                                                 style={{ elevation: 4, shadowColor: '#16a34a', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
                                             >
@@ -445,6 +483,51 @@ export function CsrEditScreen() {
                 )}
             </ScrollView>
 
+            {showDatePicker.visible && (
+                <DateTimePicker
+                    value={formData[showDatePicker.field as keyof typeof formData] ? new Date(formData[showDatePicker.field as keyof typeof formData]) : new Date()}
+                    mode="date"
+                    display="default"
+                    onChange={handleDateChange}
+                />
+            )}
+
+            <ModalConfirm
+                visible={modalUpdateVisible}
+                title="Konfirmasi Simpan"
+                message="Apakah Anda yakin ingin menyimpan perubahan pada CSR ini?"
+                confirmText="Ya, Simpan!"
+                cancelText="Batal"
+                onConfirm={handleUpdate}
+                onCancel={() => setModalUpdateVisible(false)}
+            />
+
+            <ModalConfirm
+                visible={modalConfirmVisible}
+                title="Konfirmasi CSR"
+                message="Apakah Anda yakin ingin mengkonfirmasi CSR ini?"
+                confirmText="Ya!"
+                cancelText="Batal"
+                onConfirm={executeConfirm}
+                onCancel={() => setModalConfirmVisible(false)}
+            />
+
+            <ModalCancel
+                visible={modalCancelVisible}
+                title="Batalkan CSR"
+                message="Apakah Anda yakin ingin membatalkan CSR ini?"
+                confirmText="Ya, Batalkan!"
+                cancelText="Kembali"
+                onConfirm={executeCancel}
+                onCancel={() => setModalCancelVisible(false)}
+            />
+
+            <ToastMessages
+                visible={toast.visible}
+                type={toast.type}
+                message={toast.message}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
         </View>
     );
 }

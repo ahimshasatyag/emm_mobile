@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, ScrollView, Text, TextInput, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Save } from 'lucide-react-native';
+import { Save, Calendar } from 'lucide-react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { theme } from '../../../theme/theme';
 import { useCsr } from '../hooks/useCsr';
@@ -9,16 +10,36 @@ import { Button } from '../../../components/ui/button';
 import Animated, { FadeInDown, FadeOut, Layout } from 'react-native-reanimated';
 import { Dropdown } from 'react-native-element-dropdown';
 import { CsrFormSkeleton } from '../skeleton/CsrFormSkeleton';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { formatDate } from '../../../utils/helpers/date';
 
 export function CsrFormScreen() {
     const navigation = useNavigation<any>();
-    const { submitRequest, isLoading } = useCsr();
+    const { submitRequest, isLoading, validateForm } = useCsr();
+
+    const [modalVisible, setModalVisible] = useState(false);
+    const [toast, setToast] = useState<{ visible: boolean; type: ToastType; message: string }>({
+        visible: false,
+        type: 'success',
+        message: ''
+    });
+
+    const [showDatePicker, setShowDatePicker] = useState<{ field: string, visible: boolean }>({ field: '', visible: false });
+
+    const handleDateChange = (event: any, selectedDate?: Date) => {
+        const field = showDatePicker.field;
+        setShowDatePicker({ field: '', visible: false });
+        if (event.type === 'set' && selectedDate && field) {
+            handleChange(field, selectedDate.toISOString().split('T')[0]);
+        }
+    };
 
     // Dummy form state
     const [formData, setFormData] = useState({
         customers: 'C001',
         date_request: new Date().toISOString().split('T')[0],
-        product_name: '',
+        id_product: '',
         sn_number: '',
         sts_pasang: 'Pasang Baru',
         do_code: '',
@@ -38,6 +59,12 @@ export function CsrFormScreen() {
         { label: 'Toko Budi', value: 'C003' },
     ];
 
+    const DUMMY_KARYAWAN = [
+        { label: 'Budi Santoso', value: 'K001' },
+        { label: 'Andi Hermawan', value: 'K002' },
+        { label: 'Siti Aminah', value: 'K003' },
+    ];
+
     const DUMMY_PRODUCTS = [
         { label: 'Mesin EDC Verifone', value: 'Mesin EDC Verifone' },
         { label: 'Printer Thermal', value: 'Printer Thermal' },
@@ -48,7 +75,6 @@ export function CsrFormScreen() {
 
     const onRefresh = () => {
         setIsRefreshing(true);
-        // Simulate loading external data for the form (e.g. customer lists, product lists)
         setTimeout(() => {
             setIsRefreshing(false);
         }, 1000);
@@ -59,31 +85,61 @@ export function CsrFormScreen() {
     };
 
     const handleSave = async () => {
-        if (!formData.customers || !formData.id_product || !formData.lokasi || !formData.lap_kerusakan) {
-            Alert.alert('Perhatian', 'Harap lengkapi semua field yang wajib diisi.');
+        const errorMsg = validateForm(formData);
+        if (errorMsg) {
+            setToast({ visible: true, type: 'error', message: errorMsg });
             return;
         }
 
+        setModalVisible(true);
+    };
+
+    const handleConfirmSave = async () => {
+        setModalVisible(false);
         try {
-            await submitRequest(formData);
-            Alert.alert('Sukses', 'Data CSR berhasil ditambahkan.', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+            const result = await submitRequest(formData);
+            navigation.replace('CsrEditScreen', { id: result.id, showSuccessToast: true, successMessage: 'Data CSR berhasil ditambahkan.' });
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Gagal menyimpan data');
+            setToast({ visible: true, type: 'error', message: error.message || 'Gagal menyimpan data' });
         }
     };
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator 
+            <ToastMessages
+                visible={toast.visible}
+                title='Validasi'
+                type={toast.type}
+                message={toast.message}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+
+            <ModalConfirm
+                visible={modalVisible}
+                title="Konfirmasi"
+                message="Apakah Anda yakin ingin menyimpan data CSR ini?"
+                confirmText="Ya, Simpan!"
+                cancelText="Batal"
+                onConfirm={handleConfirmSave}
+                onCancel={() => setModalVisible(false)}
+            />
+
+            <HeaderNavigator
                 title={isLoading ? "MENYIMPAN DATA..." : (isRefreshing ? "MEMUAT DATA..." : "TAMBAH CSR")}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
             />
+            {showDatePicker.visible && (
+                <DateTimePicker
+                    value={formData[showDatePicker.field as keyof typeof formData] ? new Date(formData[showDatePicker.field as keyof typeof formData]) : new Date()}
+                    mode="date"
+                    display="default"
+                    onChange={handleDateChange}
+                />
+            )}
 
-            <ScrollView 
-                className="flex-1 px-4 pt-4" 
+            <ScrollView
+                className="flex-1 px-4 pt-4"
                 contentContainerStyle={{ paddingBottom: 40 }}
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />}
             >
@@ -96,179 +152,182 @@ export function CsrFormScreen() {
                         <View key="content" className="space-y-4">
                             <Animated.View entering={FadeInDown.delay(100).springify()} layout={Layout.springify()}>
                                 {/* SECTION: Product To Service */}
-                                <View className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                <View className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
                                     <Text className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2">Product To Service</Text>
 
-                                    <View className="space-y-3">
-                                        <View>
-                                            <Text className="text-gray-500 text-xs mb-1">Serial Number</Text>
+                                    <View>
+                                        {/* --- Product To Service Fields --- */}
+                                        <View className="mb-4">
+                                            <Text className="text-sm font-bold text-gray-700 mb-2">Serial Number</Text>
                                             <TextInput
-                                                className="border border-gray-200 rounded-lg px-3 py-2 text-gray-800 bg-gray-50"
+                                                className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                                 value={formData.sn_number}
                                                 onChangeText={(text) => handleChange('sn_number', text)}
                                             />
                                         </View>
-                                        <View>
-                                            <Text className="text-gray-500 text-xs mb-1">Product Name <Text className="text-red-500">*</Text></Text>
-                                            <View className="border border-gray-200 rounded-lg bg-gray-50 h-[42px] justify-center">
+                                        <View className="mb-4">
+                                            <Text className="text-sm font-bold text-gray-700 mb-2">Product Name <Text className="text-red-500">*</Text></Text>
+                                            <View className="border border-gray-200 rounded-xl bg-gray-50">
                                                 <Dropdown
-                                                    style={{ paddingHorizontal: 12 }}
+                                                    style={{ height: 48, paddingHorizontal: 16 }}
                                                     data={DUMMY_PRODUCTS}
                                                     labelField="label"
                                                     valueField="value"
                                                     placeholder="Select Product"
-                                                    value={formData.product_name}
-                                                    onChange={item => handleChange('product_name', item.value)}
-                                                    selectedTextStyle={{ color: '#1f2937', fontSize: 14 }}
+                                                    value={formData.id_product}
+                                                    onChange={item => handleChange('id_product', item.value)}
+                                                    selectedTextStyle={{ color: '#111827', fontSize: 14 }}
                                                     placeholderStyle={{ color: '#9ca3af', fontSize: 14 }}
                                                 />
                                             </View>
                                         </View>
-                                        <View>
-                                            <Text className="text-gray-500 text-xs mb-1">Delivery Order</Text>
+                                        <View className="mb-4">
+                                            <Text className="text-sm font-bold text-gray-700 mb-2">Delivery Order</Text>
                                             <TextInput
-                                                className="border border-gray-200 rounded-lg px-3 py-2 text-gray-800 bg-gray-50"
+                                                className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                                 value={formData.do_code}
                                                 onChangeText={(text) => handleChange('do_code', text)}
                                             />
                                         </View>
-                                        <View className="flex-row">
+                                        <View className="mb-4 flex-row">
                                             <View className="flex-1 mr-2">
-                                                <Text className="text-gray-500 text-xs mb-1">Status SO</Text>
+                                                <Text className="text-sm font-bold text-gray-700 mb-2">Status SO</Text>
                                                 <TextInput
-                                                    className="border border-gray-200 rounded-lg px-3 py-2 text-gray-800 bg-gray-50"
+                                                    className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                                     value={formData.status_so}
                                                     onChangeText={(text) => handleChange('status_so', text)}
                                                 />
                                             </View>
                                             <View className="flex-1 ml-2">
-                                                <Text className="text-gray-500 text-xs mb-1">Warranty Status</Text>
+                                                <Text className="text-sm font-bold text-gray-700 mb-2">Warranty Status</Text>
                                                 <TextInput
-                                                    className="border border-gray-200 rounded-lg px-3 py-2 text-gray-800 bg-gray-50"
+                                                    className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                                     value={formData.warranty_status}
                                                     onChangeText={(text) => handleChange('warranty_status', text)}
                                                 />
                                             </View>
                                         </View>
-                                        <View className="flex-row">
+                                        <View className="mb-4 flex-row">
                                             <View className="flex-1 mr-2">
-                                                <Text className="text-gray-500 text-xs mb-1">Warranty Start</Text>
-                                                <TextInput
-                                                    className="border border-gray-200 rounded-lg px-3 py-2 text-gray-800 bg-gray-50"
-                                                    value={formData.warranty_start}
-                                                    onChangeText={(text) => handleChange('warranty_start', text)}
-                                                />
+                                                <Text className="text-sm font-bold text-gray-700 mb-2">Warranty Start</Text>
+                                                <TouchableOpacity
+                                                    className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 flex-row items-center justify-between"
+                                                    onPress={() => setShowDatePicker({ field: 'warranty_start', visible: true })}
+                                                >
+                                                    <Text className={formData.warranty_start ? "text-gray-900" : "text-gray-400"}>
+                                                        {formData.warranty_start ? formatDate(new Date(formData.warranty_start)) : "Select Date"}
+                                                    </Text>
+                                                    <Calendar size={20} color="#9ca3af" />
+                                                </TouchableOpacity>
                                             </View>
                                             <View className="flex-1 ml-2">
-                                                <Text className="text-gray-500 text-xs mb-1">Warranty Time</Text>
+                                                <Text className="text-sm font-bold text-gray-700 mb-2">Warranty Time</Text>
                                                 <TextInput
-                                                    className="border border-gray-200 rounded-lg px-3 py-2 text-gray-800 bg-gray-50"
+                                                    className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
                                                     value={formData.warranty_time}
                                                     onChangeText={(text) => handleChange('warranty_time', text)}
                                                 />
                                             </View>
                                         </View>
-                                    </View>
-                                </View>
-                            </Animated.View>
 
-                            <Animated.View entering={FadeInDown.delay(200).springify()} layout={Layout.springify()}>
-                                {/* SECTION: Customer */}
-                                <View className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                                    <Text className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2">Customer</Text>
-
-                                    <View className="space-y-3">
-                                        <View>
-                                            <Text className="text-gray-500 text-xs mb-1">Customers Name <Text className="text-red-500">*</Text></Text>
-                                            <View className="border border-gray-200 rounded-lg bg-gray-50 h-[42px] justify-center">
+                                        {/* --- Customer Fields --- */}
+                                        <Text className="text-lg font-bold text-gray-800 mt-6 mb-4 border-b border-gray-100 pb-2">Customer</Text>
+                                        <View className="mb-4">
+                                            <Text className="text-sm font-bold text-gray-700 mb-2 mt-2">Customers Name <Text className="text-red-500">*</Text></Text>
+                                            <View className="border border-gray-200 rounded-xl bg-gray-50">
                                                 <Dropdown
-                                                    style={{ paddingHorizontal: 12 }}
+                                                    style={{ height: 48, paddingHorizontal: 16 }}
                                                     data={DUMMY_CUSTOMERS}
                                                     labelField="label"
                                                     valueField="value"
                                                     placeholder="Select Customer"
                                                     value={formData.customers}
                                                     onChange={item => handleChange('customers', item.value)}
-                                                    selectedTextStyle={{ color: '#1f2937', fontSize: 14 }}
+                                                    selectedTextStyle={{ color: '#111827', fontSize: 14 }}
                                                     placeholderStyle={{ color: '#9ca3af', fontSize: 14 }}
                                                 />
                                             </View>
                                         </View>
-                                        <View>
-                                            <Text className="text-gray-500 text-xs mb-1">Requestor <Text className="text-red-500">*</Text></Text>
-                                            <TextInput
-                                                className="border border-gray-200 rounded-lg px-3 py-2 text-gray-800 bg-gray-50"
-                                                value={formData.id_karyawan}
-                                                onChangeText={(text) => handleChange('id_karyawan', text)}
-                                            />
+                                        <View className="mb-4">
+                                            <Text className="text-sm font-bold text-gray-700 mb-2">Requestor <Text className="text-red-500">*</Text></Text>
+                                            <View className="border border-gray-200 rounded-xl bg-gray-50">
+                                                <Dropdown
+                                                    style={{ height: 48, paddingHorizontal: 16 }}
+                                                    data={DUMMY_KARYAWAN}
+                                                    labelField="label"
+                                                    valueField="value"
+                                                    placeholder="Select Requestor"
+                                                    value={formData.id_karyawan}
+                                                    onChange={item => handleChange('id_karyawan', item.value)}
+                                                    selectedTextStyle={{ color: '#111827', fontSize: 14 }}
+                                                    placeholderStyle={{ color: '#9ca3af', fontSize: 14 }}
+                                                />
+                                            </View>
                                         </View>
-                                        <View className="flex-row justify-between">
+                                        <View className="mb-4 flex-row justify-between">
                                             <View className="flex-1 mr-2">
-                                                <Text className="text-gray-500 text-xs mb-1">Created Date</Text>
+                                                <Text className="text-sm font-bold text-gray-700 mb-2">Created Date</Text>
                                                 <TextInput
-                                                    className="border border-gray-200 rounded-lg px-3 py-2 text-gray-800 bg-gray-100"
-                                                    value={new Date().toISOString().split('T')[0]}
+                                                    className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 text-gray-500"
+                                                    value={formatDate(new Date())}
                                                     editable={false}
                                                 />
                                             </View>
                                             <View className="flex-1 ml-2">
-                                                <Text className="text-gray-500 text-xs mb-1">Date Request</Text>
-                                                <TextInput
-                                                    className="border border-gray-200 rounded-lg px-3 py-2 text-gray-800 bg-gray-50"
-                                                    value={formData.date_request}
-                                                    onChangeText={(text) => handleChange('date_request', text)}
-                                                />
+                                                <Text className="text-sm font-bold text-gray-700 mb-2">Date Request</Text>
+                                                <TouchableOpacity
+                                                    className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 flex-row items-center justify-between"
+                                                    onPress={() => setShowDatePicker({ field: 'date_request', visible: true })}
+                                                >
+                                                    <Text className={formData.date_request ? "text-gray-900" : "text-gray-400"}>
+                                                        {formData.date_request ? formatDate(new Date(formData.date_request)) : "Select Date"}
+                                                    </Text>
+                                                    <Calendar size={20} color="#9ca3af" />
+                                                </TouchableOpacity>
                                             </View>
                                         </View>
-                                        <View>
-                                            <Text className="text-gray-500 text-xs mb-1">Lokasi <Text className="text-red-500">*</Text></Text>
-                                            <View className="flex-row items-center space-x-4 mt-1">
-                                                <TouchableOpacity className="flex-row items-center mr-4" onPress={() => handleChange('lokasi', 'Dalam Kota')}>
-                                                    <View className={`w-4 h-4 rounded-full border items-center justify-center mr-2 ${formData.lokasi === 'Dalam Kota' ? 'border-blue-500' : 'border-gray-300'}`}>
-                                                        {formData.lokasi === 'Dalam Kota' && <View className="w-2 h-2 rounded-full bg-blue-500" />}
+                                        <View className="mb-4">
+                                            <Text className="text-sm font-bold text-gray-700 mb-2">Lokasi <Text className="text-red-500">*</Text></Text>
+                                            <View className="flex-row items-center mt-1">
+                                                <TouchableOpacity className="flex-row items-center mr-8" onPress={() => handleChange('lokasi', 'Dalam Kota')}>
+                                                    <View className={`w-5 h-5 rounded-full border items-center justify-center mr-2 ${formData.lokasi === 'Dalam Kota' ? 'border-[#9e0b0f]' : 'border-gray-300'}`}>
+                                                        {formData.lokasi === 'Dalam Kota' && <View className="w-2.5 h-2.5 rounded-full bg-[#9e0b0f]" />}
                                                     </View>
-                                                    <Text className="text-gray-700 text-sm">Dalam Kota</Text>
+                                                    <Text className="text-gray-700 font-medium">Dalam Kota</Text>
                                                 </TouchableOpacity>
                                                 <TouchableOpacity className="flex-row items-center" onPress={() => handleChange('lokasi', 'Luar Kota')}>
-                                                    <View className={`w-4 h-4 rounded-full border items-center justify-center mr-2 ${formData.lokasi === 'Luar Kota' ? 'border-blue-500' : 'border-gray-300'}`}>
-                                                        {formData.lokasi === 'Luar Kota' && <View className="w-2 h-2 rounded-full bg-blue-500" />}
+                                                    <View className={`w-5 h-5 rounded-full border items-center justify-center mr-2 ${formData.lokasi === 'Luar Kota' ? 'border-[#9e0b0f]' : 'border-gray-300'}`}>
+                                                        {formData.lokasi === 'Luar Kota' && <View className="w-2.5 h-2.5 rounded-full bg-[#9e0b0f]" />}
                                                     </View>
-                                                    <Text className="text-gray-700 text-sm">Luar Kota</Text>
+                                                    <Text className="text-gray-700 font-medium">Luar Kota</Text>
                                                 </TouchableOpacity>
                                             </View>
                                         </View>
-                                        <View>
-                                            <Text className="text-gray-500 text-xs mb-1">Status Pemasangan <Text className="text-red-500">*</Text></Text>
-                                            <View className="flex-row items-center space-x-4 mt-1">
-                                                <TouchableOpacity className="flex-row items-center mr-4" onPress={() => handleChange('sts_pasang', 'Pasang Baru')}>
-                                                    <View className={`w-4 h-4 rounded-full border items-center justify-center mr-2 ${formData.sts_pasang === 'Pasang Baru' ? 'border-blue-500' : 'border-gray-300'}`}>
-                                                        {formData.sts_pasang === 'Pasang Baru' && <View className="w-2 h-2 rounded-full bg-blue-500" />}
+                                        <View className="mb-4">
+                                            <Text className="text-sm font-bold text-gray-700 mb-2">Status Pemasangan <Text className="text-red-500">*</Text></Text>
+                                            <View className="flex-row items-center mt-1">
+                                                <TouchableOpacity className="flex-row items-center mr-8" onPress={() => handleChange('sts_pasang', 'Pasang Baru')}>
+                                                    <View className={`w-5 h-5 rounded-full border items-center justify-center mr-2 ${formData.sts_pasang === 'Pasang Baru' ? 'border-[#9e0b0f]' : 'border-gray-300'}`}>
+                                                        {formData.sts_pasang === 'Pasang Baru' && <View className="w-2.5 h-2.5 rounded-full bg-[#9e0b0f]" />}
                                                     </View>
-                                                    <Text className="text-gray-700 text-sm">Pasang Baru</Text>
+                                                    <Text className="text-gray-700 font-medium">Pasang Baru</Text>
                                                 </TouchableOpacity>
                                                 <TouchableOpacity className="flex-row items-center" onPress={() => handleChange('sts_pasang', 'Service')}>
-                                                    <View className={`w-4 h-4 rounded-full border items-center justify-center mr-2 ${formData.sts_pasang === 'Service' ? 'border-blue-500' : 'border-gray-300'}`}>
-                                                        {formData.sts_pasang === 'Service' && <View className="w-2 h-2 rounded-full bg-blue-500" />}
+                                                    <View className={`w-5 h-5 rounded-full border items-center justify-center mr-2 ${formData.sts_pasang === 'Service' ? 'border-[#9e0b0f]' : 'border-gray-300'}`}>
+                                                        {formData.sts_pasang === 'Service' && <View className="w-2.5 h-2.5 rounded-full bg-[#9e0b0f]" />}
                                                     </View>
-                                                    <Text className="text-gray-700 text-sm">Service</Text>
+                                                    <Text className="text-gray-700 font-medium">Service</Text>
                                                 </TouchableOpacity>
                                             </View>
                                         </View>
-                                    </View>
-                                </View>
-                            </Animated.View>
 
-                            <Animated.View entering={FadeInDown.delay(300).springify()} layout={Layout.springify()}>
-                                {/* SECTION: Laporan Kerusakan */}
-                                <View className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                                    <Text className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2">Laporan Kerusakan</Text>
-
-                                    <View className="space-y-3">
-                                        <View>
-                                            <Text className="text-gray-500 text-xs mb-1">Catatan Kerusakan <Text className="text-red-500">*</Text></Text>
+                                        {/* --- Laporan Kerusakan Fields --- */}
+                                        <Text className="text-lg font-bold text-gray-800 mt-6 mb-4 border-b border-gray-100 pb-2">Laporan Kerusakan</Text>
+                                        <View className="mb-4">
+                                            <Text className="text-sm font-bold text-gray-700 mb-2 mt-2">Catatan Kerusakan <Text className="text-red-500">*</Text></Text>
                                             <TextInput
-                                                className="border border-gray-200 rounded-lg px-3 py-3 text-gray-800 bg-gray-50"
-                                                style={{ minHeight: 100 }}
+                                                className="bg-gray-50 px-4 py-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
+                                                style={{ minHeight: 120 }}
                                                 value={formData.lap_kerusakan}
                                                 onChangeText={(text) => handleChange('lap_kerusakan', text)}
                                                 multiline
@@ -276,12 +335,13 @@ export function CsrFormScreen() {
                                                 textAlignVertical="top"
                                             />
                                         </View>
-                                        <View>
-                                            <Text className="text-gray-500 text-xs mb-1">Images</Text>
-                                            <View className="w-16 h-16 bg-gray-100 border border-gray-200 rounded-lg items-center justify-center">
-                                                <Text className="text-gray-400 text-xs">No Image</Text>
+                                        <View className="mb-4">
+                                            <Text className="text-sm font-bold text-gray-700 mb-2">Images</Text>
+                                            <View className="w-24 h-24 bg-gray-50 border border-gray-300 border-dashed rounded-xl items-center justify-center">
+                                                <Text className="text-gray-400 text-xs font-medium">No Image</Text>
                                             </View>
                                         </View>
+
                                     </View>
                                 </View>
                             </Animated.View>

@@ -7,15 +7,29 @@ import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useCst } from '../hooks/useCst';
 import { CstEditSkeleton } from '../skeleton/CstEditSkeleton';
 import { theme } from '../../../theme/theme';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export function CstEditScreen() {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
-    const cstCode = route.params?.id;
+    const { id: cstCode, showSuccessToast, successMessage } = route.params || {};
 
     const { currentCst, isLoading, loadCstDetail, handleCloseCst, handleCancelCst, resetCurrentCst } = useCst();
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState<'lkt' | 'expense'>('lkt');
+
+    const [toast, setToast] = useState<{ visible: boolean; type: ToastType; message: string }>({
+        visible: false,
+        type: 'success',
+        message: ''
+    });
+
+    useEffect(() => {
+        if (showSuccessToast && successMessage) {
+            setToast({ visible: true, type: 'success', message: successMessage });
+            navigation.setParams({ showSuccessToast: undefined, successMessage: undefined });
+        }
+    }, [showSuccessToast, successMessage, navigation]);
 
     useEffect(() => {
         if (cstCode) {
@@ -93,6 +107,13 @@ export function CstEditScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toast.visible}
+                type={toast.type}
+                message={toast.message}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+
             <HeaderNavigator 
                 title={isLoading ? "MEMUAT DATA..." : "DETAIL CST"} 
                 showBackButton={true}

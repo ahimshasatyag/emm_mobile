@@ -44,6 +44,21 @@ export const useCsr = () => {
         dispatch(clearCurrentRequest());
     }, [dispatch]);
 
+    const validateForm = (formData: Partial<CsrPayload>): string | null => {
+        if (!formData.id_product && !formData.customers && !formData.id_karyawan && !formData.lokasi && !formData.sts_pasang && !formData.lap_kerusakan) {
+            return 'Semua field wajib diisi!';
+        }
+        
+        if (!formData.id_product) return 'Product Name harus diisi';
+        if (!formData.customers) return 'Customer Name harus diisi';
+        if (!formData.id_karyawan) return 'Requestor harus diisi';
+        if (!formData.lokasi) return 'Lokasi harus diisi';
+        if (!formData.sts_pasang) return 'Status Pemasangan harus diisi';
+        if (!formData.lap_kerusakan) return 'Catatan Kerusakan harus diisi';
+        
+        return null;
+    };
+
     return {
         requests,
         currentRequest,
@@ -55,6 +70,7 @@ export const useCsr = () => {
         editRequest,
         submitConfirmCsr,
         submitCancelCsr,
-        resetCurrentRequest
+        resetCurrentRequest,
+        validateForm
     };
 };
