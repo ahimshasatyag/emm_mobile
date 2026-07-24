@@ -3,6 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, Modal, KeyboardAvoidingView, P
 import { X, Save, Trash2 } from 'lucide-react-native';
 import { SupplierContact } from '../types/suppliers.types';
 import { theme } from '../../../theme/theme';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { validateContactForm } from '../hooks/useSuppliers';
 
 interface ContactModalProps {
     visible: boolean;
@@ -21,6 +23,12 @@ export function ContactModal({ visible, onClose, onSubmit, onDelete, initialData
         suppliers_contact_email: ''
     });
 
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType; title?: string }>({
+        visible: false,
+        message: '',
+        type: 'error'
+    });
+
     useEffect(() => {
         if (visible) {
             if (initialData) {
@@ -37,8 +45,9 @@ export function ContactModal({ visible, onClose, onSubmit, onDelete, initialData
     }, [visible, initialData]);
 
     const handleSubmit = () => {
-        if (!formData.nm_suppliers_contact.trim()) {
-            Alert.alert('Peringatan', 'Nama kontak wajib diisi');
+        const errorMsg = validateContactForm(formData);
+        if (errorMsg) {
+            setToast({ visible: true, type: 'error', message: errorMsg, title: 'Peringatan' });
             return;
         }
         onSubmit(formData);
@@ -62,6 +71,13 @@ export function ContactModal({ visible, onClose, onSubmit, onDelete, initialData
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 className="flex-1 justify-end bg-black/50"
             >
+                <ToastMessages
+                    visible={toast.visible}
+                    title={toast.title || 'Error'}
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+                />
                 <View className="bg-white rounded-t-3xl p-6" style={{ maxHeight: '90%' }}>
                     {/* Header */}
                     <View className="flex-row justify-between items-center mb-6">

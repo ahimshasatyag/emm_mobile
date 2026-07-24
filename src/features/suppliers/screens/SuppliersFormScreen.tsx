@@ -6,6 +6,8 @@ import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { ContactTable } from '../components/ContactTable';
 import { Button } from '../../../components/ui/button';
 import { SuppliersFormSkeleton } from '../skeleton/SuppliersFormSkeleton';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { PreviewGambar } from '../components/PreviewGambar';
 import { ContactModal } from '../components/ContactModal';
 import { SupplierContact } from '../types/suppliers.types';
@@ -13,6 +15,7 @@ import { theme } from '../../../theme/theme';
 import { Dropdown } from 'react-native-element-dropdown';
 import * as DocumentPicker from 'expo-document-picker';
 import { Plus, UploadCloud, Save } from 'lucide-react-native';
+import { validateForm } from '../hooks/useSuppliers';
 
 export function SuppliersFormScreen() {
     const navigation = useNavigation();
@@ -32,6 +35,14 @@ export function SuppliersFormScreen() {
     const [isSaving, setIsSaving] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [previewVisible, setPreviewVisible] = useState(false);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [modalType, setModalType] = useState<'save' | 'delete' | null>(null);
+    const [deletingContactIndex, setDeletingContactIndex] = useState<number | null>(null);
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType; title?: string }>({
+        visible: false,
+        message: '',
+        type: 'success'
+    });
 
     const [contactModalVisible, setContactModalVisible] = useState(false);
     const [editingContactIndex, setEditingContactIndex] = useState<number | null>(null);
@@ -56,8 +67,10 @@ export function SuppliersFormScreen() {
             const newContacts = [...contacts];
             newContacts[editingContactIndex] = contact;
             setContacts(newContacts);
+            setToast({ visible: true, type: 'success', message: 'Kontak berhasil diupdate' });
         } else {
             setContacts([...contacts, contact]);
+            setToast({ visible: true, type: 'success', message: 'Kontak berhasil ditambahkan' });
         }
     };
 
@@ -75,38 +88,48 @@ export function SuppliersFormScreen() {
     };
 
     const handleDeleteContact = (index: number) => {
-        Alert.alert(
-            'Hapus Kontak',
-            'Apakah Anda yakin ingin menghapus kontak ini?',
-            [
-                { text: 'Batal', style: 'cancel' },
-                {
-                    text: 'Hapus',
-                    style: 'destructive',
-                    onPress: () => {
-                        const newContacts = [...contacts];
-                        newContacts.splice(index, 1);
-                        setContacts(newContacts);
-                    }
-                }
-            ]
-        );
+        setDeletingContactIndex(index);
+        setModalType('delete');
+        setIsModalVisible(true);
+    };
+
+    const confirmDeleteContact = () => {
+        if (deletingContactIndex !== null) {
+            const newContacts = [...contacts];
+            newContacts.splice(deletingContactIndex, 1);
+            setContacts(newContacts);
+            setDeletingContactIndex(null);
+            setIsModalVisible(false);
+            setToast({ visible: true, type: 'success', message: 'Kontak berhasil dihapus' });
+        }
     };
 
     const handleSubmit = async () => {
-        if (!formData.nm_suppliers.trim()) {
-            Alert.alert('Error', 'Nama supplier harus diisi');
+        const errorMsg = validateForm(formData, contacts);
+        if (errorMsg) {
+            setToast({ visible: true, type: 'error', message: errorMsg, title: 'Validasi' });
             return;
         }
 
+        setModalType('save');
+        setIsModalVisible(true);
+    };
+
+    const confirmSave = async () => {
+        setIsModalVisible(false);
         setIsSaving(true);
         try {
             await new Promise(resolve => setTimeout(resolve, 1000));
-            console.log('Saved Supplier:', { ...formData, contacts });
-            Alert.alert('Sukses', 'Supplier berhasil ditambahkan');
-            navigation.goBack();
+            const newId = Date.now().toString(); // Simulate new ID
+            console.log('Saved Supplier:', { ...formData, contacts, id_suppliers: newId });
+            
+            (navigation as any).replace('SuppliersEditScreen', {
+                id: newId,
+                showSuccessToast: true,
+                successMessage: 'Supplier berhasil ditambahkan!'
+            });
         } catch (error) {
-            Alert.alert('Error', 'Gagal menyimpan data supplier');
+            setToast({ visible: true, type: 'error', message: 'Gagal menyimpan data supplier' });
         } finally {
             setIsSaving(false);
         }
@@ -117,6 +140,27 @@ export function SuppliersFormScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             className="flex-1 bg-gray-50"
         >
+            <ModalConfirm
+                visible={isModalVisible}
+                title={modalType === 'delete' ? "Hapus Kontak" : "Konfirmasi Simpan"}
+                message={modalType === 'delete' ? "Apakah Anda yakin ingin menghapus kontak ini?" : "Apakah Anda yakin ingin menyimpan data supplier ini?"}
+                confirmText={modalType === 'delete' ? "Ya, Hapus" : "Ya, Simpan"}
+                cancelText="Batal"
+                onConfirm={modalType === 'delete' ? confirmDeleteContact : confirmSave}
+                onCancel={() => {
+                    setIsModalVisible(false);
+                    if (modalType === 'delete') setDeletingContactIndex(null);
+                }}
+            />
+
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.title || (toast.type === 'error' ? 'Error' : 'Sukses')}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+
             <HeaderNavigator title={isRefreshing ? "MEMUAT DATA..." : "TAMBAH SUPPLIER"} showBackButton={true} />
 
             <ScrollView

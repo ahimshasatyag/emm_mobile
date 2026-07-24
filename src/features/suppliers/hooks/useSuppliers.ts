@@ -44,3 +44,13 @@ export const useSuppliers = () => {
         refreshSuppliers
     };
 };
+
+export const validateForm = (formData: any, contacts: any[]): string | null => {
+    if (!formData.nm_suppliers?.trim()) return 'Nama Supplier harus diisi';
+    return null;
+};
+
+export const validateContactForm = (contactData: any): string | null => {
+    if (!contactData.nm_suppliers_contact?.trim()) return 'Nama kontak wajib diisi';
+    return null;
+};

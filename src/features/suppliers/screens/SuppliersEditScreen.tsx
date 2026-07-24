@@ -14,6 +14,9 @@ import { Dropdown } from 'react-native-element-dropdown';
 import * as DocumentPicker from 'expo-document-picker';
 import { Plus, UploadCloud, X, Save, Pencil } from 'lucide-react-native';
 import { getSupplierById } from '../api/suppliers.api';
+import { validateForm } from '../hooks/useSuppliers';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 export function SuppliersEditScreen() {
     const navigation = useNavigation();
@@ -41,13 +44,33 @@ export function SuppliersEditScreen() {
     const [contactModalVisible, setContactModalVisible] = useState(false);
     const [editingContactIndex, setEditingContactIndex] = useState<number | null>(null);
 
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [modalType, setModalType] = useState<'update' | 'delete' | null>(null);
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType; title?: string }>({
+        visible: false,
+        message: '',
+        type: 'success'
+    });
+    const [deletingContactIndex, setDeletingContactIndex] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (route.params?.showSuccessToast) {
+            setToast({
+                visible: true,
+                type: 'success',
+                message: route.params.successMessage || 'Data berhasil disimpan!'
+            });
+            navigation.setParams({ showSuccessToast: undefined, successMessage: undefined });
+        }
+    }, [route.params?.showSuccessToast]);
+
     const loadDetail = useCallback(async (supplierId: string, mode: 'initial' | 'refresh' | 'silent' = 'initial') => {
         if (mode === 'initial') {
             setIsLoadingDetail(true);
         } else if (mode === 'refresh') {
             setIsRefreshing(true);
         }
-        
+
         try {
             const data = await getSupplierById(supplierId);
             if (data) {
@@ -64,7 +87,7 @@ export function SuppliersEditScreen() {
                 setContacts(data.contacts || []);
             }
         } catch (error) {
-            Alert.alert('Error', 'Gagal memuat detail supplier');
+            setToast({ visible: true, type: 'error', message: 'Gagal memuat detail supplier' });
         } finally {
             if (mode === 'initial') {
                 setIsLoadingDetail(false);
@@ -96,8 +119,10 @@ export function SuppliersEditScreen() {
             const newContacts = [...contacts];
             newContacts[editingContactIndex] = contact;
             setContacts(newContacts);
+            setToast({ visible: true, type: 'success', message: 'Kontak berhasil diupdate' });
         } else {
             setContacts([...contacts, contact]);
+            setToast({ visible: true, type: 'success', message: 'Kontak berhasil ditambahkan' });
         }
     };
 
@@ -111,49 +136,53 @@ export function SuppliersEditScreen() {
                 setFormData(prev => ({ ...prev, suppliers_logo: result.assets[0].uri }));
             }
         } catch (error) {
-            Alert.alert('Error', 'Gagal memilih logo');
+            setToast({ visible: true, type: 'error', message: 'Gagal memilih logo' });
         }
     };
 
     const handleDeleteContact = (index: number) => {
         if (!isEditMode) return;
-        Alert.alert(
-            'Hapus Kontak',
-            'Apakah Anda yakin ingin menghapus kontak ini?',
-            [
-                { text: 'Batal', style: 'cancel' },
-                {
-                    text: 'Hapus',
-                    style: 'destructive',
-                    onPress: () => {
-                        const newContacts = [...contacts];
-                        newContacts.splice(index, 1);
-                        setContacts(newContacts);
-                    }
-                }
-            ]
-        );
+        setDeletingContactIndex(index);
+        setModalType('delete');
+        setIsModalVisible(true);
     };
 
-    const handleSubmit = async () => {
+    const confirmDeleteContact = () => {
+        if (deletingContactIndex !== null) {
+            const newContacts = [...contacts];
+            newContacts.splice(deletingContactIndex, 1);
+            setContacts(newContacts);
+            setDeletingContactIndex(null);
+            setIsModalVisible(false);
+            setToast({ visible: true, type: 'success', message: 'Kontak berhasil dihapus' });
+        }
+    };
+
+    const handleSubmitClick = async () => {
         if (!isEditMode) {
             setIsEditMode(true);
             return;
         }
 
-        if (!formData.nm_suppliers.trim()) {
-            Alert.alert('Error', 'Nama supplier harus diisi');
+        const errorMsg = validateForm(formData, contacts);
+        if (errorMsg) {
+            setToast({ visible: true, type: 'error', message: errorMsg, title: 'Validasi' });
             return;
         }
 
+        setModalType('update');
+        setIsModalVisible(true);
+    };
+
+    const confirmUpdate = async () => {
+        setIsModalVisible(false);
         setIsSaving(true);
         try {
             await new Promise(resolve => setTimeout(resolve, 1000));
-            console.log('Updated Supplier:', { ...formData, id_suppliers: id, contacts });
-            Alert.alert('Sukses', 'Perubahan berhasil disimpan');
+            setToast({ visible: true, type: 'success', message: 'Perubahan berhasil disimpan' });
             setIsEditMode(false);
         } catch (error) {
-            Alert.alert('Error', 'Gagal menyimpan perubahan');
+            setToast({ visible: true, type: 'error', message: 'Gagal menyimpan perubahan' });
         } finally {
             setIsSaving(false);
         }
@@ -164,6 +193,27 @@ export function SuppliersEditScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             className="flex-1 bg-gray-50"
         >
+            <ModalConfirm
+                visible={isModalVisible}
+                title={modalType === 'delete' ? "Hapus Kontak" : "Konfirmasi Update"}
+                message={modalType === 'delete' ? "Apakah Anda yakin ingin menghapus kontak ini?" : "Apakah Anda yakin ingin menyimpan perubahan data supplier ini?"}
+                confirmText={modalType === 'delete' ? "Ya, Hapus" : "Ya, Update"}
+                cancelText="Batal"
+                onConfirm={modalType === 'delete' ? confirmDeleteContact : confirmUpdate}
+                onCancel={() => {
+                    setIsModalVisible(false);
+                    if (modalType === 'delete') setDeletingContactIndex(null);
+                }}
+            />
+
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.title || (toast.type === 'error' ? 'Error' : 'Sukses')}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+
             <HeaderNavigator
                 title={isLoadingDetail ? 'MEMUAT DATA...' : isEditMode ? `EDIT ${formData.nm_suppliers}` : `DETAIL ${formData.nm_suppliers}`}
                 showBackButton={true}
@@ -352,7 +402,7 @@ export function SuppliersEditScreen() {
                                     </Button>
 
                                     <Button
-                                        onPress={handleSubmit}
+                                        onPress={handleSubmitClick}
                                         disabled={isSaving}
                                         className="flex-1 h-14 rounded-2xl flex-row items-center justify-center"
                                         style={{ elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
@@ -370,7 +420,7 @@ export function SuppliersEditScreen() {
                             ) : (
                                 <View className="flex-row gap-4">
                                     <Button
-                                        onPress={() => setIsEditMode(true)}
+                                        onPress={handleSubmitClick}
                                         className="flex-1 h-14 rounded-2xl flex-row items-center justify-center bg-gray-800"
                                     >
                                         <Pencil color="white" size={20} className="mr-2" />
