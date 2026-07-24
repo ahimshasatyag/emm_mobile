@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { AlertCircle } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 
@@ -11,6 +11,7 @@ interface ModalConfirmProps {
     onCancel: () => void;
     confirmText?: string;
     cancelText?: string;
+    children?: React.ReactNode;
 }
 
 export const ModalConfirm: React.FC<ModalConfirmProps> = ({
@@ -20,7 +21,8 @@ export const ModalConfirm: React.FC<ModalConfirmProps> = ({
     onConfirm,
     onCancel,
     confirmText = "Proceed",
-    cancelText = "Cancel"
+    cancelText = "Cancel",
+    children
 }) => {
     return (
         <Modal
@@ -29,7 +31,10 @@ export const ModalConfirm: React.FC<ModalConfirmProps> = ({
             animationType="fade"
             onRequestClose={onCancel}
         >
-            <View className="flex-1 bg-black/50 justify-center items-center px-6">
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                className="flex-1 bg-black/50 justify-center items-center px-6"
+            >
                 <View
                     className="bg-white rounded-3xl w-full max-w-[340px] pt-12 pb-6 px-5 items-center mt-10 shadow-xl"
                     style={{ elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 15 }}
@@ -42,9 +47,14 @@ export const ModalConfirm: React.FC<ModalConfirmProps> = ({
                     </View>
 
                     {/* Content */}
-                    <View className="items-center mb-6">
+                    <View className="items-center mb-6 w-full">
                         <Text className="text-xl font-bold text-gray-800 mb-3 text-center">{title}</Text>
                         <Text className="text-sm text-gray-500 text-center leading-5">{message}</Text>
+                        {children && (
+                            <View className="w-full mt-4">
+                                {children}
+                            </View>
+                        )}
                     </View>
 
                     {/* Buttons */}
@@ -67,7 +77,7 @@ export const ModalConfirm: React.FC<ModalConfirmProps> = ({
                         </TouchableOpacity>
                     </View>
                 </View>
-            </View>
+            </KeyboardAvoidingView>
         </Modal>
     );
 };

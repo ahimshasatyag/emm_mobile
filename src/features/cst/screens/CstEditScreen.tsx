@@ -8,6 +8,8 @@ import { useCst } from '../hooks/useCst';
 import { CstEditSkeleton } from '../skeleton/CstEditSkeleton';
 import { theme } from '../../../theme/theme';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ModalCancel } from '../../../components/ui/ModalCancel';
 
 export function CstEditScreen() {
     const navigation = useNavigation<any>();
@@ -22,6 +24,34 @@ export function CstEditScreen() {
         visible: false,
         type: 'success',
         message: ''
+    });
+
+    const [modalConfig, setModalConfig] = useState<{
+        visible: boolean;
+        title: string;
+        message: string;
+        confirmText: string;
+        onConfirm: () => void;
+    }>({
+        visible: false,
+        title: '',
+        message: '',
+        confirmText: '',
+        onConfirm: () => {}
+    });
+
+    const [modalCancelConfig, setModalCancelConfig] = useState<{
+        visible: boolean;
+        title: string;
+        message: string;
+        confirmText: string;
+        onConfirm: () => void;
+    }>({
+        visible: false,
+        title: '',
+        message: '',
+        confirmText: '',
+        onConfirm: () => {}
     });
 
     useEffect(() => {
@@ -50,42 +80,35 @@ export function CstEditScreen() {
     }, [cstCode, loadCstDetail]);
 
     const onDone = () => {
-        Alert.alert(
-            "Apakah anda yakin?",
-            "Anda akan Done CST ini!",
-            [
-                { text: "Tidak!", style: "cancel" },
-                {
-                    text: "Ya, Done!",
-                    onPress: async () => {
-                        const success = await handleCloseCst(cstCode);
-                        if (success) {
-                            Alert.alert("Sukses", "Data berhasil di-done");
-                        }
-                    }
+        setModalConfig({
+            visible: true,
+            title: "Apakah anda yakin?",
+            message: "Anda akan Done CST ini!",
+            confirmText: "Ya, Done!",
+            onConfirm: async () => {
+                setModalConfig(prev => ({ ...prev, visible: false }));
+                const success = await handleCloseCst(cstCode);
+                if (success) {
+                    setToast({ visible: true, type: 'success', message: 'Data berhasil di-done' });
                 }
-            ]
-        );
+            }
+        });
     };
 
     const onCancel = () => {
-        Alert.alert(
-            "Apakah anda yakin?",
-            "Anda akan cancel CST ini!",
-            [
-                { text: "Tidak!", style: "cancel" },
-                {
-                    text: "Ya, Cancel!",
-                    style: "destructive",
-                    onPress: async () => {
-                        const success = await handleCancelCst(cstCode);
-                        if (success) {
-                            Alert.alert("Dicancel", "Data berhasil dicancel");
-                        }
-                    }
+        setModalCancelConfig({
+            visible: true,
+            title: "Apakah anda yakin?",
+            message: "Anda akan cancel CST ini!",
+            confirmText: "Ya, Cancel!",
+            onConfirm: async () => {
+                setModalCancelConfig(prev => ({ ...prev, visible: false }));
+                const success = await handleCancelCst(cstCode);
+                if (success) {
+                    setToast({ visible: true, type: 'success', message: 'Data berhasil dicancel' });
                 }
-            ]
-        );
+            }
+        });
     };
 
     const getStatusColor = (status: string) => {
@@ -114,8 +137,26 @@ export function CstEditScreen() {
                 onClose={() => setToast(prev => ({ ...prev, visible: false }))}
             />
 
-            <HeaderNavigator 
-                title={isLoading ? "MEMUAT DATA..." : "DETAIL CST"} 
+            <ModalConfirm
+                visible={modalConfig.visible}
+                title={modalConfig.title}
+                message={modalConfig.message}
+                confirmText={modalConfig.confirmText}
+                onConfirm={modalConfig.onConfirm}
+                onCancel={() => setModalConfig(prev => ({ ...prev, visible: false }))}
+            />
+
+            <ModalCancel
+                visible={modalCancelConfig.visible}
+                title={modalCancelConfig.title}
+                message={modalCancelConfig.message}
+                confirmText={modalCancelConfig.confirmText}
+                onConfirm={modalCancelConfig.onConfirm}
+                onCancel={() => setModalCancelConfig(prev => ({ ...prev, visible: false }))}
+            />
+
+            <HeaderNavigator
+                title={isLoading ? "MEMUAT DATA..." : "DETAIL CST"}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
             />
@@ -303,7 +344,18 @@ export function CstEditScreen() {
                         </View>
 
                         {/* LKT LIST & EXPENSE TABS */}
-                        <View className="flex-row space-x-2 mt-6">
+                        <View className="flex-row justify-between items-center mt-6 mb-2">
+                            <Text className="text-lg font-bold text-gray-800">LKT & Expense</Text>
+                            <TouchableOpacity
+                                className="flex-row items-center px-4 py-2 rounded-lg"
+                                style={{ backgroundColor: theme.colors.primary }}
+                                onPress={() => navigation.navigate('LktFormScreen', { cstCode: currentCst.cst_code })}
+                            >
+                                <Plus color="#fff" size={16} />
+                                <Text className="text-white text-xs font-bold ml-1.5">Add New LKT</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <View className="flex-row space-x-2">
                             <TouchableOpacity
                                 className={`flex-1 p-3 rounded-lg items-center shadow-sm mr-2 ${activeTab === 'lkt' ? 'bg-white border-b-2' : 'bg-gray-100 border border-gray-200'}`}
                                 style={activeTab === 'lkt' ? { borderBottomColor: theme.colors.primary } : undefined}
@@ -335,23 +387,15 @@ export function CstEditScreen() {
                         {/* CONTAINER UTAMA (Tab Content) */}
                         <View className="bg-gray-50 p-4 rounded-xl border border-gray-100 mt-2 min-h-[150px]">
                             {activeTab === 'lkt' ? (
-                                (!currentCst.lkt_list || currentCst.lkt_list.length === 0) ? (
-                                    <View className="flex-1 items-center justify-center">
-                                        <TouchableOpacity
-                                            className="flex-row items-center px-4 py-2.5 rounded-lg"
-                                            style={{ backgroundColor: theme.colors.primary }}
-                                            onPress={() => navigation.navigate('LktFormScreen', { cstCode: currentCst.cst_code })}
-                                        >
-                                            <Plus color="#fff" size={18} />
-                                            <Text className="text-white text-xs font-bold ml-1.5">Add New LKT</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                ) : (
-                                    <View className="flex-1">
-                                        {/* Tampilkan daftar LKT disini jika ada data */}
+                                <View className="flex-1">
+                                    {(!currentCst.lkt_list || currentCst.lkt_list.length === 0) ? (
+                                        <View className="flex-1 items-center justify-center py-6">
+                                            <Text className="text-sm text-gray-400 italic">Belum ada LKT.</Text>
+                                        </View>
+                                    ) : (
                                         <Text className="text-sm text-gray-700">Menampilkan {currentCst.lkt_list.length} data LKT...</Text>
-                                    </View>
-                                )
+                                    )}
+                                </View>
                             ) : (
                                 <View className="flex-1 items-center justify-center">
                                     <Text className="text-sm text-gray-400 italic">Modul Expense belum tersedia pada simulasi ini.</Text>

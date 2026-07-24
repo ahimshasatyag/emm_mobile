@@ -181,6 +181,43 @@ export function CsrEditScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toast.visible}
+                type={toast.type}
+                message={toast.message}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+
+            <ModalConfirm
+                visible={modalUpdateVisible}
+                title="Konfirmasi Simpan"
+                message="Apakah Anda yakin ingin menyimpan perubahan pada CSR ini?"
+                confirmText="Ya, Simpan!"
+                cancelText="Batal"
+                onConfirm={handleUpdate}
+                onCancel={() => setModalUpdateVisible(false)}
+            />
+
+            <ModalConfirm
+                visible={modalConfirmVisible}
+                title="Konfirmasi CSR"
+                message="Apakah Anda yakin ingin mengkonfirmasi CSR ini?"
+                confirmText="Ya!"
+                cancelText="Batal"
+                onConfirm={executeConfirm}
+                onCancel={() => setModalConfirmVisible(false)}
+            />
+
+            <ModalCancel
+                visible={modalCancelVisible}
+                title="Batalkan CSR"
+                message="Apakah Anda yakin ingin membatalkan CSR ini?"
+                confirmText="Ya, Batalkan!"
+                cancelText="Kembali"
+                onConfirm={executeCancel}
+                onCancel={() => setModalCancelVisible(false)}
+            />
+
             <HeaderNavigator
                 title={isLoading ? "MEMUAT DATA..." : (isEditing ? "EDIT CSR" : "DETAIL CSR")}
                 showBackButton={true}
@@ -492,42 +529,6 @@ export function CsrEditScreen() {
                 />
             )}
 
-            <ModalConfirm
-                visible={modalUpdateVisible}
-                title="Konfirmasi Simpan"
-                message="Apakah Anda yakin ingin menyimpan perubahan pada CSR ini?"
-                confirmText="Ya, Simpan!"
-                cancelText="Batal"
-                onConfirm={handleUpdate}
-                onCancel={() => setModalUpdateVisible(false)}
-            />
-
-            <ModalConfirm
-                visible={modalConfirmVisible}
-                title="Konfirmasi CSR"
-                message="Apakah Anda yakin ingin mengkonfirmasi CSR ini?"
-                confirmText="Ya!"
-                cancelText="Batal"
-                onConfirm={executeConfirm}
-                onCancel={() => setModalConfirmVisible(false)}
-            />
-
-            <ModalCancel
-                visible={modalCancelVisible}
-                title="Batalkan CSR"
-                message="Apakah Anda yakin ingin membatalkan CSR ini?"
-                confirmText="Ya, Batalkan!"
-                cancelText="Kembali"
-                onConfirm={executeCancel}
-                onCancel={() => setModalCancelVisible(false)}
-            />
-
-            <ToastMessages
-                visible={toast.visible}
-                type={toast.type}
-                message={toast.message}
-                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
-            />
         </View>
     );
 }

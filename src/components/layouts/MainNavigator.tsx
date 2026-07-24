@@ -23,6 +23,7 @@ import { CstListScreen } from '../../features/cst/screens/CstListScreen';
 import { CstEditScreen } from '../../features/cst/screens/CstEditScreen';
 import { LktListScreen } from '../../features/lkt/screens/LktListScreen';
 import { LktEditScreen } from '../../features/lkt/screens/LktEditScreen';
+import { LktEditCloseScreen } from '../../features/lkt/screens/LktEditCloseScreen';
 import { LktFormScreen } from '../../features/lkt/screens/LktFormScreen';
 import { RealisasiFormScreen } from '../../features/lkt/screens/RealisasiFormScreen';
 import { RealisasiEditScreen } from '../../features/lkt/screens/RealisasiEditScreen';
@@ -337,6 +338,11 @@ export function MainNavigator() {
             <Stack.Screen
                 name="LktEditScreen"
                 component={LktEditScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="LktEditCloseScreen"
+                component={LktEditCloseScreen}
                 options={{ headerShown: false }}
             />
             <Stack.Screen

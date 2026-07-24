@@ -128,21 +128,12 @@ export function RealisasiListView({ setActiveTab }: { setActiveTab: (tab: 'perba
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator
-                title={isRefreshing ? "MEMUAT DATA..." : "DETAIL LKT"}
-                showBackButton={true}
-                onBackPress={() => navigation.goBack()}
-                disableAnimation={true}
-            />
-
-            {/* Main Content Container */}
-            <View style={{ padding: 12, flex: 1, paddingBottom: 0 }}>
-                <View className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex-1 mb-4">
-
-                    <LktHeaderViewScreen
-                        activeTab="realisasi"
-                        setActiveTab={setActiveTab}
-                    />
+            <LktHeaderViewScreen
+                activeTab="realisasi"
+                setActiveTab={setActiveTab}
+                titleHeader={isRefreshing ? "MEMUAT DATA..." : "DETAIL LKT"}
+                onBackPress={() => navigation.navigate('Drawer', { screen: 'LktListScreen' })}
+            >
 
                     {/* Top Action Bar (Filter) */}
                     <View className="flex-row items-center justify-between mb-4">
@@ -179,8 +170,7 @@ export function RealisasiListView({ setActiveTab }: { setActiveTab: (tab: 'perba
                             )
                         }
                     />
-                </View>
-            </View>
+            </LktHeaderViewScreen>
 
             <ButtonAdd onPress={() => navigation.navigate('RealisasiForm')} />
         </View>

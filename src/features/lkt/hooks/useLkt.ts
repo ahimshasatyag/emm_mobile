@@ -76,6 +76,42 @@ export const useLkt = () => {
         dispatch(setCurrentLkt(null));
     }, [dispatch]);
 
+    const validateLktForm = (data: { typeTransport?: string; description?: string; startingDate?: any }): string | null => {
+        if (!data.startingDate && !data.typeTransport && !data.description) {
+            return 'Semua field wajib diisi';
+        }
+        
+        if (!data.startingDate) return 'Start Date harus diisi';
+        if (!data.typeTransport) return 'Type Transport harus diisi';
+        if (!data.description) return 'Tambahan Catatan Kerusakan harus diisi';
+        
+        return null;
+    };
+
+    const validateRealisasiForm = (data: { nmTeknisi?: any[]; actualDay?: string; actualDescription?: string }): string | null => {
+        if ((!data.nmTeknisi || data.nmTeknisi.length === 0) && !data.actualDay && !data.actualDescription) {
+            return 'Semua field wajib diisi';
+        }
+        
+        if (!data.actualDescription) return 'Actual Catatan Kerusakan harus diisi';
+        if (!data.nmTeknisi || data.nmTeknisi.length === 0) return 'Nama Teknisi harus diisi';
+        if (!data.actualDay) return 'Actual Day harus diisi';
+        
+        return null;
+    };
+
+    const validateSparepartForm = (data: { nama_part?: string; qty?: string; harga?: string }): string | null => {
+        if (!data.nama_part && !data.qty && !data.harga) {
+            return 'Semua field wajib diisi';
+        }
+        
+        if (!data.nama_part) return 'Nama Part harus diisi';
+        if (!data.harga) return 'Harga harus diisi';
+        if (!data.qty) return 'Qty harus diisi';
+        
+        return null;
+    };
+
     return {
         items,
         currentLkt,
@@ -87,6 +123,9 @@ export const useLkt = () => {
         handleCloseLkt,
         handleCancelLkt,
         updateFilter,
-        resetCurrentLkt
+        resetCurrentLkt,
+        validateLktForm,
+        validateRealisasiForm,
+        validateSparepartForm
     };
 };

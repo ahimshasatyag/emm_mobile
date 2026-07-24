@@ -20,12 +20,6 @@ export function LktFormSkeleton() {
                     </View>
                 ))}
             </View>
-
-            {/* Button Skeleton */}
-            <View className="flex-row space-x-2 pt-4">
-                <View className="flex-1 h-12 bg-gray-200 rounded-xl animate-pulse" />
-                <View className="flex-1 h-12 bg-gray-200 rounded-xl animate-pulse" />
-            </View>
         </View>
     );
 }

@@ -10,6 +10,9 @@ import { theme } from '../../../theme/theme';
 import { useLkt } from '../hooks/useLkt';
 import { LktFormSkeleton } from '../skeleton/LktFormSkeleton';
 import { formatDate } from '../../../utils/helpers/date';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { formatInputNumber } from '../../../utils/helpers/money';
 
 export function LktFormScreen() {
     const navigation = useNavigation<any>();
@@ -26,6 +29,16 @@ export function LktFormScreen() {
         }, 1000);
     };
 
+    const { validateLktForm } = useLkt();
+
+    const [toast, setToast] = useState<{ visible: boolean; type: ToastType; message: string }>({
+        visible: false,
+        type: 'success',
+        message: ''
+    });
+
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+
     // Form State
     const [catatanKerusakan, setCatatanKerusakan] = useState('');
     const [description, setDescription] = useState('');
@@ -34,7 +47,7 @@ export function LktFormScreen() {
     const [serviceAmount, setServiceAmount] = useState('0');
     const [accommodationAmount, setAccommodationAmount] = useState('0');
     const [typeTransport, setTypeTransport] = useState('');
-    const [startingDate, setStartingDate] = useState(new Date());
+    const [startingDate, setStartingDate] = useState<Date | null>(null);
     const [showDatePicker, setShowDatePicker] = useState(false);
 
     const transportOptions = [
@@ -44,27 +57,49 @@ export function LktFormScreen() {
     ];
 
     const handleSubmit = async () => {
-        if (!typeTransport) {
-            Alert.alert('Error', 'Type Transport harus diisi!');
-            return;
-        }
-        if (!description) {
-            Alert.alert('Error', 'Tambahan Catatan Kerusakan harus diisi!');
+        const errorMsg = validateLktForm({ typeTransport, description, startingDate });
+        if (errorMsg) {
+            setToast({ visible: true, type: 'error', message: errorMsg });
             return;
         }
 
+        setShowConfirmModal(true);
+    };
+
+    const handleConfirmSave = () => {
+        setShowConfirmModal(false);
         setIsLoading(true);
         // Simulasi request API
         setTimeout(() => {
             setIsLoading(false);
-            Alert.alert('Sukses', 'LKT berhasil ditambahkan', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+            navigation.replace('LktEditScreen', {
+                id: 'LKT-123',
+                showSuccessToast: true,
+                successMessage: 'LKT berhasil ditambahkan'
+            });
         }, 1000);
     };
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toast.visible}
+                title='Validasi'
+                type={toast.type}
+                message={toast.message}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+
+            <ModalConfirm
+                visible={showConfirmModal}
+                title="Konfirmasi Simpan"
+                message="Apakah Anda yakin ingin menyimpan data LKT ini?"
+                confirmText="Ya, Simpan!"
+                cancelText="Batal!"
+                onCancel={() => setShowConfirmModal(false)}
+                onConfirm={handleConfirmSave}
+            />
+
             <HeaderNavigator
                 title={isLoading ? "MENYIMPAN DATA..." : (isRefreshing ? "MEMUAT DATA..." : "TAMBAH LKT")}
                 showBackButton={true}
@@ -141,11 +176,13 @@ export function LktFormScreen() {
                                         onPress={() => setShowDatePicker(true)}
                                     >
                                         <Calendar color="#9CA3AF" size={18} />
-                                        <Text className="ml-2 text-sm text-gray-800 flex-1">{formatDate(startingDate)}</Text>
+                                        <Text className="ml-2 text-sm text-gray-800 flex-1">
+                                            {startingDate ? formatDate(startingDate) : 'Pilih Tanggal'}
+                                        </Text>
                                     </TouchableOpacity>
                                     {showDatePicker && (
                                         <DateTimePicker
-                                            value={startingDate}
+                                            value={startingDate || new Date()}
                                             mode="date"
                                             display="default"
                                             onChange={(event, date) => {
@@ -173,8 +210,8 @@ export function LktFormScreen() {
                                         className="bg-gray-50 border border-gray-200 rounded-lg h-12 px-3 text-sm text-gray-800"
                                         keyboardType="numeric"
                                         value={transportAmount}
-                                        onChangeText={setTransportAmount}
-                                        onBlur={() => { if(!transportAmount) setTransportAmount('0'); }}
+                                        onChangeText={(text) => setTransportAmount(formatInputNumber(text))}
+                                        onBlur={() => { if (!transportAmount) setTransportAmount('0'); }}
                                     />
                                 </View>
                                 <View className="flex-1">
@@ -200,8 +237,8 @@ export function LktFormScreen() {
                                         className="bg-gray-50 border border-gray-200 rounded-lg h-12 px-3 text-sm text-gray-800"
                                         keyboardType="numeric"
                                         value={serviceAmount}
-                                        onChangeText={setServiceAmount}
-                                        onBlur={() => { if(!serviceAmount) setServiceAmount('0'); }}
+                                        onChangeText={(text) => setServiceAmount(formatInputNumber(text))}
+                                        onBlur={() => { if (!serviceAmount) setServiceAmount('0'); }}
                                     />
                                 </View>
                                 <View className="flex-1">
@@ -210,8 +247,8 @@ export function LktFormScreen() {
                                         className="bg-gray-50 border border-gray-200 rounded-lg h-12 px-3 text-sm text-gray-800"
                                         keyboardType="numeric"
                                         value={accommodationAmount}
-                                        onChangeText={setAccommodationAmount}
-                                        onBlur={() => { if(!accommodationAmount) setAccommodationAmount('0'); }}
+                                        onChangeText={(text) => setAccommodationAmount(formatInputNumber(text))}
+                                        onBlur={() => { if (!accommodationAmount) setAccommodationAmount('0'); }}
                                     />
                                 </View>
                             </View>
@@ -220,13 +257,6 @@ export function LktFormScreen() {
 
                         {/* Action Buttons */}
                         <View className="flex-row space-x-3 mt-4">
-                            <TouchableOpacity
-                                className="flex-1 flex-row items-center justify-center bg-gray-200 h-12 rounded-xl"
-                                onPress={() => navigation.goBack()}
-                            >
-                                <X color="#4B5563" size={18} />
-                                <Text className="font-bold text-gray-700 ml-2">Cancel</Text>
-                            </TouchableOpacity>
                             <TouchableOpacity
                                 className="flex-1 flex-row items-center justify-center h-12 rounded-xl"
                                 style={{ backgroundColor: theme.colors.primary }}
