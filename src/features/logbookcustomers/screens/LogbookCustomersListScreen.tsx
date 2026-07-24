@@ -71,17 +71,16 @@ export function LogbookCustomersListScreen() {
         <View className="flex-1 bg-gray-50">
             <HeaderNavigator title="LOGBOOK CUSTOMERS" />
 
-            <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
-                <View className="flex-row items-center justify-between">
-                    <View className="flex-1 bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2">
-                        <Search color="#9ca3af" size={20} />
-                        <TextInput
-                            className="flex-1 ml-2 text-gray-900"
-                            placeholder="Cari ID atau nama customer..."
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                        />
-                    </View>
+            <Animated.View entering={FadeInUp.duration(400)} className="px-4 pt-3 pb-1">
+                <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm mb-2">
+                    <Search size={20} color="#9CA3AF" />
+                    <TextInput
+                        placeholder="Cari ID atau nama customer..."
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        className="flex-1 ml-3 text-sm text-gray-800 p-0"
+                        placeholderTextColor="#9CA3AF"
+                    />
                 </View>
             </Animated.View>
 

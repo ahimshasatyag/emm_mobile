@@ -25,6 +25,10 @@ export function useLogbookCustomersForm(initialData?: LogbookCustomer) {
     };
 
     const validate = () => {
+        if (!formData.id_customers && !formData.masalah && !formData.solusi) {
+            return 'Semua field wajib diisi';
+        }
+
         if (!formData.id_customers) return "Customer wajib diisi";
         if (!formData.masalah) return "Masalah wajib diisi";
         if (!formData.solusi) return "Solusi wajib diisi";

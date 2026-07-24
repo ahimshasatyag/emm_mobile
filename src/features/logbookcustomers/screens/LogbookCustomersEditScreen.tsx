@@ -14,6 +14,9 @@ import { LogbookCustomersEditSkeleton } from '../skeleton/LogbookCustomersEditSk
 import { useLogbookCustomersForm } from '../hooks/useLogbookCustomersForm';
 import { logbookCustomersApi } from '../api/logbookCustomersApi';
 import { dummyCustomersDropdown } from '../data/dummyCustomers';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ModalCancel } from '../../../components/ui/ModalCancel';
 
 export function LogbookCustomersEditScreen() {
     const navigation = useNavigation<any>();
@@ -26,9 +29,27 @@ export function LogbookCustomersEditScreen() {
     const [isEditing, setIsEditing] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [modalType, setModalType] = useState<'update' | 'delete' | null>(null);
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType; title?: string }>({
+        visible: false,
+        message: '',
+        type: 'success'
+    });
 
     // Form Hook
     const { formData, updateField, validate } = useLogbookCustomersForm(current || undefined);
+
+    useEffect(() => {
+        if (route.params?.showSuccessToast) {
+            setToast({
+                visible: true,
+                type: 'success',
+                message: route.params.successMessage || 'Data berhasil disimpan!'
+            });
+            navigation.setParams({ showSuccessToast: undefined, successMessage: undefined });
+        }
+    }, [route.params?.showSuccessToast]);
 
     useEffect(() => {
         if (id) {
@@ -57,52 +78,86 @@ export function LogbookCustomersEditScreen() {
         setIsRefreshing(false);
     };
 
-    const handleUpdate = async () => {
+    const handleUpdateClick = () => {
         const errorMsg = validate();
         if (errorMsg) {
-            Alert.alert("Perhatian", errorMsg);
+            setToast({ visible: true, type: 'error', message: errorMsg, title: 'Validasi' });
             return;
         }
-        
+        setModalType('update');
+        setIsModalVisible(true);
+    };
+
+    const confirmUpdate = async () => {
+        setIsModalVisible(false);
         setIsSaving(true);
         try {
             await logbookCustomersApi.update(id, formData);
-            Alert.alert("Sukses", "Data berhasil diupdate!", [
-                { text: "OK", onPress: () => setIsEditing(false) }
-            ]);
+            setToast({ visible: true, type: 'success', message: 'Data berhasil diupdate!' });
+            setIsEditing(false);
             await loadData();
         } catch (e) {
-            Alert.alert("Error", "Gagal mengupdate data.");
+            setToast({ visible: true, type: 'error', message: 'Gagal mengupdate data.' });
         } finally {
             setIsSaving(false);
         }
     };
 
-    const handleDelete = () => {
-        Alert.alert(
-            "Apakah anda yakin ?",
-            "Anda tidak akan dapat memulihkan data ini!",
-            [
-                { text: "Tidak, batalkan!", style: "cancel" },
-                { 
-                    text: "Ya, hapus!", 
-                    style: "destructive",
-                    onPress: async () => {
-                        try {
-                            await logbookCustomersApi.delete(id);
-                            Alert.alert("Dihapus!", "Data berhasil dihapus");
-                            navigation.goBack();
-                        } catch (e) {
-                            Alert.alert("Error", "Gagal menghapus data.");
-                        }
-                    }
+    const handleDeleteClick = () => {
+        setModalType('delete');
+        setIsModalVisible(true);
+    };
+
+    const confirmDelete = async () => {
+        setIsModalVisible(false);
+        try {
+            await logbookCustomersApi.delete(id);
+            
+            (navigation as any).navigate('Drawer', {
+                screen: 'LogbookCustomersListScreen',
+                params: {
+                    toastMessage: 'Data berhasil dihapus!',
+                    toastType: 'success',
+                    timestamp: Date.now()
                 }
-            ]
-        );
+            });
+        } catch (e) {
+            setToast({ visible: true, type: 'error', message: 'Gagal menghapus data.' });
+        }
     };
 
     return (
         <View className="flex-1 bg-gray-50">
+            {modalType === 'delete' ? (
+                <ModalCancel
+                    visible={isModalVisible}
+                    title="Apakah anda yakin ?"
+                    message="Anda tidak akan dapat memulihkan data ini!"
+                    confirmText="Ya, hapus!"
+                    cancelText="Tidak, batalkan!"
+                    onConfirm={confirmDelete}
+                    onCancel={() => setIsModalVisible(false)}
+                />
+            ) : (
+                <ModalConfirm
+                    visible={isModalVisible}
+                    title="Konfirmasi Update"
+                    message="Apakah Anda yakin ingin menyimpan perubahan data logbook ini?"
+                    confirmText="Ya, Update"
+                    cancelText="Batal"
+                    onConfirm={confirmUpdate}
+                    onCancel={() => setIsModalVisible(false)}
+                />
+            )}
+
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.title || (toast.type === 'error' ? 'Error' : 'Sukses')}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+
             <HeaderNavigator 
                 title={isLoading || isRefreshing ? "MEMUAT DATA..." : (isEditing ? "EDIT LOGBOOK CUSTOMERS" : "DETAIL LOGBOOK CUSTOMERS")}
                 showBackButton={true}
@@ -208,7 +263,7 @@ export function LogbookCustomersEditScreen() {
                                             <Text className="text-white font-bold text-lg">Edit</Text>
                                         </Button>
                                         <Button 
-                                            onPress={handleDelete}
+                                            onPress={handleDeleteClick}
                                             className="flex-1 h-14 rounded-2xl flex-row items-center justify-center bg-red-600"
                                             style={{ elevation: 4, shadowColor: '#ef4444', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
                                         >
@@ -227,7 +282,7 @@ export function LogbookCustomersEditScreen() {
                                             <Text className="font-bold text-lg" style={{ color: theme.colors.primary }}>Batal</Text>
                                         </Button>
                                         <Button 
-                                            onPress={handleUpdate}
+                                            onPress={handleUpdateClick}
                                             disabled={isSaving}
                                             className={`flex-1 h-14 rounded-2xl flex-row items-center justify-center ${isSaving ? 'bg-gray-400' : 'bg-green-600'}`}
                                             style={isSaving ? {} : { elevation: 4, shadowColor: '#16a34a', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
