@@ -27,6 +27,10 @@ export function useLogbookProductForm(initialData?: LogbookProduct) {
     };
 
     const validate = () => {
+        if (!formData.id_product && !formData.id_type_kerusakan && !formData.masalah && !formData.solusi) {
+            return 'Semua field wajib diisi';
+        }
+
         if (!formData.id_product) return "Product wajib diisi";
         if (!formData.id_type_kerusakan) return "Tipe kerusakan wajib diisi";
         if (!formData.masalah) return "Masalah wajib diisi";

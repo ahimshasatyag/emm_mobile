@@ -14,18 +14,29 @@ import { LogbookProductEditSkeleton } from '../skeleton/LogbookProductEditSkelet
 import { useLogbookProductForm } from '../hooks/useLogbookProductForm';
 import { logbookProductApi } from '../api/logbookProductApi';
 import { dummyProductsDropdown, dummyKerusakanDropdown } from '../data/dummyProducts';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ModalCancel } from '../../../components/ui/ModalCancel';
 
 export function LogbookProductEditScreen() {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
     const dispatch = useDispatch<AppDispatch>();
-    
+
     const { id } = route.params || {};
     const { current, isLoading } = useSelector((state: RootState) => state.logbookproduct || { current: null, isLoading: false });
 
     const [isEditing, setIsEditing] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isSaveModalVisible, setIsSaveModalVisible] = useState(false);
+    const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+    const [toast, setToast] = useState<{ visible: boolean; type: ToastType; message: string; title?: string }>({
+        visible: false,
+        type: 'success',
+        message: '',
+        title: undefined
+    });
 
     // Form Hook
     const { formData, updateField, validate } = useLogbookProductForm(current || undefined);
@@ -36,6 +47,13 @@ export function LogbookProductEditScreen() {
         }
         return () => { dispatch(clearCurrent()); };
     }, [id]);
+
+    useEffect(() => {
+        if (route.params?.showSuccessToast && route.params?.successMessage) {
+            setToast({ visible: true, type: 'success', message: route.params.successMessage });
+            navigation.setParams({ showSuccessToast: undefined, successMessage: undefined });
+        }
+    }, [route.params?.showSuccessToast, route.params?.successMessage, navigation]);
 
     useEffect(() => {
         if (current) {
@@ -58,53 +76,76 @@ export function LogbookProductEditScreen() {
         setIsRefreshing(false);
     };
 
-    const handleUpdate = async () => {
+    const handleUpdate = () => {
         const errorMsg = validate();
         if (errorMsg) {
-            Alert.alert("Perhatian", errorMsg);
+            setToast({ visible: true, type: 'error', message: errorMsg, title: 'Validasi' });
             return;
         }
-        
+
+        setIsSaveModalVisible(true);
+    };
+
+    const confirmUpdate = async () => {
+        setIsSaveModalVisible(false);
         setIsSaving(true);
         try {
             await logbookProductApi.update(id, formData);
-            Alert.alert("Sukses", "Data berhasil diupdate!", [
-                { text: "OK", onPress: () => setIsEditing(false) }
-            ]);
+            setToast({ visible: true, type: 'success', message: 'Data berhasil diupdate!' });
+            setIsEditing(false);
             await loadData();
         } catch (e) {
-            Alert.alert("Error", "Gagal mengupdate data.");
+            setToast({ visible: true, type: 'error', message: 'Gagal mengupdate data.' });
         } finally {
             setIsSaving(false);
         }
     };
 
     const handleDelete = () => {
-        Alert.alert(
-            "Apakah anda yakin ?",
-            "Anda tidak akan dapat memulihkan data ini!",
-            [
-                { text: "Tidak, batalkan!", style: "cancel" },
-                { 
-                    text: "Ya, hapus!", 
-                    style: "destructive",
-                    onPress: async () => {
-                        try {
-                            await logbookProductApi.delete(id);
-                            Alert.alert("Dihapus!", "Data berhasil dihapus");
-                            navigation.goBack();
-                        } catch (e) {
-                            Alert.alert("Error", "Gagal menghapus data.");
-                        }
-                    }
-                }
-            ]
-        );
+        setIsDeleteModalVisible(true);
+    };
+
+    const confirmDelete = async () => {
+        setIsDeleteModalVisible(false);
+        try {
+            await logbookProductApi.delete(id);
+            navigation.navigate('LogbookProductListScreen', {
+                toastMessage: 'Data berhasil dihapus!',
+                toastType: 'success'
+            });
+        } catch (e) {
+            setToast({ visible: true, type: 'error', message: 'Gagal menghapus data.' });
+        }
     };
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator 
+            <ModalConfirm
+                visible={isSaveModalVisible}
+                title="Konfirmasi Simpan"
+                message="Apakah Anda yakin ingin menyimpan perubahan data logbook ini?"
+                confirmText="Ya, Simpan"
+                cancelText="Batal"
+                onConfirm={confirmUpdate}
+                onCancel={() => setIsSaveModalVisible(false)}
+            />
+            <ModalCancel
+                visible={isDeleteModalVisible}
+                title="Hapus Data Logbook?"
+                message="Data ini akan dihapus secara permanen dan tidak dapat dipulihkan."
+                confirmText="Ya, Hapus!"
+                cancelText="Tidak, Batal"
+                onConfirm={confirmDelete}
+                onCancel={() => setIsDeleteModalVisible(false)}
+            />
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.title || (toast.type === 'error' ? 'Error' : 'Sukses')}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+            <HeaderNavigator
                 title={isLoading || isRefreshing ? "MEMUAT DATA..." : (isEditing ? "EDIT LOGBOOK PRODUCT" : "DETAIL LOGBOOK PRODUCT")}
                 showBackButton={true}
                 onBackPress={() => {
@@ -118,8 +159,8 @@ export function LogbookProductEditScreen() {
             />
 
             <View style={{ padding: 12, flex: 1, paddingBottom: 0 }}>
-                <ScrollView 
-                    className="flex-1" 
+                <ScrollView
+                    className="flex-1"
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={{ paddingBottom: 100 }}
                     refreshControl={
@@ -130,7 +171,7 @@ export function LogbookProductEditScreen() {
                         <LogbookProductEditSkeleton />
                     ) : (
                         <View className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
-                            
+
                             <View className="mb-5">
                                 <Text className="text-xs font-bold text-gray-700 mb-2">Product Name <Text className="text-red-500">*</Text></Text>
                                 <View className={`border border-gray-300 rounded-lg justify-center h-[42px] ${isEditing ? 'bg-white' : 'bg-gray-100'}`}>
@@ -176,7 +217,7 @@ export function LogbookProductEditScreen() {
 
                             <View className="mb-5">
                                 <Text className="text-xs font-bold text-gray-700 mb-2">Problem <Text className="text-red-500">*</Text></Text>
-                                <TextInput 
+                                <TextInput
                                     className={`p-3 border border-gray-300 rounded-lg text-sm text-gray-800 ${isEditing ? 'bg-white' : 'bg-gray-100'}`}
                                     style={{ minHeight: 80, textAlignVertical: 'top' }}
                                     multiline
@@ -189,7 +230,7 @@ export function LogbookProductEditScreen() {
 
                             <View className="mb-5">
                                 <Text className="text-xs font-bold text-gray-700 mb-2">Solution <Text className="text-red-500">*</Text></Text>
-                                    <TextInput 
+                                <TextInput
                                     className={`p-3 border border-gray-300 rounded-lg text-sm text-gray-800 ${isEditing ? 'bg-white' : 'bg-gray-100'}`}
                                     style={{ minHeight: 80, textAlignVertical: 'top' }}
                                     multiline
@@ -202,7 +243,7 @@ export function LogbookProductEditScreen() {
 
                             <View className="mb-5">
                                 <Text className="text-xs font-bold text-gray-700 mb-2">Note</Text>
-                                    <TextInput 
+                                <TextInput
                                     className={`p-3 border border-gray-300 rounded-lg text-sm text-gray-800 ${isEditing ? 'bg-white' : 'bg-gray-100'}`}
                                     style={{ minHeight: 80, textAlignVertical: 'top' }}
                                     multiline
@@ -212,12 +253,12 @@ export function LogbookProductEditScreen() {
                                     placeholder="Tambahan catatan..."
                                 />
                             </View>
-                            
+
                             {/* Actions */}
                             <Animated.View entering={FadeInUp.delay(100)} className="mt-4 flex-row gap-4">
                                 {!isEditing ? (
                                     <>
-                                        <Button 
+                                        <Button
                                             onPress={() => setIsEditing(true)}
                                             className="flex-1 h-14 rounded-2xl flex-row items-center justify-center bg-indigo-600"
                                             style={{ elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
@@ -225,7 +266,7 @@ export function LogbookProductEditScreen() {
                                             <Edit3 color="white" size={20} className="mr-2" />
                                             <Text className="text-white font-bold text-lg">Edit</Text>
                                         </Button>
-                                        <Button 
+                                        <Button
                                             onPress={handleDelete}
                                             className="flex-1 h-14 rounded-2xl flex-row items-center justify-center bg-red-600"
                                             style={{ elevation: 4, shadowColor: '#ef4444', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
@@ -244,7 +285,7 @@ export function LogbookProductEditScreen() {
                                             <X color={theme.colors.primary} size={20} className="mr-2" />
                                             <Text className="font-bold text-lg" style={{ color: theme.colors.primary }}>Batal</Text>
                                         </Button>
-                                        <Button 
+                                        <Button
                                             onPress={handleUpdate}
                                             disabled={isSaving}
                                             className={`flex-1 h-14 rounded-2xl flex-row items-center justify-center ${isSaving ? 'bg-gray-400' : 'bg-green-600'}`}
