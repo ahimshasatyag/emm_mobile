@@ -29,8 +29,8 @@ export function LogbookProductEditScreen() {
     const [isEditing, setIsEditing] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [isSaveModalVisible, setIsSaveModalVisible] = useState(false);
-    const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [modalType, setModalType] = useState<'save' | 'delete' | null>(null);
     const [toast, setToast] = useState<{ visible: boolean; type: ToastType; message: string; title?: string }>({
         visible: false,
         type: 'success',
@@ -83,11 +83,12 @@ export function LogbookProductEditScreen() {
             return;
         }
 
-        setIsSaveModalVisible(true);
+        setModalType('save');
+        setIsModalVisible(true);
     };
 
     const confirmUpdate = async () => {
-        setIsSaveModalVisible(false);
+        setIsModalVisible(false);
         setIsSaving(true);
         try {
             await logbookProductApi.update(id, formData);
@@ -102,16 +103,22 @@ export function LogbookProductEditScreen() {
     };
 
     const handleDelete = () => {
-        setIsDeleteModalVisible(true);
+        setModalType('delete');
+        setIsModalVisible(true);
     };
 
     const confirmDelete = async () => {
-        setIsDeleteModalVisible(false);
+        setIsModalVisible(false);
         try {
             await logbookProductApi.delete(id);
-            navigation.navigate('LogbookProductListScreen', {
-                toastMessage: 'Data berhasil dihapus!',
-                toastType: 'success'
+
+            (navigation as any).navigate('Drawer', {
+                screen: 'LogbookProductListScreen',
+                params: {
+                    toastMessage: 'Data berhasil dihapus!',
+                    toastType: 'success',
+                    timestamp: Date.now()
+                }
             });
         } catch (e) {
             setToast({ visible: true, type: 'error', message: 'Gagal menghapus data.' });
@@ -120,24 +127,27 @@ export function LogbookProductEditScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
-            <ModalConfirm
-                visible={isSaveModalVisible}
-                title="Konfirmasi Simpan"
-                message="Apakah Anda yakin ingin menyimpan perubahan data logbook ini?"
-                confirmText="Ya, Simpan"
-                cancelText="Batal"
-                onConfirm={confirmUpdate}
-                onCancel={() => setIsSaveModalVisible(false)}
-            />
-            <ModalCancel
-                visible={isDeleteModalVisible}
-                title="Hapus Data Logbook?"
-                message="Data ini akan dihapus secara permanen dan tidak dapat dipulihkan."
-                confirmText="Ya, Hapus!"
-                cancelText="Tidak, Batal"
-                onConfirm={confirmDelete}
-                onCancel={() => setIsDeleteModalVisible(false)}
-            />
+            {modalType === 'delete' ? (
+                <ModalCancel
+                    visible={isModalVisible}
+                    title="Konfirmasi Hapus"
+                    message="Apakah anda yakin ingin menghapus data logbook ini?"
+                    confirmText="Ya!"
+                    cancelText="Batal!"
+                    onConfirm={confirmDelete}
+                    onCancel={() => setIsModalVisible(false)}
+                />
+            ) : (
+                <ModalConfirm
+                    visible={isModalVisible}
+                    title="Konfirmasi Simpan"
+                    message="Apakah Anda yakin ingin menyimpan perubahan data logbook ini?"
+                    confirmText="Ya!"
+                    cancelText="Batal!"
+                    onConfirm={confirmUpdate}
+                    onCancel={() => setIsModalVisible(false)}
+                />
+            )}
             <ToastMessages
                 visible={toast.visible}
                 title={toast.title || (toast.type === 'error' ? 'Error' : 'Sukses')}
