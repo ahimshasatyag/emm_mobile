@@ -65,3 +65,19 @@ export const usePurchaseRequisitions = () => {
         clearError: () => dispatch(clearError())
     };
 };
+
+export const validateForm = (formData: any, details: any[]): string | null => {
+    if (!formData.username?.trim()) return 'Responsible wajib diisi';
+    if (details.length === 0) return 'Daftar barang tidak boleh kosong';
+    return null;
+};
+
+export const validateProductForm = (productData: any): string | null => {
+    if (!productData.code_product?.trim()) return 'Kode barang wajib diisi';
+    return null;
+};
+
+export const validateCreateQuotation = (selectedItems: any[]): string | null => {
+    if (!selectedItems || selectedItems.length === 0) return 'Pilih PR Minimal 1';
+    return null;
+};

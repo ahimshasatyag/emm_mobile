@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Save, Plus, Trash2, Package, Send, X, Edit2, ArrowLeft, Pencil } from 'lucide-react-native';
-import { usePurchaseRequisitions } from '../hooks/usePurchaseRequisitions';
+import { usePurchaseRequisitions, validateForm } from '../hooks/usePurchaseRequisitions';
 import { PurchaseRequisitionDetail } from '../types/purchaserequisitions';
 import { theme } from '../../../theme/theme';
 import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
@@ -11,6 +11,8 @@ import { ProductModal } from '../components/ProductModal';
 import { ProductTable } from '../components/ProductTable';
 import { Button } from '../../../components/ui/button';
 import { PurchaseRequisitionEditSkeleton } from '../skeleton/PurchaseRequisitionEditSkeleton';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 const DUMMY_PRODUCTS = [
     { id_product: 'PRD001', code_product: 'P001', nm_product: 'Laptop Dell XPS 13', satuan: 'Unit' },
@@ -35,6 +37,26 @@ export function PurchaseRequisitionEditScreen() {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [isEditMode, setIsEditMode] = useState(false);
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType; title?: string }>({
+        visible: false,
+        message: '',
+        type: 'success'
+    });
+
+    const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
+    const [modalActionType, setModalActionType] = useState<'save' | 'ajukan' | null>(null);
+
+    useEffect(() => {
+        if (route.params?.showSuccessToast) {
+            setToast({
+                visible: true,
+                type: 'success',
+                message: route.params.successMessage || 'Data berhasil disimpan!'
+            });
+            // Clear params to avoid loop
+            navigation.setParams({ showSuccessToast: undefined, successMessage: undefined });
+        }
+    }, [route.params?.showSuccessToast]);
 
     useEffect(() => {
         if (id) {
@@ -72,6 +94,7 @@ export function PurchaseRequisitionEditScreen() {
     const handleRemoveProduct = (index: number) => {
         if (!isEditMode) return;
         setDetails(prev => prev.filter((_, i) => i !== index));
+        setToast({ visible: true, type: 'success', message: 'Barang berhasil dihapus' });
     };
 
     const handleSaveProduct = (product: any) => {
@@ -82,45 +105,55 @@ export function PurchaseRequisitionEditScreen() {
                 newDetails[editingIndex] = { ...newDetails[editingIndex], ...product };
                 return newDetails;
             });
+            setToast({ visible: true, type: 'success', message: 'Barang berhasil diupdate' });
         } else {
             setDetails(prev => [...prev, { ...product, qty_po: 0 }]);
+            setToast({ visible: true, type: 'success', message: 'Barang berhasil ditambahkan' });
         }
     };
 
     const handleSubmit = async () => {
+        const errorMsg = validateForm(formData, details);
+        if (errorMsg) {
+            setToast({ visible: true, type: 'error', message: errorMsg, title: 'Success' });
+            return;
+        }
+        setModalActionType('save');
+        setIsConfirmModalVisible(true);
+    };
+
+    const confirmSave = async () => {
+        setIsConfirmModalVisible(false);
         try {
             await update({
                 id_pr: id,
                 ...formData,
                 details
             });
-            Alert.alert('Sukses', 'Purchase Requisition berhasil diupdate');
+            setToast({ visible: true, type: 'success', message: 'Purchase Requisition berhasil diupdate' });
             setIsEditMode(false);
         } catch (error) {
-            Alert.alert('Error', 'Gagal menyimpan data');
+            setToast({ visible: true, type: 'error', message: 'Gagal menyimpan data' });
         }
     };
 
     const handleAjukan = () => {
-        Alert.alert(
-            'Konfirmasi',
-            'Apakah Anda yakin ingin mengajukan PR ini?',
-            [
-                { text: 'Batal', style: 'cancel' },
-                {
-                    text: 'Ajukan',
-                    onPress: async () => {
-                        try {
-                            await ajukan(id);
-                            Alert.alert('Sukses', 'PR berhasil diajukan');
-                            navigation.goBack();
-                        } catch (error) {
-                            Alert.alert('Error', 'Gagal mengajukan PR');
-                        }
-                    }
-                }
-            ]
-        );
+        setModalActionType('ajukan');
+        setIsConfirmModalVisible(true);
+    };
+
+    const confirmAjukan = async () => {
+        setIsConfirmModalVisible(false);
+        try {
+            await ajukan(id);
+            navigation.replace('PurchaseRequisitionEditScreen', {
+                id: id,
+                showSuccessToast: true,
+                successMessage: 'PR berhasil diajukan!'
+            });
+        } catch (error) {
+            setToast({ visible: true, type: 'error', message: 'Gagal mengajukan PR' });
+        }
     };
 
     return (
@@ -128,6 +161,24 @@ export function PurchaseRequisitionEditScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             className="flex-1 bg-gray-50"
         >
+            <ModalConfirm
+                visible={isConfirmModalVisible}
+                title={modalActionType === 'ajukan' ? "Konfirmasi Ajukan" : "Konfirmasi Simpan"}
+                message={modalActionType === 'ajukan' ? "Apakah Anda yakin ingin mengajukan PR ini?" : "Apakah Anda yakin ingin menyimpan perubahan PR ini?"}
+                confirmText={modalActionType === 'ajukan' ? "Ya, Ajukan" : "Ya, Simpan"}
+                cancelText="Batal"
+                onConfirm={modalActionType === 'ajukan' ? confirmAjukan : confirmSave}
+                onCancel={() => setIsConfirmModalVisible(false)}
+            />
+
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.title || (toast.type === 'error' ? 'Error' : 'Sukses')}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+
             <HeaderNavigator
                 title={isLoadingDetail ? 'MEMUAT DATA...' : isEditMode ? `EDIT ${currentDetail?.code_pr}` : `DETAIL ${currentDetail?.code_pr || 'PR'}`}
                 showBackButton={true}

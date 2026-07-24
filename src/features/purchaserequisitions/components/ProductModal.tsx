@@ -4,6 +4,8 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { theme } from '../../../theme/theme';
 import { X, Save, Trash2 } from 'lucide-react-native';
 import { PurchaseRequisitionDetail } from '../types/purchaserequisitions';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { validateProductForm } from '../hooks/usePurchaseRequisitions';
 
 interface ProductModalProps {
     visible: boolean;
@@ -27,6 +29,11 @@ export const ProductModal = ({ visible, onDismiss, onSave, onDelete, productsLis
     const [qty, setQty] = useState(1);
     const [satuan, setSatuan] = useState('Unit');
     const [note, setNote] = useState('');
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType; title?: string }>({
+        visible: false,
+        message: '',
+        type: 'error'
+    });
 
     useEffect(() => {
         if (visible) {
@@ -58,12 +65,13 @@ export const ProductModal = ({ visible, onDismiss, onSave, onDelete, productsLis
     };
 
     const handleSave = () => {
-        if (!idProduct) {
-            alert('Mohon pilih Kode Barang');
+        const errorMsg = validateProductForm({ code_product: idProduct });
+        if (errorMsg) {
+            setToast({ visible: true, type: 'error', message: errorMsg, title: 'Validasi' });
             return;
         }
         if (qty <= 0) {
-            alert('Qty minimal 1');
+            setToast({ visible: true, type: 'error', message: 'Qty minimal 1', title: 'Validasi' });
             return;
         }
 
@@ -88,6 +96,13 @@ export const ProductModal = ({ visible, onDismiss, onSave, onDelete, productsLis
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 className="flex-1 justify-end bg-black/50"
             >
+                <ToastMessages
+                    visible={toast.visible}
+                    title={toast.title || 'Error'}
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+                />
                 <View className="bg-white rounded-t-3xl p-6" style={{ maxHeight: '90%' }}>
                     {/* Header */}
                     <View className="flex-row justify-between items-center mb-6">

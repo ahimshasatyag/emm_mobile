@@ -7,6 +7,8 @@ import { CheckSquare, Square, Search, ShoppingBag } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeInDown, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { PurchaseRequisitionListPRSkeleton } from '../skeleton/PurchaseRequisitionListPRSkeleton';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 interface PRDetailItem {
     id_pr_dtl: string;
@@ -33,6 +35,12 @@ export function PurchaseRequisitionListPRScreen() {
     const [items, setItems] = useState<PRDetailItem[]>(DUMMY_LIST);
     const [isSaving, setIsSaving] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType; title?: string }>({
+        visible: false,
+        message: '',
+        type: 'success'
+    });
 
     const onRefresh = useCallback(() => {
         setIsRefreshing(true);
@@ -42,8 +50,8 @@ export function PurchaseRequisitionListPRScreen() {
     const filteredItems = useMemo(() => {
         if (!searchQuery.trim()) return items;
         const lowerQuery = searchQuery.toLowerCase();
-        return items.filter(item => 
-            item.code_pr.toLowerCase().includes(lowerQuery) || 
+        return items.filter(item =>
+            item.code_pr.toLowerCase().includes(lowerQuery) ||
             item.nm_product.toLowerCase().includes(lowerQuery) ||
             item.nm_users.toLowerCase().includes(lowerQuery)
         );
@@ -72,33 +80,38 @@ export function PurchaseRequisitionListPRScreen() {
 
     const handleCreateQuotation = () => {
         const selectedItems = items.filter(i => i.selected);
-        if (selectedItems.length === 0) {
-            Alert.alert('Peringatan', 'Pilih PR Minimal 1');
+        const errorMsg = validateCreateQuotation(selectedItems);
+        if (errorMsg) {
+            setToast({ visible: true, type: 'error', message: errorMsg, title: 'Peringatan' });
             return;
         }
+        setIsConfirmModalVisible(true);
+    };
 
+    const confirmCreateQuotation = () => {
+        setIsConfirmModalVisible(false);
         setIsSaving(true);
         // Simulate API call
         setTimeout(() => {
             setIsSaving(false);
-            Alert.alert('Sukses', 'Berhasil Menyimpan Quotation\nCode PO: QO-202310-001', [
-                {
-                    text: 'OK',
-                    onPress: () => navigation.goBack()
-                }
-            ]);
+            setToast({ visible: true, type: 'success', message: 'Berhasil Menyimpan Quotation\nCode PO: QO-202310-001' });
+
+            // Navigate back after showing toast
+            setTimeout(() => {
+                navigation.goBack();
+            }, 1500);
         }, 1000);
     };
 
     const renderItem = ({ item, index }: { item: PRDetailItem, index: number }) => (
         <Animated.View entering={FadeInDown.delay(index * 50)} className="mb-3">
-            <TouchableOpacity 
+            <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => handleToggleSelect(index)}
                 className="bg-white rounded-xl border shadow-sm overflow-hidden flex-row"
                 style={{ borderColor: item.selected ? theme.colors.primary : '#e5e7eb' }}
             >
-                <View 
+                <View
                     className="w-12 items-center justify-center"
                     style={{ backgroundColor: item.selected ? `${theme.colors.primary}15` : '#f9fafb' }}
                 >
@@ -146,6 +159,24 @@ export function PurchaseRequisitionListPRScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             className="flex-1 bg-gray-50"
         >
+            <ModalConfirm
+                visible={isConfirmModalVisible}
+                title="Konfirmasi Create"
+                message="Apakah Anda yakin ingin membuat quotation dari item yang dipilih?"
+                confirmText="Ya, Create"
+                cancelText="Batal"
+                onConfirm={confirmCreateQuotation}
+                onCancel={() => setIsConfirmModalVisible(false)}
+            />
+
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.title || (toast.type === 'error' ? 'Error' : 'Sukses')}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+
             <HeaderNavigator title={isRefreshing ? "MEMUAT DATA..." : "LIST PR DETAILS"} showBackButton={true} onBackPress={() => navigation.goBack()} />
 
             <View className="px-4 py-3">
