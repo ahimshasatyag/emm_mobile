@@ -23,6 +23,17 @@ export const useCustomerInvoice = () => {
         dispatch(clearDetail());
     }, [dispatch]);
 
+    const validatePayment = useCallback((data: any) => {
+        if (!data.paymentMethod && (!data.amount || Number(data.amount) <= 0)) {
+            return 'Semua field wajib diisi';
+        }
+        
+        if (!data.paymentMethod) return 'Payment Method wajib dipilih.';
+        if (!data.amount || Number(data.amount) <= 0) return 'Amount wajib diisi dan harus lebih dari 0.';
+        if (!data.paymentDate) return 'Date wajib diisi.';
+        return null;
+    }, []);
+
     return {
         list,
         detail,
@@ -30,6 +41,7 @@ export const useCustomerInvoice = () => {
         error,
         getList,
         getDetail,
-        clearInvoiceDetail
+        clearInvoiceDetail,
+        validatePayment
     };
 };

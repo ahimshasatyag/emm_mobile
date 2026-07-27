@@ -1,9 +1,12 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { X, Save, Calendar, CheckSquare, Square } from 'lucide-react-native';
 import { theme } from '../../../theme/theme';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { useCustomerInvoice } from '../hooks/useCustomerInvoice';
+import { formatInputNumber } from '../../../utils/helpers/money';
 
 interface PaymentModalProps {
     visible: boolean;
@@ -24,6 +27,8 @@ const BANK_OPTIONS = [
 ];
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onDismiss, onSave }) => {
+    const { validatePayment } = useCustomerInvoice();
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'error' });
     const [paymentMethod, setPaymentMethod] = useState('');
     const [amount, setAmount] = useState('');
     const [paymentDate, setPaymentDate] = useState(new Date());
@@ -33,20 +38,46 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onDismiss, 
     const [isDp, setIsDp] = useState(false);
     const scrollViewRef = useRef<ScrollView>(null);
 
+    useEffect(() => {
+        if (visible) {
+            setPaymentMethod('');
+            setAmount('');
+            setPaymentDate(new Date());
+            setBank('');
+            setKeterangan('');
+            setIsDp(false);
+            setToast({ visible: false, message: '', type: 'error' });
+        }
+    }, [visible]);
+
     const handleSave = () => {
-        onSave({
+        const payload = {
             paymentMethod,
             amount: parseInt(amount.replace(/[^0-9]/g, '')) || 0,
             paymentDate,
             bank,
             keterangan,
             isDp
-        });
-        onDismiss();
+        };
+
+        const errorMsg = validatePayment(payload);
+        if (errorMsg) {
+            setToast({ visible: true, message: errorMsg, type: 'error' });
+            return;
+        }
+
+        onSave(payload);
     };
 
     return (
         <Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss}>
+            <ToastMessages
+                visible={toast.visible}
+                title="Validasi"
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 className="flex-1 justify-end bg-black/50"
@@ -90,7 +121,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onDismiss, 
                             <TextInput
                                 className="bg-white px-4 py-3 rounded-xl border border-gray-200 text-gray-900"
                                 value={amount}
-                                onChangeText={setAmount}
+                                onChangeText={(val) => setAmount(formatInputNumber(val))}
                                 keyboardType="numeric"
                                 placeholder="Masukkan jumlah"
                             />
