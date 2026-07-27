@@ -4,7 +4,7 @@ import { Dropdown } from 'react-native-element-dropdown';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
-import { FileText, Save, X, Edit, Pencil, Trash2, Calendar, Plus } from 'lucide-react-native';
+import { Save, X, Pencil, Calendar, Plus, CheckCircle, XCircle } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { theme } from '../../../theme/theme';
@@ -14,6 +14,9 @@ import { ErrorState } from '../../../components/shared/ErrorState';
 import { PurchaseOrderTable } from '../components/PurchaseOrderTable';
 import { IncshipmentInvoiceTable } from '../components/IncshipmentInvoiceTable';
 import { PurchaseOrderModal } from '../components/PurchaseOrderModal';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ModalCancel } from '../../../components/ui/ModalCancel';
 
 const DUMMY_PRODUCTS = [
     { id_product: 'P001', code_product: 'BRG-001', nm_product: 'Laptop Asus ROG', deskripsi: 'Laptop Gaming Asus ROG Strix', satuan: 'Unit', price: 15000000 },
@@ -38,16 +41,32 @@ const DUMMY_WAREHOUSES = [
 
 export function QuotationsAPEditScreen() {
     const navigation = useNavigation<any>();
+    const { validateForm } = useQuotationsAP();
     const route = useRoute<any>();
     const { id } = route.params;
     const [activeTab, setActiveTab] = useState<'po' | 'incoming'>('po');
 
     // Form states
     const [supplier, setSupplier] = useState<string | null>(null);
+    const [supplierRef, setSupplierRef] = useState('');
     const [currency, setCurrency] = useState<string | null>(null);
     const [warehouse, setWarehouse] = useState<string | null>(null);
     const [orderDate, setOrderDate] = useState<Date>(new Date());
     const [showOrderDatePicker, setShowOrderDatePicker] = useState(false);
+
+    // Incoming Shipment states
+    const [incDestination, setIncDestination] = useState<string | null>(null);
+    const [expectedDate, setExpectedDate] = useState<Date>(new Date());
+
+    // Modal state for Confirm PO
+    const [isConfirmPOVisible, setIsConfirmPOVisible] = useState(false);
+    const [isCancelPOVisible, setIsCancelPOVisible] = useState(false);
+
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType; title?: string }>({
+        visible: false,
+        message: '',
+        type: 'error'
+    });
 
     const [isEditMode, setIsEditMode] = useState(false);
 
@@ -95,34 +114,77 @@ export function QuotationsAPEditScreen() {
     } = useQuotationsAP();
 
     useEffect(() => {
-        loadDetail(id);
+        if (id !== 'NEW-QAP-001') {
+            loadDetail(id);
+        }
         return () => {
             clearSelection();
         };
     }, [id, loadDetail, clearSelection]);
 
-    // Load initial details when selectedItem is loaded
     useEffect(() => {
-        if (selectedItem?.details) {
-            setPoDetails(selectedItem.details);
+        if (route.params?.toast) {
+            setToast(route.params.toast);
         }
-        if (selectedItem?.date_po) {
+    }, [route.params?.toast]);
+
+    const isDummy = id === 'NEW-QAP-001';
+    const displayItem = React.useMemo(() => {
+        return isDummy ? {
+            id_po: 'NEW-QAP-001',
+            code_po: 'QAP-NEW',
+            nm_supplier: 'Data Baru (Draft)',
+            status: 'Draft',
+            date_po: new Date().toISOString(),
+            details: []
+        } as any : selectedItem;
+    }, [isDummy, selectedItem]);
+
+    const isLoading = isLoadingDetail || (!displayItem && !isDummy);
+
+    // Load initial details when displayItem is loaded
+    useEffect(() => {
+        if (displayItem?.details) {
+            setPoDetails(displayItem.details);
+        }
+        if (displayItem?.date_po) {
             // attempt to parse if valid, else keep current
-            const parsedDate = new Date(selectedItem.date_po);
+            const parsedDate = new Date(displayItem.date_po);
             if (!isNaN(parsedDate.getTime())) {
                 setOrderDate(parsedDate);
             }
         }
-    }, [selectedItem]);
+    }, [displayItem]);
 
     const handleSave = () => {
+        const errorMsg = validateForm({
+            supplier, supplierRef, currency, warehouse, orderDate, expectedDate, incDestination
+        });
+
+        if (errorMsg) {
+            setToast({ visible: true, type: 'error', message: errorMsg });
+            return;
+        }
+
         navigation.goBack();
     };
 
-    const handleCancel = () => {
-        // Silently go back without triggering refresh on list screen 
-        // since we handle the timestamp logic there
-        navigation.goBack();
+    const confirmPO = () => {
+        setIsConfirmPOVisible(false);
+        navigation.replace('PoEditScreen', {
+            id: 'NEW-PO-001',
+            toast: {
+                visible: true,
+                type: 'success',
+                message: 'PO berhasil dikonfirmasi!'
+            }
+        });
+    };
+
+    const cancelPO = () => {
+        setIsCancelPOVisible(false);
+        setIsEditMode(false);
+        setToast({ visible: true, type: 'success', message: 'PO telah dibatalkan!' });
     };
 
     if (error && !isLoadingDetail) {
@@ -140,8 +202,35 @@ export function QuotationsAPEditScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.title || (toast.type === 'error' ? 'Validasi' : 'Sukses')}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+
+            <ModalConfirm
+                visible={isConfirmPOVisible}
+                title="Konfirmasi"
+                message="Apakah Anda yakin ingin mengkonfirmasi PO ini?"
+                confirmText="Ya, Confirm"
+                cancelText="Batal"
+                onConfirm={confirmPO}
+                onCancel={() => setIsConfirmPOVisible(false)}
+            />
+
+            <ModalCancel
+                visible={isCancelPOVisible}
+                title="Batalkan PO"
+                message="Apakah Anda yakin ingin membatalkan PO ini?"
+                confirmText="Ya, Batalkan!"
+                cancelText="Kembali"
+                onConfirm={cancelPO}
+                onCancel={() => setIsCancelPOVisible(false)}
+            />
             <HeaderNavigator
-                title={isLoadingDetail || !selectedItem ? "MEMUAT DATA..." : isEditMode ? `EDIT ${selectedItem.code_po}` : `DETAIL ${selectedItem.code_po}`}
+                title={isLoading ? "MEMUAT DATA..." : isEditMode ? `EDIT ${displayItem?.code_po}` : `DETAIL ${displayItem?.code_po}`}
                 showBackButton
                 onBackPress={() => navigation.goBack()}
             />
@@ -149,10 +238,10 @@ export function QuotationsAPEditScreen() {
             <ScrollView
                 className="flex-1 px-4 pt-4"
                 refreshControl={
-                    <RefreshControl refreshing={isLoadingDetail} onRefresh={() => id && loadDetail(id)} colors={[theme.colors.primary]} />
+                    <RefreshControl refreshing={isLoadingDetail} onRefresh={() => id && !isDummy && loadDetail(id)} colors={[theme.colors.primary]} />
                 }
             >
-                {isLoadingDetail || !selectedItem ? (
+                {isLoading ? (
                     <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
                         <QuotationsAPEditSkeleton />
                     </Animated.View>
@@ -171,7 +260,7 @@ export function QuotationsAPEditScreen() {
                                                 valueField="value"
                                                 search
                                                 searchPlaceholder="Cari supplier..."
-                                                placeholder={selectedItem.nm_suppliers || "Pilih Supplier"}
+                                                placeholder={displayItem.nm_suppliers || "Pilih Supplier"}
                                                 value={supplier}
                                                 onChange={item => setSupplier(item.value)}
                                                 disable={!isEditMode}
@@ -182,9 +271,11 @@ export function QuotationsAPEditScreen() {
                                     <View>
                                         <Text className="text-sm font-bold text-gray-700 mb-2">Supplier Reference <Text className="text-red-500">*</Text></Text>
                                         <TextInput
-                                            className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 text-gray-900 mb-4"
-                                            value="REF-12345"
-                                            editable={false}
+                                            className={`px-4 py-3 rounded-xl border mb-4 ${isEditMode ? 'bg-white border-gray-200 text-gray-900' : 'bg-gray-100 border-gray-200 text-gray-500'}`}
+                                            value={isEditMode ? supplierRef : "REF-12345"}
+                                            onChangeText={setSupplierRef}
+                                            editable={isEditMode}
+                                            placeholder="Masukkan referensi supplier..."
                                         />
                                     </View>
 
@@ -254,7 +345,7 @@ export function QuotationsAPEditScreen() {
                                         <Text className="text-sm font-bold text-gray-700 mb-2">Notes</Text>
                                         <TextInput
                                             className={`p-4 rounded-xl border h-24 mb-4 ${isEditMode ? 'bg-gray-50 border-gray-200 text-gray-900' : 'bg-gray-100 border-gray-200 text-gray-500'}`}
-                                            value={selectedItem.notes || '-'}
+                                            value={displayItem.notes || '-'}
                                             editable={isEditMode}
                                             multiline
                                             textAlignVertical="top"
@@ -306,7 +397,13 @@ export function QuotationsAPEditScreen() {
 
                                 {activeTab === 'incoming' && (
                                     <View>
-                                        <IncshipmentInvoiceTable details={[]} />
+                                        <IncshipmentInvoiceTable
+                                            details={[]}
+                                            destination={incDestination}
+                                            onDestinationChange={setIncDestination}
+                                            expectedDate={expectedDate}
+                                            onExpectedDateChange={setExpectedDate}
+                                        />
                                     </View>
                                 )}
                             </View>
@@ -333,13 +430,35 @@ export function QuotationsAPEditScreen() {
                                     </Button>
                                 </View>
                             ) : (
-                                <Button
-                                    onPress={() => setIsEditMode(true)}
-                                    className="w-full h-14 rounded-2xl flex-row items-center justify-center bg-gray-800"
-                                >
-                                    <Pencil color="white" size={20} className="mr-2" />
-                                    <Text className="text-white font-bold text-lg">Edit Data</Text>
-                                </Button>
+                                <View className="mt-2 space-y-3">
+                                    <Button
+                                        onPress={() => setIsEditMode(true)}
+                                        className="w-full h-14 rounded-2xl flex-row items-center justify-center bg-[#9e0b0f]"
+                                        style={{ elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
+                                    >
+                                        <Pencil color="white" size={20} className="mr-2" />
+                                        <Text className="text-white font-bold text-lg">Edit Data</Text>
+                                    </Button>
+
+                                    <View className="flex-row space-x-3 mt-1">
+                                        <TouchableOpacity
+                                            className="bg-gray-800 flex-1 flex-row justify-center items-center py-3.5 rounded-xl shadow-sm"
+                                            activeOpacity={0.8}
+                                            onPress={() => setIsConfirmPOVisible(true)}
+                                        >
+                                            <CheckCircle color="#fff" size={20} />
+                                            <Text className="text-white font-bold ml-2 text-sm">Confirm PO</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            className="bg-red-500 flex-1 flex-row justify-center items-center py-3.5 rounded-xl shadow-sm"
+                                            activeOpacity={0.8}
+                                            onPress={() => setIsCancelPOVisible(true)}
+                                        >
+                                            <XCircle color="#fff" size={20} />
+                                            <Text className="text-white font-bold ml-2 text-sm">Cancel PO</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
                             )}
                         </Animated.View>
                     </Animated.View>

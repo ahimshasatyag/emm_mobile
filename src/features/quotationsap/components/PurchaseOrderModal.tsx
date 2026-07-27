@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { theme } from '../../../theme/theme';
 import { X, Save, Trash2 } from 'lucide-react-native';
-import { formatRp } from '../../../utils/helpers/money';
+import { formatRp, formatInputNumber, parseInputNumber } from '../../../utils/helpers/money';
 import { PurchaseOrderOptionTable } from './PurchaseOrderOptionTable';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 interface Product {
     id_product: string;
@@ -34,7 +35,13 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
     const [satuan, setSatuan] = useState('Unit');
     const [price, setPrice] = useState(0);
     const [qty, setQty] = useState(1);
-    
+
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType; title?: string }>({
+        visible: false,
+        message: '',
+        type: 'error'
+    });
+
     // Dummy options
     const [options, setOptions] = useState<any[]>([]);
 
@@ -48,7 +55,7 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
                 setSatuan(initialData.satuan || 'Unit');
                 setPrice(initialData.price || 0);
                 setQty(initialData.qty || 1);
-                
+
                 // Set options based on initialData if exists, or generate dummy
                 setOptions(initialData.options || [
                     { nm_product_opt: 'Option A', harga: 5000, selected: false },
@@ -75,7 +82,7 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
             setDeskripsi(product.deskripsi || 'Deskripsi Produk Dummy');
             if (product.satuan) setSatuan(product.satuan);
             if (product.price) setPrice(product.price);
-            
+
             // Generate dummy options when product is selected
             setOptions([
                 { nm_product_opt: `Opsi Khusus ${product.code_product} A`, harga: 5000, selected: false },
@@ -113,11 +120,15 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
 
     const handleSave = () => {
         if (!idProduct) {
-            alert('Mohon pilih Kode Barang');
+            setToast({ visible: true, type: 'error', message: 'Mohon pilih Kode Barang' });
             return;
         }
-        if (qty <= 0) {
-            alert('Qty minimal 1');
+        if (price <= 0 || isNaN(price)) {
+            setToast({ visible: true, type: 'error', message: 'Price wajib diisi dan harus lebih dari 0' });
+            return;
+        }
+        if (qty <= 0 || isNaN(qty)) {
+            setToast({ visible: true, type: 'error', message: 'Qty wajib diisi minimal 1' });
             return;
         }
 
@@ -146,6 +157,13 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 className="flex-1 justify-end bg-black/50"
             >
+                <ToastMessages
+                    visible={toast.visible}
+                    title={toast.title || 'Peringatan'}
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+                />
                 <View className="bg-white rounded-t-3xl p-6" style={{ maxHeight: '90%' }}>
                     {/* Header */}
                     <View className="flex-row justify-between items-center mb-6">
@@ -184,7 +202,7 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
                                 className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold"
                                 value={namaBarang}
                                 editable={false}
-                                placeholder="Otomatis terisi"
+                                placeholder="Nama Barang"
                             />
                         </View>
 
@@ -195,7 +213,7 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
                                 className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold"
                                 value={deskripsi}
                                 editable={false}
-                                placeholder="Otomatis terisi"
+                                placeholder="Deskripsi Barang"
                                 multiline
                             />
                         </View>
@@ -220,10 +238,14 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Price <Text className="text-red-500">*</Text></Text>
                                 <TextInput
                                     className="bg-white px-4 py-3 rounded-xl border border-gray-200 text-gray-900"
-                                    value={price.toString()}
-                                    onChangeText={t => setPrice(parseInt(t.replace(/[^0-9]/g, '')) || 0)}
+                                    value={price === 0 ? '' : formatInputNumber(price.toString())}
+                                    onChangeText={t => {
+                                        const parsed = parseInputNumber(t);
+                                        setPrice(parseInt(parsed, 10) || 0);
+                                    }}
                                     keyboardType="numeric"
                                     editable={!isReadOnly}
+                                    placeholder="0"
                                 />
                             </View>
                             <View className="flex-[0.7]">
@@ -263,9 +285,9 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
                         {idProduct ? (
                             <View className="mb-6">
                                 <Text className="text-sm font-bold text-gray-700 mb-3">Options</Text>
-                                <PurchaseOrderOptionTable 
-                                    options={options} 
-                                    onToggleOption={handleToggleOption} 
+                                <PurchaseOrderOptionTable
+                                    options={options}
+                                    onToggleOption={handleToggleOption}
                                     onPriceChange={handlePriceChange}
                                 />
                             </View>

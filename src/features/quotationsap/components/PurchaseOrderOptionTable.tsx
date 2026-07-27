@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, TextInput } from 'react-native';
 import { Package, CheckSquare, Square } from 'lucide-react-native';
-import { formatRp } from '../../../utils/helpers/money';
+import { formatRp, formatInputNumber, parseInputNumber } from '../../../utils/helpers/money';
 
 interface OptionItem {
     id_po_opt_dtl?: string;
@@ -38,13 +38,14 @@ export function PurchaseOrderOptionTable({ options, onToggleOption, onPriceChang
                     <View className="w-24 items-end justify-center pr-2">
                         <TextInput
                             className="bg-gray-100 px-2 py-1 rounded text-xs text-gray-900 w-full text-right"
-                            value={item.harga?.toString() || '0'}
+                            value={item.harga === 0 ? '' : formatInputNumber(item.harga?.toString() || '0')}
                             onChangeText={(t) => {
-                                const val = parseInt(t.replace(/[^0-9]/g, '')) || 0;
+                                const val = parseInt(parseInputNumber(t), 10) || 0;
                                 if (onPriceChange) onPriceChange(index, val);
                             }}
                             keyboardType="numeric"
                             editable={!!onPriceChange}
+                            placeholder="0"
                         />
                     </View>
                     <TouchableOpacity 

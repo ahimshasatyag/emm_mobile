@@ -4,7 +4,7 @@ import { Dropdown } from 'react-native-element-dropdown';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
-import { FileText, Save, X, ChevronDown, Calendar, Plus } from 'lucide-react-native';
+import { Save, Calendar, Plus } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { theme } from '../../../theme/theme';
@@ -12,6 +12,9 @@ import { QuotationsAPFormSkeleton } from '../skeleton/QuotationsAPFormSkeleton';
 import { PurchaseOrderTable } from '../components/PurchaseOrderTable';
 import { IncshipmentInvoiceTable } from '../components/IncshipmentInvoiceTable';
 import { PurchaseOrderModal } from '../components/PurchaseOrderModal';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { useQuotationsAP } from '../hooks/useQuotationsAP';
 
 // Dummy data for products
 const DUMMY_PRODUCTS = [
@@ -37,16 +40,31 @@ const DUMMY_WAREHOUSES = [
 
 export function QuotationsAPFormScreen() {
     const navigation = useNavigation<any>();
+    const { validateForm } = useQuotationsAP();
     const [activeTab, setActiveTab] = useState<'po' | 'incoming'>('po');
     const [poDetails, setPoDetails] = useState<any[]>([]);
-    
+
     // Form states
     const [supplier, setSupplier] = useState<string | null>(null);
+    const [supplierRef, setSupplierRef] = useState('');
     const [currency, setCurrency] = useState<string | null>(null);
     const [warehouse, setWarehouse] = useState<string | null>(null);
     const [orderDate, setOrderDate] = useState<Date>(new Date());
     const [showOrderDatePicker, setShowOrderDatePicker] = useState(false);
-    
+
+    // Incoming Shipment states
+    const [incDestination, setIncDestination] = useState<string | null>(null);
+    const [expectedDate, setExpectedDate] = useState<Date>(new Date());
+
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType; title?: string }>({
+        visible: false,
+        message: '',
+        type: 'error'
+    });
+
+    // Modal Confirm
+    const [isConfirmVisible, setIsConfirmVisible] = useState(false);
+
     // Loading state for refresh control and skeleton
     const [isLoading, setIsLoading] = useState(false);
 
@@ -74,7 +92,6 @@ export function QuotationsAPFormScreen() {
 
     const handleSaveProduct = (product: any) => {
         if (selectedDetail) {
-            // Edit mode (not implemented yet in this basic example, just push to list for now)
             const newDetails = [...poDetails];
             const index = poDetails.findIndex(p => p.id_product === product.id_product);
             if (index >= 0) newDetails[index] = product;
@@ -87,8 +104,28 @@ export function QuotationsAPFormScreen() {
     };
 
     const handleSave = () => {
-        // Implementasi save nanti
-        navigation.goBack();
+        const errorMsg = validateForm({
+            supplier, supplierRef, currency, warehouse, orderDate, expectedDate, incDestination
+        });
+
+        if (errorMsg) {
+            setToast({ visible: true, type: 'error', message: errorMsg });
+            return;
+        }
+
+        setIsConfirmVisible(true);
+    };
+
+    const confirmSave = () => {
+        setIsConfirmVisible(false);
+        navigation.replace('QuotationsAPEditScreen', {
+            id: 'NEW-QAP-001',
+            toast: {
+                visible: true,
+                type: 'success',
+                message: 'Quotation berhasil dibuat!'
+            }
+        });
     };
 
     const handleCancel = () => {
@@ -109,13 +146,29 @@ export function QuotationsAPFormScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator 
-                title={isLoading ? "MEMUAT DATA..." : "TAMBAH QUOTATION AP"} 
-                showBackButton 
-                onBackPress={() => navigation.goBack()} 
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.title || (toast.type === 'error' ? 'Validasi' : 'Sukses')}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+            <ModalConfirm
+                visible={isConfirmVisible}
+                title="Konfirmasi"
+                message="Apakah Anda yakin ingin menyimpan Quotation ini?"
+                confirmText="Ya, Simpan"
+                cancelText="Batal"
+                onConfirm={confirmSave}
+                onCancel={() => setIsConfirmVisible(false)}
+            />
+            <HeaderNavigator
+                title={isLoading ? "MEMUAT DATA..." : "TAMBAH QUOTATION AP"}
+                showBackButton
+                onBackPress={() => navigation.goBack()}
             />
 
-            <ScrollView 
+            <ScrollView
                 className="flex-1 px-4 pt-4"
                 refreshControl={
                     <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
@@ -129,157 +182,165 @@ export function QuotationsAPFormScreen() {
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
                         <Animated.View entering={FadeInUp.duration(400)} className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
                             <View className="p-4 space-y-4">
-                        <View>
-                            <Text className="text-sm font-bold text-gray-700 mb-2">Supplier <Text className="text-red-500">*</Text></Text>
-                            <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
-                                <Dropdown
-                                    style={{ height: 48, paddingHorizontal: 16 }}
-                                    data={DUMMY_SUPPLIERS}
-                                    labelField="label"
-                                    valueField="value"
-                                    search
-                                    searchPlaceholder="Cari supplier..."
-                                    placeholder="Pilih Supplier"
-                                    value={supplier}
-                                    onChange={item => setSupplier(item.value)}
-                                />
-                            </View>
-                        </View>
-
-                        <View>
-                            <Text className="text-sm font-bold text-gray-700 mb-2">Supplier Reference <Text className="text-red-500">*</Text></Text>
-                            <TextInput
-                                className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 text-gray-900 mb-4"
-                                placeholder="Masukkan referensi supplier..."
-                                placeholderTextColor="#9CA3AF"
-                            />
-                        </View>
-
-                        <View>
-                            <Text className="text-sm font-bold text-gray-700 mb-2">Mata Uang <Text className="text-red-500">*</Text></Text>
-                            <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
-                                <Dropdown
-                                    style={{ height: 48, paddingHorizontal: 16 }}
-                                    data={DUMMY_CURRENCIES}
-                                    labelField="label"
-                                    valueField="value"
-                                    search
-                                    searchPlaceholder="Cari mata uang..."
-                                    placeholder="Pilih Mata Uang"
-                                    value={currency}
-                                    onChange={item => setCurrency(item.value)}
-                                />
-                            </View>
-                        </View>
-
-                        <View>
-                            <Text className="text-sm font-bold text-gray-700 mb-2">Order Date <Text className="text-red-500">*</Text></Text>
-                            <TouchableOpacity 
-                                onPress={() => setShowOrderDatePicker(true)}
-                                className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 mb-4 flex-row justify-between items-center"
-                            >
-                                <Text className="text-gray-700">{orderDate.toISOString().split('T')[0]}</Text>
-                                <Calendar size={20} color="#9CA3AF" />
-                            </TouchableOpacity>
-                            {showOrderDatePicker && (
-                                <DateTimePicker
-                                    value={orderDate}
-                                    mode="date"
-                                    display="default"
-                                    onChange={(event, selectedDate) => {
-                                        setShowOrderDatePicker(false);
-                                        if (selectedDate) {
-                                            setOrderDate(selectedDate);
-                                        }
-                                    }}
-                                />
-                            )}
-                        </View>
-
-                        <View>
-                            <Text className="text-sm font-bold text-gray-700 mb-2">Destination Warehouse <Text className="text-red-500">*</Text></Text>
-                            <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
-                                <Dropdown
-                                    style={{ height: 48, paddingHorizontal: 16 }}
-                                    data={DUMMY_WAREHOUSES}
-                                    labelField="label"
-                                    valueField="value"
-                                    search
-                                    searchPlaceholder="Cari destination warehouse..."
-                                    placeholder="Pilih Destination Warehouse"
-                                    value={warehouse}
-                                    onChange={item => setWarehouse(item.value)}
-                                />
-                            </View>
-                        </View>
-
-                        <View>
-                            <Text className="text-sm font-bold text-gray-700 mb-2">Notes</Text>
-                            <TextInput
-                                className="bg-gray-100 p-4 rounded-xl border border-gray-200 text-gray-900 h-24 mb-4"
-                                placeholder="Masukkan catatan..."
-                                placeholderTextColor="#9CA3AF"
-                                multiline
-                                textAlignVertical="top"
-                            />
-                        </View>
-                    </View>
-
-                    {/* TABS AND TAB CONTENT */}
-                    <View className="flex-row bg-white border-t border-gray-100 px-2 pt-2">
-                        <TouchableOpacity
-                            onPress={() => setActiveTab('po')}
-                            className={`flex-1 py-3 items-center border-b-2`}
-                            style={{ borderColor: activeTab === 'po' ? theme.colors.primary : 'transparent' }}
-                        >
-                            <Text className="font-bold" style={{ color: activeTab === 'po' ? theme.colors.primary : '#9ca3af' }}>Purchase Order</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={() => setActiveTab('incoming')}
-                            className={`flex-1 py-3 items-center border-b-2`}
-                            style={{ borderColor: activeTab === 'incoming' ? theme.colors.primary : 'transparent' }}
-                        >
-                            <Text className="font-bold text-center" style={{ color: activeTab === 'incoming' ? theme.colors.primary : '#9ca3af' }}>Incoming Shipment & Invoice</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <View className="bg-white rounded-b-2xl min-h-[150px] pb-4">
-                        {activeTab === 'po' && (
-                            <View>
-                                <View className="px-4 py-3 flex-row justify-between items-center border-b border-gray-50">
-                                    <Text className="font-bold text-gray-800">Daftar Barang</Text>
-                                    <TouchableOpacity
-                                        onPress={handleAddProduct}
-                                        className="px-3 py-1.5 rounded-lg flex-row items-center"
-                                        style={{ backgroundColor: theme.colors.primaryContainer }}
-                                    >
-                                        <Plus size={16} color={theme.colors.primary} className="mr-1" />
-                                        <Text className="text-xs font-bold" style={{ color: theme.colors.primary }}>Tambah Barang</Text>
-                                    </TouchableOpacity>
+                                <View>
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Supplier <Text className="text-red-500">*</Text></Text>
+                                    <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
+                                        <Dropdown
+                                            style={{ height: 48, paddingHorizontal: 16 }}
+                                            data={DUMMY_SUPPLIERS}
+                                            labelField="label"
+                                            valueField="value"
+                                            search
+                                            searchPlaceholder="Cari supplier..."
+                                            placeholder="Pilih Supplier"
+                                            value={supplier}
+                                            onChange={item => setSupplier(item.value)}
+                                        />
+                                    </View>
                                 </View>
-                                <PurchaseOrderTable
-                                    details={poDetails}
-                                    onEditProduct={handleEditProduct}
-                                />
-                            </View>
-                        )}
-                        {activeTab === 'incoming' && (
-                            <IncshipmentInvoiceTable details={[]} />
-                        )}
-                    </View>
-                </Animated.View>
 
-                <Animated.View entering={FadeInUp.delay(100)} className="mb-8">
-                    <Button
-                        onPress={handleSave}
-                        className="w-full h-14 rounded-2xl flex-row items-center justify-center"
-                        style={{ elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
-                    >
-                        <Save color="white" size={20} className="mr-2" />
-                        <Text className="text-white font-bold text-lg">Simpan</Text>
-                    </Button>
-                </Animated.View>
-                </Animated.View>
+                                <View>
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Supplier Reference <Text className="text-red-500">*</Text></Text>
+                                    <TextInput
+                                        className="bg-white px-4 py-3 rounded-xl border border-gray-200 text-gray-900 mb-4"
+                                        placeholder="Masukkan referensi supplier..."
+                                        placeholderTextColor="#9CA3AF"
+                                        value={supplierRef}
+                                        onChangeText={setSupplierRef}
+                                    />
+                                </View>
+
+                                <View>
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Mata Uang <Text className="text-red-500">*</Text></Text>
+                                    <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
+                                        <Dropdown
+                                            style={{ height: 48, paddingHorizontal: 16 }}
+                                            data={DUMMY_CURRENCIES}
+                                            labelField="label"
+                                            valueField="value"
+                                            search
+                                            searchPlaceholder="Cari mata uang..."
+                                            placeholder="Pilih Mata Uang"
+                                            value={currency}
+                                            onChange={item => setCurrency(item.value)}
+                                        />
+                                    </View>
+                                </View>
+
+                                <View>
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Order Date <Text className="text-red-500">*</Text></Text>
+                                    <TouchableOpacity
+                                        onPress={() => setShowOrderDatePicker(true)}
+                                        className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 mb-4 flex-row justify-between items-center"
+                                    >
+                                        <Text className="text-gray-700">{orderDate.toISOString().split('T')[0]}</Text>
+                                        <Calendar size={20} color="#9CA3AF" />
+                                    </TouchableOpacity>
+                                    {showOrderDatePicker && (
+                                        <DateTimePicker
+                                            value={orderDate}
+                                            mode="date"
+                                            display="default"
+                                            onChange={(event, selectedDate) => {
+                                                setShowOrderDatePicker(false);
+                                                if (selectedDate) {
+                                                    setOrderDate(selectedDate);
+                                                }
+                                            }}
+                                        />
+                                    )}
+                                </View>
+
+                                <View>
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Destination Warehouse <Text className="text-red-500">*</Text></Text>
+                                    <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
+                                        <Dropdown
+                                            style={{ height: 48, paddingHorizontal: 16 }}
+                                            data={DUMMY_WAREHOUSES}
+                                            labelField="label"
+                                            valueField="value"
+                                            search
+                                            searchPlaceholder="Cari destination warehouse..."
+                                            placeholder="Pilih Destination Warehouse"
+                                            value={warehouse}
+                                            onChange={item => setWarehouse(item.value)}
+                                        />
+                                    </View>
+                                </View>
+
+                                <View>
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Notes</Text>
+                                    <TextInput
+                                        className="bg-gray-100 p-4 rounded-xl border border-gray-200 text-gray-900 h-24 mb-4"
+                                        placeholder="Masukkan catatan..."
+                                        placeholderTextColor="#9CA3AF"
+                                        multiline
+                                        textAlignVertical="top"
+                                    />
+                                </View>
+                            </View>
+
+                            {/* TABS AND TAB CONTENT */}
+                            <View className="flex-row bg-white border-t border-gray-100 px-2 pt-2">
+                                <TouchableOpacity
+                                    onPress={() => setActiveTab('po')}
+                                    className={`flex-1 py-3 items-center border-b-2`}
+                                    style={{ borderColor: activeTab === 'po' ? theme.colors.primary : 'transparent' }}
+                                >
+                                    <Text className="font-bold" style={{ color: activeTab === 'po' ? theme.colors.primary : '#9ca3af' }}>Purchase Order</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={() => setActiveTab('incoming')}
+                                    className={`flex-1 py-3 items-center border-b-2`}
+                                    style={{ borderColor: activeTab === 'incoming' ? theme.colors.primary : 'transparent' }}
+                                >
+                                    <Text className="font-bold text-center" style={{ color: activeTab === 'incoming' ? theme.colors.primary : '#9ca3af' }}>Incoming Shipment & Invoice</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            <View className="bg-white rounded-b-2xl min-h-[150px] pb-4">
+                                {activeTab === 'po' && (
+                                    <View>
+                                        <View className="px-4 py-3 flex-row justify-between items-center border-b border-gray-50">
+                                            <Text className="font-bold text-gray-800">Daftar Barang</Text>
+                                            <TouchableOpacity
+                                                onPress={handleAddProduct}
+                                                className="px-3 py-1.5 rounded-lg flex-row items-center"
+                                                style={{ backgroundColor: theme.colors.primaryContainer }}
+                                            >
+                                                <Plus size={16} color={theme.colors.primary} className="mr-1" />
+                                                <Text className="text-xs font-bold" style={{ color: theme.colors.primary }}>Tambah Barang</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                        <PurchaseOrderTable
+                                            details={poDetails}
+                                            onEditProduct={handleEditProduct}
+                                        />
+                                    </View>
+                                )}
+                                {activeTab === 'incoming' && (
+                                    <IncshipmentInvoiceTable
+                                        details={[]}
+                                        destination={incDestination}
+                                        onDestinationChange={setIncDestination}
+                                        expectedDate={expectedDate}
+                                        onExpectedDateChange={setExpectedDate}
+                                    />
+                                )}
+                            </View>
+                        </Animated.View>
+
+                        <Animated.View entering={FadeInUp.delay(100)} className="mb-8">
+                            <Button
+                                onPress={handleSave}
+                                className="w-full h-14 rounded-2xl flex-row items-center justify-center"
+                                style={{ elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
+                            >
+                                <Save color="white" size={20} className="mr-2" />
+                                <Text className="text-white font-bold text-lg">Simpan</Text>
+                            </Button>
+                        </Animated.View>
+                    </Animated.View>
                 )}
             </ScrollView>
 
@@ -291,6 +352,7 @@ export function QuotationsAPFormScreen() {
                 productsList={DUMMY_PRODUCTS}
                 initialData={selectedDetail}
             />
+
         </View>
     );
 }

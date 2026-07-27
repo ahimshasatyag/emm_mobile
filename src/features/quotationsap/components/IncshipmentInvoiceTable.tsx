@@ -6,6 +6,10 @@ import { Package, Calendar, ChevronDown } from 'lucide-react-native';
 
 interface IncshipmentInvoiceTableProps {
     details?: any[];
+    destination: string | null;
+    onDestinationChange: (val: string) => void;
+    expectedDate: Date;
+    onExpectedDateChange: (date: Date) => void;
 }
 
 const DUMMY_DESTINATIONS = [
@@ -13,9 +17,7 @@ const DUMMY_DESTINATIONS = [
     { label: 'Destinasi 2', value: 'D002' },
 ];
 
-export function IncshipmentInvoiceTable({ details = [] }: IncshipmentInvoiceTableProps) {
-    const [destination, setDestination] = useState<string | null>(null);
-    const [expectedDate, setExpectedDate] = useState<Date>(new Date());
+export function IncshipmentInvoiceTable({ details = [], destination, onDestinationChange, expectedDate, onExpectedDateChange }: IncshipmentInvoiceTableProps) {
     const [showDatePicker, setShowDatePicker] = useState(false);
 
     return (
@@ -40,7 +42,7 @@ export function IncshipmentInvoiceTable({ details = [] }: IncshipmentInvoiceTabl
                             onChange={(event, selectedDate) => {
                                 setShowDatePicker(false);
                                 if (selectedDate) {
-                                    setExpectedDate(selectedDate);
+                                    onExpectedDateChange(selectedDate);
                                 }
                             }}
                         />
@@ -60,7 +62,7 @@ export function IncshipmentInvoiceTable({ details = [] }: IncshipmentInvoiceTabl
                             placeholder="Pilih Destination"
                             value={destination}
                             dropdownPosition="top"
-                            onChange={item => setDestination(item.value)}
+                            onChange={item => onDestinationChange(item.value)}
                         />
                     </View>
                 </View>

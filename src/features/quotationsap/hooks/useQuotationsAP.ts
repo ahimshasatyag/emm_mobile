@@ -47,6 +47,22 @@ export function useQuotationsAP() {
         dispatch(clearError());
     }, [dispatch]);
 
+    const validateForm = (data: any): string | null => {
+        if (!data.supplier && !data.supplierRef?.trim() && !data.currency && !data.warehouse && !data.incDestination) {
+            return 'Semua field wajib diisi';
+        }
+
+        if (!data.supplier) return 'Supplier wajib diisi';
+        if (!data.supplierRef?.trim()) return 'Supplier Reference wajib diisi';
+        if (!data.currency) return 'Mata Uang wajib diisi';
+        if (!data.orderDate) return 'Order Date wajib diisi';
+        if (!data.warehouse) return 'Destination Warehouse wajib diisi';
+        if (!data.expectedDate) return 'Expected Date pada Tab Incoming Shipment wajib diisi';
+        if (!data.incDestination) return 'Destination pada Tab Incoming Shipment wajib diisi';
+        
+        return null;
+    };
+
     return {
         items,
         selectedItem,
@@ -60,6 +76,7 @@ export function useQuotationsAP() {
         loadDetail,
         save,
         clearSelection,
-        clearErr
+        clearErr,
+        validateForm
     };
 }

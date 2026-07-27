@@ -10,6 +10,7 @@ import Animated, { FadeInUp, FadeInDown, FadeOut, FadeIn } from 'react-native-re
 import { theme } from '../../../theme/theme';
 import { ErrorState } from '../../../components/shared/ErrorState';
 import { Button } from '../../../components/ui/button';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export function PoEditScreen() {
     const navigation = useNavigation<any>();
@@ -21,6 +22,11 @@ export function PoEditScreen() {
     const [isInitializing, setIsInitializing] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState<'po' | 'incoming'>('po');
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType; title?: string }>({
+        visible: false,
+        message: '',
+        type: 'success'
+    });
 
     const [form, setForm] = useState({
         id_suppliers: '',
@@ -71,6 +77,12 @@ export function PoEditScreen() {
     }, [initialize, clearSelection]);
 
     useEffect(() => {
+        if (route.params?.toast) {
+            setToast(route.params.toast);
+        }
+    }, [route.params?.toast]);
+
+    useEffect(() => {
         if (selectedItem) {
             setForm({
                 id_suppliers: selectedItem.id_suppliers || '',
@@ -107,10 +119,19 @@ export function PoEditScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.title || (toast.type === 'error' ? 'Peringatan' : 'Sukses')}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
             <HeaderNavigator
                 title={isInitializing ? "MEMUAT DATA..." : "DETAIL PO"}
                 showBackButton
-                onBackPress={() => navigation.goBack()}
+                onBackPress={() => {
+                    navigation.navigate('Drawer', { screen: 'PoListScreen' });
+                }}
             />
 
             <KeyboardAvoidingView
