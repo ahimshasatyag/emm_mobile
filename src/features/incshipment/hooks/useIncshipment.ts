@@ -40,6 +40,13 @@ export function useIncshipment() {
         dispatch(clearSelectedIncshipment());
     }, [dispatch]);
 
+    const validateReceive = (selectedItemIds: string[]): string | null => {
+        if (selectedItemIds.length === 0) {
+            return 'Pilih barang minimal 1';
+        }
+        return null;
+    };
+
     const clearError = useCallback(() => {
         dispatch(clearIncshipmentError());
     }, [dispatch]);
@@ -58,6 +65,7 @@ export function useIncshipment() {
         handleAssignSN,
         handlePrintBarcode,
         handleReceiveGoods,
+        validateReceive,
         clearSelection,
         clearError
     };

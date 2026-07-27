@@ -7,6 +7,8 @@ import { IncshipmentTable } from '../components/IncshipmentTable';
 import { IncshipmentEditSkeleton } from '../skeleton/IncshipmentEditSkeleton';
 import { useIncshipment } from '../hooks/useIncshipment';
 import { theme } from '../../../theme/theme';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export function IncshipmentEditScreen() {
     const route = useRoute<any>();
@@ -21,11 +23,29 @@ export function IncshipmentEditScreen() {
         handleAssignSN,
         handlePrintBarcode,
         handleReceiveGoods,
+        validateReceive,
         clearSelection
     } = useIncshipment();
 
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [selectedDetailIds, setSelectedDetailIds] = useState<string[]>([]);
+    
+    const [modalConfig, setModalConfig] = useState<{
+        visible: boolean;
+        title: string;
+        message: string;
+        type: 'assign' | 'print' | 'receive' | null;
+    }>({
+        visible: false,
+        title: '',
+        message: '',
+        type: null
+    });
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType; title?: string }>({
+        visible: false,
+        message: '',
+        type: 'success'
+    });
 
     useFocusEffect(
         useCallback(() => {
@@ -51,46 +71,70 @@ export function IncshipmentEditScreen() {
     };
 
     const onPressAssignSN = () => {
-        Alert.alert(
-            "Assign Barcode?",
-            "Anda akan membuat barcode semua mesin!",
-            [
-                { text: "Tidak", style: "cancel" },
-                { text: "Ya!", onPress: () => handleAssignSN(id) }
-            ]
-        );
+        setModalConfig({
+            visible: true,
+            title: "Assign Barcode?",
+            message: "Anda akan membuat barcode semua mesin!",
+            type: 'assign'
+        });
     };
 
     const onPressPrintBarcode = () => {
-        Alert.alert(
-            "Print Barcode?",
-            "Anda akan print barcode semua mesin!",
-            [
-                { text: "Tidak", style: "cancel" },
-                { text: "Ya!", onPress: () => handlePrintBarcode(id) }
-            ]
-        );
+        setModalConfig({
+            visible: true,
+            title: "Print Barcode?",
+            message: "Anda akan print barcode semua mesin!",
+            type: 'print'
+        });
     };
 
     const onPressReceive = () => {
-        if (selectedDetailIds.length === 0) {
-            Alert.alert("Maaf", "Pilih barang minimal 1", [{ text: "OK" }]);
+        const errorMsg = validateReceive(selectedDetailIds);
+        if (errorMsg) {
+            setToast({
+                visible: true,
+                type: 'error',
+                title: 'Validasi',
+                message: errorMsg
+            });
             return;
         }
 
-        Alert.alert(
-            "Receive?",
-            "Anda tidak dapat mengubah data ini lagi ketika sudah di confirm!",
-            [
-                { text: "Tidak", style: "cancel" },
-                { text: "Ya!", onPress: () => {
-                    handleReceiveGoods(id, selectedDetailIds).then(() => {
-                        Alert.alert("Berhasil!", "Receive Berhasil");
-                        setSelectedDetailIds([]);
-                    });
-                }}
-            ]
-        );
+        setModalConfig({
+            visible: true,
+            title: "Receive?",
+            message: "Anda tidak dapat mengubah data ini lagi ketika sudah di confirm!",
+            type: 'receive'
+        });
+    };
+
+    const handleConfirmModal = async () => {
+        const { type } = modalConfig;
+        setModalConfig(prev => ({ ...prev, visible: false }));
+
+        if (type === 'assign') {
+            try {
+                await handleAssignSN(id);
+                setToast({ visible: true, type: 'success', message: 'Assign Serial Number berhasil!' });
+            } catch (error) {
+                setToast({ visible: true, type: 'error', message: 'Gagal Assign Serial Number' });
+            }
+        } else if (type === 'print') {
+            try {
+                await handlePrintBarcode(id);
+                setToast({ visible: true, type: 'success', message: 'Print Barcode berhasil!' });
+            } catch (error) {
+                setToast({ visible: true, type: 'error', message: 'Gagal Print Barcode' });
+            }
+        } else if (type === 'receive') {
+            try {
+                await handleReceiveGoods(id, selectedDetailIds);
+                setToast({ visible: true, type: 'success', message: 'Receive Berhasil!' });
+                setSelectedDetailIds([]);
+            } catch (error) {
+                setToast({ visible: true, type: 'error', message: 'Gagal Receive Goods' });
+            }
+        }
     };
 
     // Computed flags
@@ -102,6 +146,24 @@ export function IncshipmentEditScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.title || (toast.type === 'error' ? 'Gagal' : 'Sukses')}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+
+            <ModalConfirm
+                visible={modalConfig.visible}
+                title={modalConfig.title}
+                message={modalConfig.message}
+                confirmText="Ya!"
+                cancelText="Tidak"
+                onConfirm={handleConfirmModal}
+                onCancel={() => setModalConfig(prev => ({ ...prev, visible: false }))}
+            />
+
             <HeaderNavigator title={selectedItem ? `Detail ${selectedItem.code}` : "INCOMING SHIPMENT DETAIL"} showBackButton={true} />
 
             <ScrollView 

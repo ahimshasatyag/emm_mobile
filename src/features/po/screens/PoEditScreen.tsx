@@ -160,7 +160,7 @@ export function PoEditScreen() {
 
                             <View className="flex-row justify-start mb-4">
                                 <Button
-                                    onPress={() => setActiveTab('incoming')}
+                                    onPress={() => navigation.navigate('IncshipmentEditScreen', { id: 'INC-DUMMY' })}
                                     className="px-4 py-2 rounded-xl flex-row items-center shadow-sm"
                                     style={{ backgroundColor: theme.colors.primary }}
                                 >
