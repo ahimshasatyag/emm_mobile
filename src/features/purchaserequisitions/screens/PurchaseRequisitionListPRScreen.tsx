@@ -9,6 +9,7 @@ import { Button } from '../../../components/ui/button';
 import { PurchaseRequisitionListPRSkeleton } from '../skeleton/PurchaseRequisitionListPRSkeleton';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { validateCreateQuotation } from '../hooks/usePurchaseRequisitions';
 
 interface PRDetailItem {
     id_pr_dtl: string;
@@ -94,12 +95,25 @@ export function PurchaseRequisitionListPRScreen() {
         // Simulate API call
         setTimeout(() => {
             setIsSaving(false);
-            setToast({ visible: true, type: 'success', message: 'Berhasil Menyimpan Quotation\nCode PO: QO-202310-001' });
-
-            // Navigate back after showing toast
-            setTimeout(() => {
-                navigation.goBack();
-            }, 1500);
+            
+            // Navigate back to Drawer's QuotationsAPListScreen and clear stack
+            navigation.reset({
+                index: 0,
+                routes: [
+                    {
+                        name: 'Drawer',
+                        params: {
+                            screen: 'QuotationsAPListScreen',
+                            params: {
+                                timestamp: Date.now(),
+                                showToast: true,
+                                toastMessage: 'Berhasil Menyimpan Quotation\nCode PO: QO-202310-001',
+                                toastType: 'success'
+                            }
+                        }
+                    }
+                ]
+            });
         }, 1000);
     };
 

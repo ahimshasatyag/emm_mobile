@@ -12,6 +12,7 @@ import { theme } from '../../../theme/theme';
 import { EmptyState } from '../../../components/shared/EmptyState';
 import { ErrorState } from '../../../components/shared/ErrorState';
 import { ButtonAdd } from '../../../components/ui/buttonAdd';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export function QuotationsAPListScreen() {
     const navigation = useNavigation<any>();
@@ -21,11 +22,25 @@ export function QuotationsAPListScreen() {
     const [isInitializing, setIsInitializing] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [statusFilter, setStatusFilter] = useState('ALL STATUS');
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType; title?: string }>({
+        visible: false,
+        message: '',
+        type: 'success'
+    });
 
     // Reset status filter only when accessed fresh from Sidebar (which passes a new timestamp)
     React.useEffect(() => {
         if (route.params?.timestamp) {
             setStatusFilter('ALL STATUS');
+            if (route.params?.showToast) {
+                setToast({
+                    visible: true,
+                    message: route.params.toastMessage || '',
+                    type: route.params.toastType || 'success',
+                    title: route.params.toastTitle || 'Sukses'
+                });
+                navigation.setParams({ showToast: undefined, toastMessage: undefined, toastType: undefined, toastTitle: undefined });
+            }
         }
     }, [route.params?.timestamp]);
 
@@ -89,6 +104,13 @@ export function QuotationsAPListScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.title || (toast.type === 'error' ? 'Error' : 'Sukses')}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
             <HeaderNavigator title="QUOTATIONS AP" />
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-4 py-3">
