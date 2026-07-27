@@ -1,7 +1,10 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { ApprovebaruItem } from '../types/approvebaru.types';
 import { CheckCircle, XCircle, Eye, User, Clock, FileText } from 'lucide-react-native';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { useApprovebaru } from '../hooks/useApprovebaru';
 
 interface ApprovebaruCardProps {
     item: ApprovebaruItem;
@@ -11,35 +14,31 @@ interface ApprovebaruCardProps {
 }
 
 export const ApprovebaruCard: React.FC<ApprovebaruCardProps> = ({ item, onView, onApprove, onReject }) => {
-    const handleApprove = () => {
-        Alert.alert(
-            'Konfirmasi Approval',
-            'Apakah Anda yakin ingin menyetujui approval ini?',
-            [
-                { text: 'Tidak', style: 'cancel' },
-                {
-                    text: 'Ya, Approve',
-                    onPress: () => onApprove(item.id),
-                    style: 'default'
-                }
-            ]
-        );
+    const { validateApproval } = useApprovebaru();
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'error' });
+    const [modalConfig, setModalConfig] = useState<{ visible: boolean; type: 'approve' | 'reject' | null }>({
+        visible: false,
+        type: null,
+    });
+
+    const handleAction = (type: 'approve' | 'reject') => {
+        const errorMsg = validateApproval(item.id);
+        
+        if (errorMsg) {
+            setToast({ visible: true, message: errorMsg, type: 'error' });
+            return;
+        }
+
+        setModalConfig({ visible: true, type });
     };
 
-    const handleReject = () => {
-        // In a real app, you might want to show a modal to input rejection reason
-        Alert.alert(
-            'Konfirmasi Reject',
-            'Apakah Anda yakin ingin menolak approval ini?',
-            [
-                { text: 'Tidak', style: 'cancel' },
-                {
-                    text: 'Ya, Reject',
-                    onPress: () => onReject(item.id),
-                    style: 'destructive'
-                }
-            ]
-        );
+    const handleConfirmModal = () => {
+        if (!modalConfig.type) return;
+        const { type } = modalConfig;
+        setModalConfig(prev => ({ ...prev, visible: false }));
+        
+        if (type === 'approve') onApprove(item.id);
+        else onReject(item.id);
     };
 
     const getStatusColor = (status: string) => {
@@ -58,8 +57,25 @@ export const ApprovebaruCard: React.FC<ApprovebaruCardProps> = ({ item, onView, 
     const StatusIcon = getStatusColor(item.status).icon;
 
     return (
-        <View className="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100">
-            {/* Header */}
+        <>
+            <ToastMessages
+                visible={toast.visible}
+                title="Validasi"
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+            <ModalConfirm
+                visible={modalConfig.visible}
+                title={modalConfig.type === 'approve' ? 'Konfirmasi Approval' : 'Konfirmasi Reject'}
+                message={`Apakah Anda yakin ingin ${modalConfig.type === 'approve' ? 'menyetujui' : 'menolak'} approval ini?`}
+                confirmText={`Ya, ${modalConfig.type === 'approve' ? 'Approve' : 'Reject'}`}
+                cancelText="Tidak"
+                onConfirm={handleConfirmModal}
+                onCancel={() => setModalConfig(prev => ({ ...prev, visible: false }))}
+            />
+            <View className="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100">
+                {/* Header */}
             <View className="flex-row justify-between items-start mb-3">
                 <View className="flex-row items-center flex-1">
                     <View className="h-10 w-10 rounded-full bg-blue-100 items-center justify-center mr-3">
@@ -94,7 +110,7 @@ export const ApprovebaruCard: React.FC<ApprovebaruCardProps> = ({ item, onView, 
                 </TouchableOpacity>
 
                 <TouchableOpacity 
-                    onPress={handleReject}
+                    onPress={() => handleAction('reject')}
                     className="bg-red-50 px-4 py-2 rounded-lg flex-row items-center border border-red-100 ml-2"
                 >
                     <XCircle size={14} color="#dc2626" />
@@ -102,7 +118,7 @@ export const ApprovebaruCard: React.FC<ApprovebaruCardProps> = ({ item, onView, 
                 </TouchableOpacity>
 
                 <TouchableOpacity 
-                    onPress={handleApprove}
+                    onPress={() => handleAction('approve')}
                     className="bg-green-50 px-4 py-2 rounded-lg flex-row items-center border border-green-100 ml-2"
                 >
                     <CheckCircle size={14} color="#16a34a" />
@@ -110,5 +126,6 @@ export const ApprovebaruCard: React.FC<ApprovebaruCardProps> = ({ item, onView, 
                 </TouchableOpacity>
             </View>
         </View>
+        </>
     );
 };

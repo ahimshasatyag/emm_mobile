@@ -41,6 +41,13 @@ export const useApprovebaru = () => {
         dispatch(clearDetail());
     }, [dispatch]);
 
+    const validateApproval = (id: number | undefined | null): string | null => {
+        if (!id) {
+            return 'ID Approval tidak valid atau kosong';
+        }
+        return null;
+    };
+
     return {
         approvals,
         currentDetail,
@@ -51,6 +58,7 @@ export const useApprovebaru = () => {
         getApprovalDetail,
         submitApprove,
         submitReject,
-        resetDetail
+        resetDetail,
+        validateApproval
     };
 };

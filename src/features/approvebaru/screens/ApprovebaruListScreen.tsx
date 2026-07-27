@@ -8,6 +8,7 @@ import { useApprovebaru } from '../hooks/useApprovebaru';
 import { ApprovebaruCard } from '../components/ApprovebaruCard';
 import { ApprovebaruModal } from '../components/ApprovebaruModal';
 import { ApprovebaruSkeleton } from '../skeleton/ApprovebaruSkeleton';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export const ApprovebaruListScreen = () => {
     const {
@@ -28,6 +29,7 @@ export const ApprovebaruListScreen = () => {
 
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedId, setSelectedId] = useState<number | null>(null);
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'success' });
 
     useFocusEffect(
         useCallback(() => {
@@ -82,9 +84,10 @@ export const ApprovebaruListScreen = () => {
     const handleApprove = async (id: number) => {
         const result = await submitApprove(id);
         if (result.meta.requestStatus === 'fulfilled') {
-            Alert.alert('Sukses', 'Approval berhasil disetujui');
+            setToast({ visible: true, message: 'Approval berhasil disetujui', type: 'success' });
+            setModalVisible(false); // Close detail modal if open
         } else {
-            Alert.alert('Gagal', 'Terjadi kesalahan saat menyetujui');
+            setToast({ visible: true, message: 'Terjadi kesalahan saat menyetujui', type: 'error' });
         }
     };
 
@@ -92,9 +95,10 @@ export const ApprovebaruListScreen = () => {
         const reason = "Ditolak oleh sistem (dummy)";
         const result = await submitReject(id, reason);
         if (result.meta.requestStatus === 'fulfilled') {
-            Alert.alert('Sukses', 'Approval berhasil ditolak');
+            setToast({ visible: true, message: 'Approval berhasil ditolak', type: 'success' });
+            setModalVisible(false); // Close detail modal if open
         } else {
-            Alert.alert('Gagal', 'Terjadi kesalahan saat menolak');
+            setToast({ visible: true, message: 'Terjadi kesalahan saat menolak', type: 'error' });
         }
     };
 
@@ -172,6 +176,13 @@ export const ApprovebaruListScreen = () => {
 
     return (
         <View className="flex-1 bg-[#f9fafb]">
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.type === 'success' ? 'Sukses' : 'Gagal'}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
             <HeaderNavigator title="APPROVE BARU" isBack={false} />
 
             {/* Content Area */}
@@ -185,6 +196,7 @@ export const ApprovebaruListScreen = () => {
                 loading={loadingDetail}
                 onApprove={() => selectedId && handleApprove(selectedId)}
                 onReject={() => selectedId && handleReject(selectedId)}
+                approvalId={selectedId}
             />
         </View>
     );

@@ -5,6 +5,10 @@ import { X, CheckCircle, XCircle, FileText, User, MapPin, ClipboardList } from '
 import { ApprovebaruTableProductModal } from './ApprovebaruTableProductModal';
 import { ApprovebaruTableInfoModal } from './ApprovebaruTableInfoModal';
 import { ApprovebaruModalSkeleton } from '../skeleton/ApprovebaruModalSkeleton';
+import { useState } from 'react';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { useApprovebaru } from '../hooks/useApprovebaru';
 
 interface ApprovebaruModalProps {
     visible: boolean;
@@ -13,6 +17,7 @@ interface ApprovebaruModalProps {
     loading: boolean;
     onApprove: () => void;
     onReject: () => void;
+    approvalId: number | null;
 }
 
 const FieldRow = ({ label, value }: { label: string, value: string | undefined }) => (
@@ -26,11 +31,42 @@ export const ApprovebaruModal: React.FC<ApprovebaruModalProps> = ({
     visible, 
     onClose, 
     detail, 
-    loading,
-    onApprove,
-    onReject
+    loading, 
+    onApprove, 
+    onReject,
+    approvalId
 }) => {
-    
+    const { validateApproval } = useApprovebaru();
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'error' });
+    const [modalConfig, setModalConfig] = useState<{ visible: boolean; type: 'approve' | 'reject' | null }>({
+        visible: false,
+        type: null,
+    });
+
+    const handleAction = (type: 'approve' | 'reject') => {
+        const errorMsg = validateApproval(approvalId);
+        
+        if (errorMsg) {
+            setToast({ visible: true, message: errorMsg, type: 'error' });
+            return;
+        }
+
+        setModalConfig({ visible: true, type });
+    };
+
+    const handleConfirmModal = () => {
+        if (!modalConfig.type) return;
+        const { type } = modalConfig;
+        setModalConfig(prev => ({ ...prev, visible: false }));
+        
+        // Wait for modal animation to close then execute action and close detail modal
+        setTimeout(() => {
+            if (type === 'approve') onApprove();
+            else onReject();
+            // Assuming onClose is handled in parent list screen upon success, but we can also trigger it.
+        }, 150);
+    };
+
     return (
         <Modal
             animationType="slide"
@@ -38,6 +74,22 @@ export const ApprovebaruModal: React.FC<ApprovebaruModalProps> = ({
             visible={visible}
             onRequestClose={onClose}
         >
+            <ToastMessages
+                visible={toast.visible}
+                title="Validasi"
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+            <ModalConfirm
+                visible={modalConfig.visible}
+                title={modalConfig.type === 'approve' ? 'Konfirmasi Approval' : 'Konfirmasi Reject'}
+                message={`Apakah Anda yakin ingin ${modalConfig.type === 'approve' ? 'menyetujui' : 'menolak'} approval ini?`}
+                confirmText={`Ya, ${modalConfig.type === 'approve' ? 'Approve' : 'Reject'}`}
+                cancelText="Tidak"
+                onConfirm={handleConfirmModal}
+                onCancel={() => setModalConfig(prev => ({ ...prev, visible: false }))}
+            />
             <View className="flex-1 bg-black/50 justify-end">
                 <View className="bg-white rounded-t-3xl h-[85%]">
                     {/* Header */}
@@ -132,10 +184,7 @@ export const ApprovebaruModal: React.FC<ApprovebaruModalProps> = ({
                     {!loading && detail && (
                         <View className="flex-row justify-between p-5 border-t border-gray-100 bg-white">
                             <TouchableOpacity 
-                                onPress={() => {
-                                    onClose();
-                                    onReject();
-                                }}
+                                onPress={() => handleAction('reject')}
                                 className="flex-1 bg-red-50 py-3 rounded-xl flex-row justify-center items-center mr-2 border border-red-100"
                             >
                                 <XCircle size={18} color="#dc2626" />
@@ -143,10 +192,7 @@ export const ApprovebaruModal: React.FC<ApprovebaruModalProps> = ({
                             </TouchableOpacity>
 
                             <TouchableOpacity 
-                                onPress={() => {
-                                    onClose();
-                                    onApprove();
-                                }}
+                                onPress={() => handleAction('approve')}
                                 className="flex-1 bg-green-600 py-3 rounded-xl flex-row justify-center items-center ml-2 shadow-sm"
                             >
                                 <CheckCircle size={18} color="#ffffff" />
