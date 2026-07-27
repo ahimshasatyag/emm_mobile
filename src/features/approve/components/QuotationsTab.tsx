@@ -4,6 +4,10 @@ import { QuotationApproval } from '../types/approve.types';
 import { CheckCircle, XCircle } from 'lucide-react-native';
 import { ApproveSkeleton } from '../skeleton/ApproveSkeleton';
 import { EmptyState } from '../../../components/shared/EmptyState';
+import { useState } from 'react';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { useApprove } from '../hooks/useApprove';
 
 interface QuotationsTabProps {
     data: QuotationApproval[];
@@ -16,69 +20,88 @@ interface QuotationsTabProps {
 }
 
 export const QuotationsTab: React.FC<QuotationsTabProps> = ({ data, onApprove, onReject, onRowPress, isRefreshing, onRefresh, loading }) => {
+    const { validateApproval } = useApprove();
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'error' });
+    const [modalConfig, setModalConfig] = useState<{ visible: boolean; type: 'approve' | 'reject' | null; item: QuotationApproval | null }>({
+        visible: false,
+        type: null,
+        item: null
+    });
 
     const handleAction = (item: QuotationApproval, type: 'approve' | 'reject') => {
-        const actionName = type === 'approve' ? 'Approve' : 'Reject';
         const actionCode = type === 'approve' ? item.action_approve : item.action_canceled;
+        const errorMsg = validateApproval(actionCode);
         
-        Alert.alert(
-            `${actionName} ?`,
-            `Apakah anda yakin ${actionName} ?`,
-            [
-                { text: 'Tidak, batalkan!', style: 'cancel' },
-                {
-                    text: `Ya, ${actionName} !`,
-                    onPress: () => {
-                        if (type === 'approve') onApprove(item.id_approval, actionCode);
-                        else onReject(item.id_approval, actionCode);
-                    },
-                    style: type === 'approve' ? 'default' : 'destructive'
-                }
-            ]
-        );
+        if (errorMsg) {
+            setToast({ visible: true, message: errorMsg, type: 'error' });
+            return;
+        }
+
+        setModalConfig({ visible: true, type, item });
     };
 
-    if (loading) {
-        return (
-            <ScrollView 
-                className="flex-1" 
-                refreshControl={
-                    onRefresh ? (
-                        <RefreshControl refreshing={!!isRefreshing} onRefresh={onRefresh} colors={['#2563eb']} />
-                    ) : undefined
-                }
-            >
-                <ApproveSkeleton hideHeader={true} />
-            </ScrollView>
-        );
-    }
-
-    if (data.length === 0) {
-        return (
-            <ScrollView 
-                className="flex-1" 
-                contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}
-                refreshControl={
-                    onRefresh ? (
-                        <RefreshControl refreshing={!!isRefreshing} onRefresh={onRefresh} colors={['#2563eb']} />
-                    ) : undefined
-                }
-            >
-                <EmptyState title="Tidak ada data" message="Belum ada quotations untuk disetujui." />
-            </ScrollView>
-        );
-    }
+    const handleConfirmModal = () => {
+        if (!modalConfig.item || !modalConfig.type) return;
+        const { item, type } = modalConfig;
+        const actionCode = type === 'approve' ? item.action_approve : item.action_canceled;
+        setModalConfig(prev => ({ ...prev, visible: false }));
+        
+        if (type === 'approve') onApprove(item.id_approval, actionCode);
+        else onReject(item.id_approval, actionCode);
+    };
 
     return (
-        <ScrollView 
-            className="flex-1 p-4" 
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-                onRefresh ? (
-                    <RefreshControl refreshing={!!isRefreshing} onRefresh={onRefresh} colors={['#2563eb']} />
-                ) : undefined
-            }
-        >
+        <View className="flex-1">
+            <ToastMessages
+                visible={toast.visible}
+                title="Validasi"
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+            <ModalConfirm
+                visible={modalConfig.visible}
+                title={modalConfig.type === 'approve' ? 'Approve ?' : 'Reject ?'}
+                message={`Apakah anda yakin ${modalConfig.type === 'approve' ? 'Approve' : 'Reject'} ?`}
+                confirmText={`Ya, ${modalConfig.type === 'approve' ? 'Approve' : 'Reject'} !`}
+                cancelText="Tidak, batalkan!"
+                onConfirm={handleConfirmModal}
+                onCancel={() => setModalConfig(prev => ({ ...prev, visible: false }))}
+            />
+
+            {loading ? (
+                <ScrollView 
+                    className="flex-1" 
+                    refreshControl={
+                        onRefresh ? (
+                            <RefreshControl refreshing={!!isRefreshing} onRefresh={onRefresh} colors={['#2563eb']} />
+                        ) : undefined
+                    }
+                >
+                    <ApproveSkeleton hideHeader={true} />
+                </ScrollView>
+            ) : data.length === 0 ? (
+                <ScrollView 
+                    className="flex-1" 
+                    contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}
+                    refreshControl={
+                        onRefresh ? (
+                            <RefreshControl refreshing={!!isRefreshing} onRefresh={onRefresh} colors={['#2563eb']} />
+                        ) : undefined
+                    }
+                >
+                    <EmptyState title="Tidak ada data" message="Belum ada quotations untuk disetujui." />
+                </ScrollView>
+            ) : (
+                <ScrollView 
+                    className="flex-1 p-4" 
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        onRefresh ? (
+                            <RefreshControl refreshing={!!isRefreshing} onRefresh={onRefresh} colors={['#2563eb']} />
+                        ) : undefined
+                    }
+                >
             {data.map((item, index) => (
                 <TouchableOpacity 
                     key={index} 
@@ -145,7 +168,9 @@ export const QuotationsTab: React.FC<QuotationsTabProps> = ({ data, onApprove, o
                     </View>
                 </TouchableOpacity>
             ))}
-            <View className="h-10" />
-        </ScrollView>
+                <View className="h-10" />
+                </ScrollView>
+            )}
+        </View>
     );
 };

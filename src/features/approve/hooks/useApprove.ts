@@ -29,6 +29,13 @@ export const useApprove = () => {
         return resultAction;
     }, [dispatch]);
 
+    const validateApproval = (actionCode: string | undefined | null): string | null => {
+        if (!actionCode || actionCode.trim() === '') {
+            return 'Kode aksi tidak valid atau kosong';
+        }
+        return null;
+    };
+
     return {
         quotations,
         accounting,
@@ -38,6 +45,7 @@ export const useApprove = () => {
         getQuotations,
         getAccounting,
         getHistory,
-        submitApproval
+        submitApproval,
+        validateApproval
     };
 };

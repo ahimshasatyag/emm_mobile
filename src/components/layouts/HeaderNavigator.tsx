@@ -13,9 +13,11 @@ interface HeaderNavigatorProps {
     showBackButton?: boolean;
     onBackPress?: () => void;
     disableAnimation?: boolean;
+    noBottomRadius?: boolean;
+    noShadow?: boolean;
 }
 
-export function HeaderNavigator({ isLoading = false, title = 'Eka Maju Mesinindo', showBackButton = false, onBackPress, disableAnimation = false }: HeaderNavigatorProps) {
+export function HeaderNavigator({ isLoading = false, title = 'Eka Maju Mesinindo', showBackButton = false, onBackPress, disableAnimation = false, noBottomRadius = false, noShadow = false }: HeaderNavigatorProps) {
     const navigation = useNavigation<DrawerNavigationProp<any>>();
     const insets = useSafeAreaInsets();
 
@@ -50,13 +52,13 @@ export function HeaderNavigator({ isLoading = false, title = 'Eka Maju Mesinindo
             className="bg-white"
             style={{
                 paddingTop: insets.top > 0 ? insets.top + 10 : 20,
-                borderBottomLeftRadius: 28,
-                borderBottomRightRadius: 28,
-                elevation: 8,
+                borderBottomLeftRadius: noBottomRadius ? 0 : 28,
+                borderBottomRightRadius: noBottomRadius ? 0 : 28,
+                elevation: noShadow ? 0 : 8,
                 shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.08,
-                shadowRadius: 8,
+                shadowOffset: { width: 0, height: noShadow ? 0 : 4 },
+                shadowOpacity: noShadow ? 0 : 0.08,
+                shadowRadius: noShadow ? 0 : 8,
                 paddingBottom: 16,
                 zIndex: 10
             }}

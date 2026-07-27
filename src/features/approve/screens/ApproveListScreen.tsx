@@ -9,6 +9,7 @@ import { AccountingTab } from '../components/AccountingTab';
 import { HistoryTab } from '../components/HistoryTab';
 import { ApproveModal } from '../components/ApproveModal';
 import { ErrorState } from '../../../components/shared/ErrorState';
+import { theme } from '../../../theme/theme';
 
 type TabType = 'quotations' | 'accounting' | 'history';
 
@@ -111,21 +112,24 @@ export const ApproveListScreen = () => {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
                 <TouchableOpacity
                     onPress={() => setActiveTab('quotations')}
-                    className={`pb-3 px-4 border-b-2 mr-2 ${activeTab === 'quotations' ? 'border-blue-600' : 'border-transparent'}`}
+                    className={`pb-3 px-4 border-b-2 mr-2 ${activeTab === 'quotations' ? '' : 'border-transparent'}`}
+                    style={activeTab === 'quotations' ? { borderBottomColor: theme.colors.primary } : {}}
                 >
-                    <Text className={`font-bold ${activeTab === 'quotations' ? 'text-blue-600' : 'text-gray-500'}`}>Quotations</Text>
+                    <Text className="font-bold" style={activeTab === 'quotations' ? { color: theme.colors.primary } : { color: '#6b7280' }}>Quotations</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     onPress={() => setActiveTab('accounting')}
-                    className={`pb-3 px-4 border-b-2 mr-2 ${activeTab === 'accounting' ? 'border-blue-600' : 'border-transparent'}`}
+                    className={`pb-3 px-4 border-b-2 mr-2 ${activeTab === 'accounting' ? '' : 'border-transparent'}`}
+                    style={activeTab === 'accounting' ? { borderBottomColor: theme.colors.primary } : {}}
                 >
-                    <Text className={`font-bold ${activeTab === 'accounting' ? 'text-blue-600' : 'text-gray-500'}`}>Accounting</Text>
+                    <Text className="font-bold" style={activeTab === 'accounting' ? { color: theme.colors.primary } : { color: '#6b7280' }}>Accounting</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     onPress={() => setActiveTab('history')}
-                    className={`pb-3 px-4 border-b-2 ${activeTab === 'history' ? 'border-blue-600' : 'border-transparent'}`}
+                    className={`pb-3 px-4 border-b-2 ${activeTab === 'history' ? '' : 'border-transparent'}`}
+                    style={activeTab === 'history' ? { borderBottomColor: theme.colors.primary } : {}}
                 >
-                    <Text className={`font-bold ${activeTab === 'history' ? 'text-blue-600' : 'text-gray-500'}`}>History Approval</Text>
+                    <Text className="font-bold" style={activeTab === 'history' ? { color: theme.colors.primary } : { color: '#6b7280' }}>History Approval</Text>
                 </TouchableOpacity>
             </ScrollView>
         </View>
@@ -138,7 +142,7 @@ export const ApproveListScreen = () => {
                     className="flex-1"
                     contentContainerStyle={{ flexGrow: 1 }}
                     refreshControl={
-                        <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={['#2563eb']} />
+                        <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
                     }
                 >
                     <ErrorState 
@@ -195,9 +199,9 @@ export const ApproveListScreen = () => {
 
     return (
         <View className="flex-1 bg-[#f9fafb]">
-            <HeaderNavigator title="APPROVAL LIST" isBack={false} />
+            <HeaderNavigator title="APPROVAL LIST" isBack={false} noBottomRadius noShadow />
 
-            <View className="bg-white rounded-b-3xl pt-4 shadow-sm z-10" style={{ elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 15 }}>
+            <View className="bg-white rounded-b-3xl pt-2 shadow-sm z-10" style={{ elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 15 }}>
                 {/* Search Bar */}
                 <View className="px-4 mb-2">
                     <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-2 border border-gray-100">
