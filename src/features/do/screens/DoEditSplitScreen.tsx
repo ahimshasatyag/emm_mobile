@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, ScrollView, Text, TextInput, Alert, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, ScrollView, Text, TouchableOpacity, RefreshControl } from 'react-native';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useDo } from '../hooks/useDo';
@@ -8,15 +8,19 @@ import { X, Save } from 'lucide-react-native';
 import { Button } from '../../../components/ui/button';
 import { DoProductTable } from '../components/DoProductTable';
 import { DoEditSplitSkeleton } from '../skeleton/DoEditSplitSkeleton';
-
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 export const DoEditSplitScreen = () => {
     const route = useRoute<any>();
     const navigation = useNavigation<any>();
     const { id } = route.params || { id: null };
-    const { detail, loadingDetail, getDetail, submitAction, resetDetail, error } = useDo();
+    const { detail, loadingDetail, getDetail, submitAction, resetDetail, error, validateDoSplit } = useDo();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'error' });
+    const [modalConfig, setModalConfig] = useState<{ visible: boolean }>({ visible: false });
 
     // State for checkbox selection
     const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
@@ -48,28 +52,43 @@ export const DoEditSplitScreen = () => {
     );
 
     const handleSave = () => {
-        if (selectedIds.length === 0) {
-            Alert.alert('Peringatan', 'Pilih minimal 1 barang untuk di-split.');
+        const errorMsg = validateDoSplit(selectedIds);
+        if (errorMsg) {
+            setToast({ visible: true, message: errorMsg, type: 'warning' });
             return;
         }
-        Alert.alert(
-            'Konfirmasi Simpan',
-            'Apakah anda yakin ingin menyimpan split DO ini?',
-            [
-                { text: 'Batal', style: 'cancel' },
-                {
-                    text: 'Simpan',
-                    onPress: () => {
-                        Alert.alert('Sukses', 'Data split berhasil disimpan!');
-                        navigation.goBack();
-                    }
-                }
-            ]
-        );
+
+        setModalConfig({ visible: true });
+    };
+
+    const handleConfirmSplit = () => {
+        setModalConfig({ visible: false });
+        setTimeout(() => {
+            setToast({ visible: true, message: 'Data split berhasil disimpan!', type: 'success' });
+            setTimeout(() => {
+                navigation.goBack();
+            }, 1000);
+        }, 300);
     };
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.type === 'success' ? 'Sukses' : toast.type === 'warning' ? 'Peringatan' : 'Gagal'}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+            <ModalConfirm
+                visible={modalConfig.visible}
+                title="Konfirmasi Simpan"
+                message="Apakah anda yakin ingin menyimpan split DO ini?"
+                confirmText="Simpan"
+                cancelText="Batal"
+                onConfirm={handleConfirmSplit}
+                onCancel={() => setModalConfig({ visible: false })}
+            />
             <HeaderNavigator title={`DETAIL ${detail?.code_do || ''}`} showBackButton={true} />
 
             <ScrollView

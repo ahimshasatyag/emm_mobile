@@ -9,13 +9,14 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Button } from '../../../components/ui/button';
 import { DoProductTable } from '../components/DoProductTable';
 import { DoEditSkeleton } from '../skeleton/DoEditSkeleton';
-
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 export const DoEditScreen = () => {
     const route = useRoute<any>();
     const navigation = useNavigation<any>();
     const { id } = route.params;
-    const { detail, loadingDetail, getDetail, submitAction, resetDetail } = useDo();
+    const { detail, loadingDetail, getDetail, submitAction, resetDetail, validateDoAction } = useDo();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -23,6 +24,22 @@ export const DoEditScreen = () => {
     const [showDatePicker, setShowDatePicker] = useState<'' | 'date_do' | 'date_estimasi' | 'date_delivery'>('');
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const scrollViewRef = useRef<ScrollView>(null);
+
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'error' });
+    const [modalConfig, setModalConfig] = useState<{ 
+        visible: boolean; 
+        type: 'save_edit' | 'action' | null; 
+        title: string; 
+        message: string; 
+        confirmText: string; 
+        actionParams?: { actionName: string, actionValue: string } 
+    }>({
+        visible: false,
+        type: null,
+        title: '',
+        message: '',
+        confirmText: ''
+    });
 
     useEffect(() => {
         const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -43,16 +60,13 @@ export const DoEditScreen = () => {
     };
 
     const handleSaveEdit = () => {
-        Alert.alert('Konfirmasi', 'Apakah anda yakin ingin menyimpan perubahan?', [
-            { text: 'Batal', style: 'cancel' },
-            {
-                text: 'Simpan',
-                onPress: () => {
-                    Alert.alert('Sukses', 'Data berhasil diperbarui!');
-                    setIsEditMode(false);
-                }
-            }
-        ]);
+        setModalConfig({
+            visible: true,
+            type: 'save_edit',
+            title: 'Konfirmasi',
+            message: 'Apakah anda yakin ingin menyimpan perubahan?',
+            confirmText: 'Simpan'
+        });
     };
 
     const updatePlat = (id_do_dtl: string | number, newPlat: string) => {
@@ -82,30 +96,47 @@ export const DoEditScreen = () => {
     );
 
     const handleAction = (actionName: string, actionValue: string) => {
-        Alert.alert(
-            `Konfirmasi ${actionName}`,
-            `Apakah anda yakin ingin melakukan ${actionName} pada DO ini?`,
-            [
-                { text: 'Tidak, Batal', style: 'cancel' },
-                {
-                    text: `Ya, ${actionName}`,
-                    onPress: async () => {
-                        setIsSubmitting(true);
-                        const res = await submitAction(id, actionValue);
-                        setIsSubmitting(false);
-                        if (res) {
-                            Alert.alert('Sukses', `${actionName} berhasil!`);
-                            getDetail(id);
-                        }
-                    }
-                }
-            ]
-        );
+        const errorMsg = validateDoAction(actionName, detail);
+        if (errorMsg) {
+            setToast({ visible: true, message: errorMsg, type: 'error' });
+            return;
+        }
+
+        setModalConfig({
+            visible: true,
+            type: 'action',
+            title: `Konfirmasi ${actionName}`,
+            message: `Apakah anda yakin ingin melakukan ${actionName} pada DO ini?`,
+            confirmText: `Ya, ${actionName}`,
+            actionParams: { actionName, actionValue }
+        });
     };
 
+    const handleConfirmModal = async () => {
+        const currentConfig = { ...modalConfig };
+        setModalConfig(prev => ({ ...prev, visible: false }));
 
-
-    const renderActionButtons = () => {
+        if (currentConfig.type === 'save_edit') {
+            setTimeout(() => {
+                setToast({ visible: true, message: 'Data berhasil diperbarui!', type: 'success' });
+                setIsEditMode(false);
+            }, 300);
+        } else if (currentConfig.type === 'action' && currentConfig.actionParams) {
+            setIsSubmitting(true);
+            const { actionName, actionValue } = currentConfig.actionParams;
+            const res = await submitAction(id, actionValue);
+            setIsSubmitting(false);
+            
+            setTimeout(() => {
+                if (res) {
+                    setToast({ visible: true, message: `${actionName} berhasil!`, type: 'success' });
+                    getDetail(id);
+                } else {
+                    setToast({ visible: true, message: `${actionName} gagal!`, type: 'error' });
+                }
+            }, 300);
+        }
+    };    const renderActionButtons = () => {
         const btns = [];
         if (detail.status_do === 'DRAFT DELIVERY ORDER') {
             btns.push(
@@ -151,7 +182,7 @@ export const DoEditScreen = () => {
                         </TouchableOpacity>
                     )}
 
-                    <TouchableOpacity key="print" onPress={() => Alert.alert('Print SJ', 'Fitur Print SJ belum tersedia')} className="w-[48%] bg-teal-500 py-3 rounded-xl flex-row justify-center items-center mb-3">
+                    <TouchableOpacity key="print" onPress={() => setToast({ visible: true, message: 'Fitur Print SJ belum tersedia', type: 'info' })} className="w-[48%] bg-teal-500 py-3 rounded-xl flex-row justify-center items-center mb-3">
                         <Printer size={18} color="white" />
                         <Text className="text-white font-bold ml-2">Print SJ</Text>
                     </TouchableOpacity>
@@ -160,7 +191,7 @@ export const DoEditScreen = () => {
         }
         if (detail.status_do === 'DELIVERED') {
             btns.push(
-                <TouchableOpacity key="print-delivered" onPress={() => Alert.alert('Print SJ', 'Fitur Print SJ belum tersedia')} className="bg-teal-500 px-5 py-2.5 rounded-xl flex-row justify-center items-center self-start">
+                <TouchableOpacity key="print-delivered" onPress={() => setToast({ visible: true, message: 'Fitur Print SJ belum tersedia', type: 'info' })} className="bg-teal-500 px-5 py-2.5 rounded-xl flex-row justify-center items-center self-start">
                     <Printer size={18} color="white" />
                     <Text className="text-white font-bold ml-2">Print SJ</Text>
                 </TouchableOpacity>
@@ -175,8 +206,25 @@ export const DoEditScreen = () => {
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.type === 'success' ? 'Sukses' : toast.type === 'error' ? 'Gagal' : 'Info'}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+            <ModalConfirm
+                visible={modalConfig.visible}
+                title={modalConfig.title}
+                message={modalConfig.message}
+                confirmText={modalConfig.confirmText}
+                cancelText="Batal"
+                onConfirm={handleConfirmModal}
+                onCancel={() => setModalConfig(prev => ({ ...prev, visible: false }))}
+            />
             <HeaderNavigator 
                 title={(refreshing || loadingDetail) ? 'MEMUAT DATA...' : `${isEditMode ? 'EDIT' : 'DETAIL'} ${detail?.code_do || ''}`} 
+
                 showBackButton={true} 
             />
 

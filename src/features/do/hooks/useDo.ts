@@ -24,6 +24,18 @@ export const useDo = () => {
         dispatch(clearDetail());
     }, [dispatch]);
 
+    const validateDoAction = useCallback((actionName: string, currentDetail: any) => {
+        if (!currentDetail || !currentDetail.id_do) return 'Data DO tidak valid atau belum dimuat.';
+        return null;
+    }, []);
+
+    const validateDoSplit = useCallback((selectedIds: (string | number)[]) => {
+        if (!selectedIds || selectedIds.length === 0) {
+            return 'Pilih minimal 1 barang untuk di-split.';
+        }
+        return null;
+    }, []);
+
     return {
         list,
         detail,
@@ -33,6 +45,8 @@ export const useDo = () => {
         getList,
         getDetail,
         submitAction,
-        resetDetail
+        resetDetail,
+        validateDoAction,
+        validateDoSplit
     };
 };
