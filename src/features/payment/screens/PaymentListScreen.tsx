@@ -13,11 +13,13 @@ import { EmptyState } from '../../../components/shared/EmptyState';
 import { ButtonAdd } from '../../../components/ui/buttonAdd';
 import { NotifModalList, NotifModalType } from '../components/NotifModalList';
 import { theme } from '../../../theme/theme';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export const PaymentListScreen = () => {
     const navigation = useNavigation<any>();
     const { payments, isLoading, loadPayments } = usePayment();
 
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'error' });
     const [isInitializing, setIsInitializing] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -95,7 +97,7 @@ export const PaymentListScreen = () => {
 
     const filteredPayments = payments.filter(item => {
         const matchSearch = item.nm_customers?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            item.code_invoice?.toLowerCase().includes(searchQuery.toLowerCase());
+            item.code_invoice?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchStatus = statusFilter === 'ALL STATUS' || item.status_payment?.toUpperCase() === statusFilter;
         const matchCustomer = customerFilter === 'ALL CUSTOMER' || item.nm_customers === customerFilter;
         const matchSo = soFilter === 'ALL SO' || item.code_so === soFilter;
@@ -104,6 +106,13 @@ export const PaymentListScreen = () => {
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.type === 'success' ? 'Success' : 'Pemberitahuan'}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
             <HeaderNavigator title="DAFTAR PAYMENT" />
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-4 py-3 z-30">
@@ -120,11 +129,11 @@ export const PaymentListScreen = () => {
                             onBlur={() => setIsSearchFocused(false)}
                         />
                     </Animated.View>
-                    
+
                     {selectedIds.length > 0 && (
                         <Animated.View entering={FadeIn} exiting={FadeOut} layout={LinearTransition.springify()} className="flex-row ml-3">
-                            <TouchableOpacity 
-                                className="h-12 px-3 rounded-xl items-center justify-center bg-red-500 shadow-sm flex-row mr-2" 
+                            <TouchableOpacity
+                                className="h-12 px-3 rounded-xl items-center justify-center bg-red-500 shadow-sm flex-row mr-2"
                                 onPress={() => {
                                     setNotifModalType('batal');
                                     setIsNotifModalVisible(true);
@@ -137,8 +146,8 @@ export const PaymentListScreen = () => {
                                     </Animated.Text>
                                 )}
                             </TouchableOpacity>
-                            <TouchableOpacity 
-                                className="h-12 px-3 rounded-xl items-center justify-center bg-green-500 shadow-sm flex-row" 
+                            <TouchableOpacity
+                                className="h-12 px-3 rounded-xl items-center justify-center bg-green-500 shadow-sm flex-row"
                                 onPress={() => {
                                     setNotifModalType('terima');
                                     setIsNotifModalVisible(true);
@@ -275,10 +284,10 @@ export const PaymentListScreen = () => {
                     contentContainerStyle={{ flexGrow: 1, paddingBottom: 20, paddingHorizontal: 16 }}
                     showsVerticalScrollIndicator={false}
                     refreshControl={
-                        <RefreshControl 
-                            refreshing={isRefreshing} 
-                            onRefresh={handleRefresh} 
-                            colors={[theme.colors.primary]} 
+                        <RefreshControl
+                            refreshing={isRefreshing}
+                            onRefresh={handleRefresh}
+                            colors={[theme.colors.primary]}
                         />
                     }
                     renderItem={({ item }) => (
@@ -328,6 +337,7 @@ export const PaymentListScreen = () => {
                     // console.log('Confirmed:', notifModalType, data, selectedIds);
                     setIsNotifModalVisible(false);
                     setSelectedIds([]);
+                    setToast({ visible: true, message: 'Status payment berhasil diperbarui', type: 'success' });
                     // Reload payments if necessary after API call
                 }}
             />

@@ -5,6 +5,7 @@ import { Dropdown } from 'react-native-element-dropdown';
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { theme } from '../../../theme/theme';
 import { formatDate } from '../../../utils/helpers/date';
+import { formatInputNumber, parseInputNumber } from '../../../utils/helpers/money';
 
 interface PaymentModalProps {
     visible: boolean;
@@ -180,8 +181,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onDismiss, 
                                 placeholder="Masukkan Amount"
                                 placeholderTextColor="#9CA3AF"
                                 keyboardType="numeric"
-                                value={amount}
-                                onChangeText={setAmount}
+                                value={formatInputNumber(amount)}
+                                onChangeText={(val) => setAmount(parseInputNumber(val))}
                                 editable={!isReadOnly}
                             />
                         </View>

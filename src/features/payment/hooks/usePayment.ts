@@ -40,12 +40,24 @@ export const usePayment = () => {
         }
     };
 
+    const validateForm = (data: any): string | null => {
+        if (!data.customer && !data.invoice && !data.bankTujuan && (!data.paymentDetails || data.paymentDetails.length === 0)) {
+            return 'Semua field harus diisi';
+        }
+        if (!data.customer) return 'Customer harus dipilih';
+        if (!data.invoice) return 'Invoice harus dipilih';
+        if (!data.bankTujuan) return 'Bank Tujuan harus dipilih';
+        if (!data.paymentDetails || data.paymentDetails.length === 0) return 'Riwayat Pembayaran tidak boleh kosong';
+        return null;
+    };
+
     return {
         payments,
         isLoading,
         error,
         loadPayments,
         createNewPayment,
-        updateExistingPayment
+        updateExistingPayment,
+        validateForm
     };
 };

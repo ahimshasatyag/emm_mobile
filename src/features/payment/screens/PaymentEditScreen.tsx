@@ -12,7 +12,9 @@ import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { PaymentTable } from '../components/PaymentTable';
 import { PaymentModal } from '../components/PaymentModal';
 import { ModalCancel } from '../../../components/ui/ModalCancel';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { formatRp } from '../../../utils/helpers/money';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export const PaymentEditScreen = () => {
     const navigation = useNavigation<any>();
@@ -23,12 +25,21 @@ export const PaymentEditScreen = () => {
     const [isEditMode, setIsEditMode] = useState(!id || route.params?.mode === 'edit');
     const [isSplitMode, setIsSplitMode] = useState(false);
     const [isCancelModalVisible, setIsCancelModalVisible] = useState(false);
+    const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
     const isReadOnly = !isEditMode;
 
-    const { updateExistingPayment } = usePayment();
+    const { updateExistingPayment, validateForm } = usePayment();
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'error' });
     const [isLoading, setIsLoading] = useState(isEdit);
     const [isSaving, setIsSaving] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
+
+    useEffect(() => {
+        if (route.params?.successMessage) {
+            setToast({ visible: true, message: route.params.successMessage, type: 'success' });
+            navigation.setParams({ successMessage: undefined });
+        }
+    }, [route.params?.successMessage]);
 
     const onRefresh = useCallback(() => {
         setIsRefreshing(true);
@@ -84,7 +95,7 @@ export const PaymentEditScreen = () => {
             }
         } catch (error) {
             console.error(error);
-            Alert.alert('Error', 'Failed to load payment detail');
+            setToast({ visible: true, message: 'Failed to load payment detail', type: 'error' });
         } finally {
             setIsLoading(false);
         }
@@ -93,14 +104,17 @@ export const PaymentEditScreen = () => {
     const handleAddDetail = (detail: any) => {
         if (editingDetail) {
             setPaymentDetails(paymentDetails.map(item => item.id === detail.id ? detail : item));
+            setToast({ visible: true, message: 'Data payment berhasil diubah', type: 'success' });
         } else {
             setPaymentDetails([...paymentDetails, detail]);
+            setToast({ visible: true, message: 'Data payment berhasil ditambahkan', type: 'success' });
         }
         setEditingDetail(null);
     };
 
     const handleDeleteDetail = (detailId: string) => {
         setPaymentDetails(paymentDetails.filter(item => item.id !== detailId));
+        setToast({ visible: true, message: 'Data payment berhasil dihapus', type: 'success' });
         setEditingDetail(null);
     };
 
@@ -110,16 +124,29 @@ export const PaymentEditScreen = () => {
     };
 
     const handleSave = async () => {
+        const errorMsg = validateForm({ customer, invoice, bankTujuan, paymentDetails });
+        if (errorMsg) {
+            setToast({ visible: true, message: errorMsg, type: 'error' });
+            return;
+        }
+        setIsConfirmModalVisible(true);
+    };
+
+    const confirmSubmit = async () => {
+        setIsConfirmModalVisible(false);
         setIsSaving(true);
         try {
             // Adapt back to expected API format if needed, here just mocking success
             if (isEdit) {
                 // await updateExistingPayment(id, { ... });
-                Alert.alert('Success', 'Payment updated successfully');
+                setToast({ visible: true, message: 'Payment berhasil diupdate!', type: 'success' });
+            } else {
+                // await createNewPayment({ ... });
+                setToast({ visible: true, message: 'Payment berhasil dibuat!', type: 'success' });
             }
-            navigation.goBack();
+            setIsEditMode(false);
         } catch (error) {
-            Alert.alert('Error', 'Failed to save payment');
+            setToast({ visible: true, message: 'Failed to save payment', type: 'error' });
         } finally {
             setIsSaving(false);
         }
@@ -132,6 +159,34 @@ export const PaymentEditScreen = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             className="flex-1 bg-gray-50"
         >
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.type === 'success' ? 'Success' : 'Validasi'}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+            <ModalCancel
+                visible={isCancelModalVisible}
+                title="Hapus Payment"
+                message="Apakah Anda yakin ingin menghapus payment ini? Tindakan ini tidak dapat dibatalkan."
+                onCancel={() => setIsCancelModalVisible(false)}
+                onConfirm={() => {
+                    setIsCancelModalVisible(false);
+                    navigation.goBack();
+                }}
+                confirmText="Hapus"
+                cancelText="Batal"
+            />
+            <ModalConfirm
+                visible={isConfirmModalVisible}
+                title="Update Data Payment"
+                message="Apakah Anda yakin ingin update data payment ini?"
+                onCancel={() => setIsConfirmModalVisible(false)}
+                onConfirm={confirmSubmit}
+                confirmText="Update"
+                cancelText="Batal"
+            />
             <HeaderNavigator
                 title={title}
                 showBackButton={true}
@@ -152,180 +207,180 @@ export const PaymentEditScreen = () => {
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)} className="p-4">
 
-                    <Animated.View entering={FadeInUp.delay(100)} className="mb-4">
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', alignItems: 'center' }}>
-                            {isEditMode && (
+                        <Animated.View entering={FadeInUp.delay(100)} className="mb-4">
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', alignItems: 'center' }}>
+                                {isEditMode && (
+                                    <TouchableOpacity
+                                        className="bg-blue-400 px-3 py-2 rounded flex-row items-center mr-2"
+                                        onPress={() => {
+                                            if (!id) navigation.goBack();
+                                            else {
+                                                setIsEditMode(false);
+                                                setIsSplitMode(false);
+                                            }
+                                        }}
+                                    >
+                                        <CornerDownLeft size={14} color="white" />
+                                        <Text className="text-white text-xs font-bold ml-1">Back</Text>
+                                    </TouchableOpacity>
+                                )}
+
                                 <TouchableOpacity
-                                    className="bg-blue-400 px-3 py-2 rounded flex-row items-center mr-2"
+                                    className={`px-3 py-2 rounded flex-row items-center mr-2 ${isEditMode ? 'bg-emerald-500' : 'bg-amber-500'}`}
                                     onPress={() => {
-                                        if (!id) navigation.goBack();
-                                        else {
-                                            setIsEditMode(false);
-                                            setIsSplitMode(false);
+                                        if (isEditMode) {
+                                            handleSave();
+                                        } else {
+                                            setIsEditMode(true);
                                         }
                                     }}
                                 >
-                                    <CornerDownLeft size={14} color="white" />
-                                    <Text className="text-white text-xs font-bold ml-1">Back</Text>
+                                    {isSaving ? (
+                                        <ActivityIndicator size="small" color="white" />
+                                    ) : (
+                                        <>
+                                            {isEditMode ? <Save size={14} color="white" /> : <Pencil size={14} color="white" />}
+                                            <Text className="text-white text-xs font-bold ml-1">{isEditMode ? 'Simpan' : 'Edit'}</Text>
+                                        </>
+                                    )}
                                 </TouchableOpacity>
-                            )}
 
-                            <TouchableOpacity
-                                className={`px-3 py-2 rounded flex-row items-center mr-2 ${isEditMode ? 'bg-emerald-500' : 'bg-amber-500'}`}
-                                onPress={() => {
-                                    if (isEditMode) {
-                                        handleSave();
-                                    } else {
-                                        setIsEditMode(true);
-                                    }
-                                }}
-                            >
-                                {isSaving ? (
-                                    <ActivityIndicator size="small" color="white" />
-                                ) : (
+                                {!isEditMode && (
                                     <>
-                                        {isEditMode ? <Save size={14} color="white" /> : <Pencil size={14} color="white" />}
-                                        <Text className="text-white text-xs font-bold ml-1">{isEditMode ? 'Simpan' : 'Edit'}</Text>
+                                        <TouchableOpacity
+                                            className="bg-orange-500 px-3 py-2 rounded flex-row items-center mr-2"
+                                            onPress={() => {
+                                                setIsSplitMode(true);
+                                                setIsEditMode(true);
+                                            }}
+                                        >
+                                            <Split size={14} color="white" />
+                                            <Text className="text-white text-xs font-bold ml-1">Split</Text>
+                                        </TouchableOpacity>
+
+                                        <TouchableOpacity
+                                            className="bg-gray-600 px-3 py-2 rounded flex-row items-center mr-2"
+                                            onPress={() => setToast({ visible: true, message: 'Fitur Print belum diimplementasikan', type: 'error' })}
+                                        >
+                                            <Printer size={14} color="white" />
+                                            <Text className="text-white text-xs font-bold ml-1">Print</Text>
+                                        </TouchableOpacity>
+
+                                        <TouchableOpacity
+                                            className="bg-red-600 px-3 py-2 rounded flex-row items-center mr-2"
+                                            onPress={() => setIsCancelModalVisible(true)}
+                                        >
+                                            <Trash2 size={14} color="white" />
+                                            <Text className="text-white text-xs font-bold ml-1">Hapus</Text>
+                                        </TouchableOpacity>
                                     </>
                                 )}
-                            </TouchableOpacity>
+                            </ScrollView>
+                        </Animated.View>
 
-                            {!isEditMode && (
-                                <>
+                        <View className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
+
+                            <Text className="text-sm font-bold text-gray-700 mb-2">Customer <Text className="text-red-500">*</Text></Text>
+                            <View className={`border border-gray-200 rounded-xl mb-4 ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50'}`}>
+                                <Dropdown
+                                    style={{ height: 48, paddingHorizontal: 16 }}
+                                    data={[
+                                        { label: 'Customer A', value: 'CUST-A' },
+                                        { label: 'Customer B', value: 'CUST-B' },
+                                    ]}
+                                    labelField="label"
+                                    valueField="value"
+                                    placeholder="Pilih Customer"
+                                    value={customer}
+                                    onChange={(item) => setCustomer(item.value)}
+                                    disable={isReadOnly}
+                                    selectedTextStyle={{ fontSize: 14, color: '#111827' }}
+                                    placeholderStyle={{ fontSize: 14, color: '#9CA3AF' }}
+                                />
+                            </View>
+
+                            <Text className="text-sm font-bold text-gray-700 mb-2">Invoice <Text className="text-red-500">*</Text></Text>
+                            <View className={`border border-gray-200 rounded-xl mb-4 ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50'}`}>
+                                <Dropdown
+                                    style={{ height: 48, paddingHorizontal: 16 }}
+                                    data={[
+                                        { label: 'INV-001', value: 'INV-001' },
+                                        { label: 'INV-002', value: 'INV-002' },
+                                    ]}
+                                    labelField="label"
+                                    valueField="value"
+                                    placeholder="Pilih Invoice"
+                                    value={invoice}
+                                    onChange={(item) => setInvoice(item.value)}
+                                    disable={isReadOnly}
+                                    selectedTextStyle={{ fontSize: 14, color: '#111827' }}
+                                    placeholderStyle={{ fontSize: 14, color: '#9CA3AF' }}
+                                />
+                            </View>
+
+                            <View className="flex-row justify-between mb-4">
+                                <View className="flex-1 mr-2">
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Jumlah Invoice</Text>
+                                    <TextInput
+                                        className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 text-gray-900"
+                                        value={formatRp(parseFloat(jumlahInvoice) || 0)}
+                                        editable={false}
+                                    />
+                                </View>
+                                <View className="flex-1 ml-2">
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Sisa Tagihan</Text>
+                                    <TextInput
+                                        className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 text-gray-900"
+                                        value={formatRp(sisaTagihan)}
+                                        editable={false}
+                                    />
+                                </View>
+                            </View>
+
+                            <Text className="text-sm font-bold text-gray-700 mb-2">Bank Tujuan <Text className="text-red-500">*</Text></Text>
+                            <View className={`border border-gray-200 rounded-xl mb-4 ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50'}`}>
+                                <Dropdown
+                                    style={{ height: 48, paddingHorizontal: 16 }}
+                                    data={[
+                                        { label: 'BCA | PT Eka Maju Mesinindo', value: 'BCA' },
+                                        { label: 'MANDIRI | PT Eka Maju Mesinindo', value: 'MANDIRI' },
+                                    ]}
+                                    labelField="label"
+                                    valueField="value"
+                                    placeholder="Pilih Bank Tujuan"
+                                    value={bankTujuan}
+                                    onChange={(item) => setBankTujuan(item.value)}
+                                    disable={isReadOnly}
+                                    selectedTextStyle={{ fontSize: 14, color: '#111827' }}
+                                    placeholderStyle={{ fontSize: 14, color: '#9CA3AF' }}
+                                />
+                            </View>
+
+                            <View className="h-px bg-gray-200 my-4" />
+
+                            <View className="flex-row justify-between items-center mb-4">
+                                <Text className="font-bold text-gray-800">Payment</Text>
+                                {isEditMode && (!isEdit || isSplitMode) && (
                                     <TouchableOpacity
-                                        className="bg-orange-500 px-3 py-2 rounded flex-row items-center mr-2"
                                         onPress={() => {
-                                            setIsSplitMode(true);
-                                            setIsEditMode(true);
+                                            setEditingDetail(null);
+                                            setIsModalVisible(true);
                                         }}
+                                        className="flex-row items-center px-3 py-1.5 rounded-lg"
+                                        style={{ backgroundColor: theme.colors.primary }}
                                     >
-                                        <Split size={14} color="white" />
-                                        <Text className="text-white text-xs font-bold ml-1">Split</Text>
+                                        <Plus size={16} color="#ffffff" />
+                                        <Text className="text-white font-bold ml-1 text-xs">Tambah</Text>
                                     </TouchableOpacity>
+                                )}
+                            </View>
 
-                                    <TouchableOpacity
-                                        className="bg-gray-600 px-3 py-2 rounded flex-row items-center mr-2"
-                                        onPress={() => Alert.alert('Print', 'Fitur Print belum diimplementasikan')}
-                                    >
-                                        <Printer size={14} color="white" />
-                                        <Text className="text-white text-xs font-bold ml-1">Print</Text>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        className="bg-red-600 px-3 py-2 rounded flex-row items-center mr-2"
-                                        onPress={() => setIsCancelModalVisible(true)}
-                                    >
-                                        <Trash2 size={14} color="white" />
-                                        <Text className="text-white text-xs font-bold ml-1">Hapus</Text>
-                                    </TouchableOpacity>
-                                </>
-                            )}
-                        </ScrollView>
+                            <PaymentTable
+                                details={paymentDetails}
+                                onRowClick={handleRowClick}
+                            />
+                        </View>
                     </Animated.View>
-
-                    <View className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
-
-                        <Text className="text-sm font-bold text-gray-700 mb-2">Customer <Text className="text-red-500">*</Text></Text>
-                        <View className={`border border-gray-200 rounded-xl mb-4 ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50'}`}>
-                            <Dropdown
-                                style={{ height: 48, paddingHorizontal: 16 }}
-                                data={[
-                                    { label: 'Customer A', value: 'CUST-A' },
-                                    { label: 'Customer B', value: 'CUST-B' },
-                                ]}
-                                labelField="label"
-                                valueField="value"
-                                placeholder="Pilih Customer"
-                                value={customer}
-                                onChange={(item) => setCustomer(item.value)}
-                                disable={isReadOnly}
-                                selectedTextStyle={{ fontSize: 14, color: '#111827' }}
-                                placeholderStyle={{ fontSize: 14, color: '#9CA3AF' }}
-                            />
-                        </View>
-
-                        <Text className="text-sm font-bold text-gray-700 mb-2">Invoice <Text className="text-red-500">*</Text></Text>
-                        <View className={`border border-gray-200 rounded-xl mb-4 ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50'}`}>
-                            <Dropdown
-                                style={{ height: 48, paddingHorizontal: 16 }}
-                                data={[
-                                    { label: 'INV-001', value: 'INV-001' },
-                                    { label: 'INV-002', value: 'INV-002' },
-                                ]}
-                                labelField="label"
-                                valueField="value"
-                                placeholder="Pilih Invoice"
-                                value={invoice}
-                                onChange={(item) => setInvoice(item.value)}
-                                disable={isReadOnly}
-                                selectedTextStyle={{ fontSize: 14, color: '#111827' }}
-                                placeholderStyle={{ fontSize: 14, color: '#9CA3AF' }}
-                            />
-                        </View>
-
-                        <View className="flex-row justify-between mb-4">
-                            <View className="flex-1 mr-2">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Jumlah Invoice</Text>
-                                <TextInput
-                                    className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 text-gray-900"
-                                    value={formatRp(parseFloat(jumlahInvoice) || 0)}
-                                    editable={false}
-                                />
-                            </View>
-                            <View className="flex-1 ml-2">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Sisa Tagihan</Text>
-                                <TextInput
-                                    className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 text-gray-900"
-                                    value={formatRp(sisaTagihan)}
-                                    editable={false}
-                                />
-                            </View>
-                        </View>
-
-                        <Text className="text-sm font-bold text-gray-700 mb-2">Bank Tujuan <Text className="text-red-500">*</Text></Text>
-                        <View className={`border border-gray-200 rounded-xl mb-4 ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50'}`}>
-                            <Dropdown
-                                style={{ height: 48, paddingHorizontal: 16 }}
-                                data={[
-                                    { label: 'BCA | PT Eka Maju Mesinindo', value: 'BCA' },
-                                    { label: 'MANDIRI | PT Eka Maju Mesinindo', value: 'MANDIRI' },
-                                ]}
-                                labelField="label"
-                                valueField="value"
-                                placeholder="Pilih Bank Tujuan"
-                                value={bankTujuan}
-                                onChange={(item) => setBankTujuan(item.value)}
-                                disable={isReadOnly}
-                                selectedTextStyle={{ fontSize: 14, color: '#111827' }}
-                                placeholderStyle={{ fontSize: 14, color: '#9CA3AF' }}
-                            />
-                        </View>
-
-                        <View className="h-px bg-gray-200 my-4" />
-
-                        <View className="flex-row justify-between items-center mb-4">
-                            <Text className="font-bold text-gray-800">Riwayat Pembayaran</Text>
-                            {isEditMode && (!isEdit || isSplitMode) && (
-                                <TouchableOpacity
-                                    onPress={() => {
-                                        setEditingDetail(null);
-                                        setIsModalVisible(true);
-                                    }}
-                                    className="flex-row items-center px-3 py-1.5 rounded-lg"
-                                    style={{ backgroundColor: theme.colors.primary }}
-                                >
-                                    <Plus size={16} color="#ffffff" />
-                                    <Text className="text-white font-bold ml-1 text-xs">Tambah</Text>
-                                </TouchableOpacity>
-                            )}
-                        </View>
-
-                        <PaymentTable
-                            details={paymentDetails}
-                            onRowClick={handleRowClick}
-                        />
-                    </View>
-                </Animated.View>
                 )}
             </ScrollView>
 
@@ -341,16 +396,6 @@ export const PaymentEditScreen = () => {
                 isReadOnly={isReadOnly}
             />
 
-            <ModalCancel
-                visible={isCancelModalVisible}
-                title="Hapus Data"
-                message="Apakah anda yakin ingin membatalkan atau menghapus data ini? Aksi ini tidak dapat dibatalkan."
-                onCancel={() => setIsCancelModalVisible(false)}
-                onConfirm={() => {
-                    setIsCancelModalVisible(false);
-                    navigation.goBack();
-                }}
-            />
         </KeyboardAvoidingView>
     );
 };

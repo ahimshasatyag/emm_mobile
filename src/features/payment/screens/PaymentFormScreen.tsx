@@ -12,9 +12,13 @@ import { Button } from '../../../components/ui/button';
 import { theme } from '../../../theme/theme';
 import { formatRp } from '../../../utils/helpers/money';
 import { PaymentFormSkeleton } from '../skeleton/PaymentFormSkeleton';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { usePayment } from '../hooks/usePayment';
 
 export const PaymentFormScreen = () => {
     const navigation = useNavigation();
+    const { validateForm } = usePayment();
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'error' });
     const [customer, setCustomer] = useState('');
     const [invoice, setInvoice] = useState('');
     const [bankTujuan, setBankTujuan] = useState('');
@@ -41,14 +45,17 @@ export const PaymentFormScreen = () => {
     const handleAddDetail = (detail: any) => {
         if (editingDetail) {
             setPaymentDetails(paymentDetails.map(item => item.id === detail.id ? detail : item));
+            setToast({ visible: true, message: 'Data Payment berhasil diubah', type: 'success' });
         } else {
             setPaymentDetails([...paymentDetails, detail]);
+            setToast({ visible: true, message: 'Data Payment berhasil ditambahkan', type: 'success' });
         }
         setEditingDetail(null);
     };
 
     const handleDeleteDetail = (id: string) => {
         setPaymentDetails(paymentDetails.filter(item => item.id !== id));
+        setToast({ visible: true, message: 'Data payment berhasil dihapus', type: 'success' });
         setEditingDetail(null);
     };
 
@@ -58,17 +65,23 @@ export const PaymentFormScreen = () => {
     };
 
     const handleSubmit = () => {
+        const error = validateForm({ customer, invoice, bankTujuan, paymentDetails });
+        if (error) {
+            setToast({ visible: true, message: error, type: 'error' });
+            return;
+        }
         setIsConfirmModalVisible(true);
     };
 
     const confirmSubmit = async () => {
         setIsConfirmModalVisible(false);
         setIsSaving(true);
-        // Simulate save
-        setTimeout(() => {
+        try {
+            navigation.replace('PaymentEdit', { id: 'NEW-PAYMENT-ID', successMessage: 'Payment berhasil dibuat!' });
+        } catch (error) {
+            setToast({ visible: true, message: 'Failed to save payment', type: 'error' });
             setIsSaving(false);
-            navigation.goBack();
-        }, 1000);
+        }
     };
 
     return (
@@ -76,6 +89,22 @@ export const PaymentFormScreen = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             className="flex-1 bg-gray-50"
         >
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.type === 'success' ? 'Success' : 'Validasi'}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+            <ModalConfirm
+                visible={isConfirmModalVisible}
+                title="Simpan Payment"
+                message="Apakah Anda yakin ingin menyimpan data payment ini?"
+                onCancel={() => setIsConfirmModalVisible(false)}
+                onConfirm={confirmSubmit}
+                confirmText="Simpan"
+                cancelText="Batal"
+            />
             <HeaderNavigator
                 title={isRefreshing ? "MEMUAT DATA..." : "TAMBAH PAYMENT"}
                 showBackButton={true}
@@ -173,7 +202,7 @@ export const PaymentFormScreen = () => {
                             <View className="h-px bg-gray-200 my-4" />
 
                             <View className="flex-row justify-between items-center mb-4">
-                                <Text className="font-bold text-gray-800">Riwayat Pembayaran</Text>
+                                <Text className="font-bold text-gray-800">Payment</Text>
                                 <TouchableOpacity
                                     onPress={() => {
                                         setEditingDetail(null);
@@ -224,15 +253,6 @@ export const PaymentFormScreen = () => {
                 onSave={handleAddDetail}
                 onDelete={editingDetail ? () => handleDeleteDetail(editingDetail.id) : undefined}
                 initialData={editingDetail}
-            />
-
-            <ModalConfirm
-                visible={isConfirmModalVisible}
-                title="Simpan Payment"
-                message="Apakah Anda yakin ingin menyimpan data payment ini?"
-                onCancel={() => setIsConfirmModalVisible(false)}
-                onConfirm={confirmSubmit}
-                confirmText="Simpan"
             />
         </KeyboardAvoidingView>
     );
