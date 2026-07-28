@@ -45,6 +45,17 @@ export const useKasBankIn = () => {
         dispatch(clearCurrentKasBankIn());
     }, [dispatch]);
 
+    const validateForm = (headerData: Partial<KasBankInHeader>, detailData: Partial<KasBankInDetail>[]) => {
+        if (!headerData.id_bank) return "Bank/Kas harus dipilih!";
+        if (headerData.f_dp && !headerData.id_so) return "No. SO harus dipilih jika tipe DP!";
+        if (detailData.length === 0) return "Minimal 1 detail COA harus diisi!";
+        
+        const totalDetail = detailData.reduce((sum, item) => sum + (item.v_amount || 0), 0);
+        if (totalDetail !== (headerData.v_amount || 0)) return "Total nilai detail harus sama dengan Total (Amount)!";
+        
+        return null;
+    };
+
     return {
         kasBankIns,
         banks,
@@ -60,5 +71,6 @@ export const useKasBankIn = () => {
         loadKasBankInById,
         submitKasBankIn,
         resetCurrent,
+        validateForm,
     };
 };

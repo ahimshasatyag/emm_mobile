@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, RefreshControl } from 'react-native';
-import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, RefreshControl, DeviceEventEmitter } from 'react-native';
+import { useNavigation, useRoute, useFocusEffect, CommonActions } from '@react-navigation/native';
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Dropdown } from 'react-native-element-dropdown';
-import { Calendar, Save, ArrowLeft } from 'lucide-react-native';
+import { Calendar, Save } from 'lucide-react-native';
 import Animated, { FadeIn, FadeOut, FadeInUp } from 'react-native-reanimated';
-
 import { useKasBankIn } from '../hooks/useKasBankIn';
 import { KasBankInHeader, KasBankInDetail } from '../types/kasbankin.types';
 import { KasBankInDetailTable } from '../components/KasBankInDetailTable';
@@ -16,6 +15,8 @@ import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { theme } from '../../../theme/theme';
 import { formatRp } from '../../../utils/helpers/money';
+import { formatDate } from '../../../utils/helpers/date';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export const KasBankInFormScreen = () => {
     const navigation = useNavigation<any>();
@@ -26,7 +27,7 @@ export const KasBankInFormScreen = () => {
         banks, coas, sos,
         currentHeader, currentDetails,
         isLoading, isSubmitting,
-        loadMasterData, loadKasBankInById, submitKasBankIn, resetCurrent
+        loadMasterData, loadKasBankInById, submitKasBankIn, resetCurrent, validateForm
     } = useKasBankIn();
 
     const [isInitializing, setIsInitializing] = useState(true);
@@ -41,6 +42,7 @@ export const KasBankInFormScreen = () => {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [isConfirmVisible, setIsConfirmVisible] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'error' });
 
     const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
     const [editingDetailIndex, setEditingDetailIndex] = useState<number | null>(null);
@@ -106,22 +108,9 @@ export const KasBankInFormScreen = () => {
     }, [id, currentHeader, currentDetails]);
 
     const handleSave = async () => {
-        if (!headerData.id_bank) {
-            Alert.alert("Validasi", "Bank/Kas harus dipilih!");
-            return;
-        }
-        if (headerData.f_dp && !headerData.id_so) {
-            Alert.alert("Validasi", "No. SO harus dipilih jika tipe DP!");
-            return;
-        }
-        if (detailData.length === 0) {
-            Alert.alert("Validasi", "Minimal 1 detail COA harus diisi!");
-            return;
-        }
-
-        const totalDetail = detailData.reduce((sum, item) => sum + (item.v_amount || 0), 0);
-        if (totalDetail !== (headerData.v_amount || 0)) {
-            Alert.alert("Validasi", "Total nilai detail harus sama dengan Total (Amount)!");
+        const errorMsg = validateForm(headerData, detailData);
+        if (errorMsg) {
+            setToast({ visible: true, message: errorMsg, type: 'error' });
             return;
         }
 
@@ -132,9 +121,11 @@ export const KasBankInFormScreen = () => {
         setIsConfirmVisible(false);
         try {
             await submitKasBankIn({ header: headerData, details: detailData });
+            
+            DeviceEventEmitter.emit('kasBankInSaved', 'Data Kas/Bank Masuk berhasil disimpan!');
             navigation.goBack();
         } catch (error: any) {
-            Alert.alert("Error", error.message || "Gagal menyimpan data");
+            setToast({ visible: true, message: error.message || "Gagal menyimpan data", type: 'error' });
         }
     };
 
@@ -152,6 +143,13 @@ export const KasBankInFormScreen = () => {
 
             return newData;
         });
+
+        if (editingDetailIndex !== null) {
+            setToast({ visible: true, message: 'Detail COA berhasil diubah!', type: 'success' });
+        } else {
+            setToast({ visible: true, message: 'Detail COA berhasil ditambahkan!', type: 'success' });
+        }
+
         setEditingDetailIndex(null);
         setEditingDetailData(null);
     };
@@ -170,6 +168,7 @@ export const KasBankInFormScreen = () => {
                 setHeaderData(h => ({ ...h, v_amount: total }));
                 return newData;
             });
+            setToast({ visible: true, message: 'Detail COA berhasil dihapus!', type: 'success' });
             setEditingDetailIndex(null);
             setEditingDetailData(null);
         }
@@ -196,6 +195,22 @@ export const KasBankInFormScreen = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             className="flex-1 bg-gray-50"
         >
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.type === 'success' ? 'Success' : 'Validasi'}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
+            <ModalConfirm
+                visible={isConfirmVisible}
+                title="Konfirmasi Simpan"
+                message="Apakah Anda yakin data Kas/Bank Masuk ini sudah benar?"
+                onConfirm={confirmSave}
+                onCancel={() => setIsConfirmVisible(false)}
+                confirmText="Simpan"
+                cancelText="Batal"
+            />
             <HeaderNavigator
                 title={isInitializing || isLoading || isRefreshing ? "MEMUAT DATA..." : 'TAMBAH PENERIMAAN KAS DAN BANK'}
                 showBackButton={true}
@@ -255,6 +270,7 @@ export const KasBankInFormScreen = () => {
                                     </View>
                                 </View>
                                 <View className="flex-1 ml-2 justify-center">
+                                    <Text className="text-xs text-gray-500 mb-1">DP</Text>
                                     <TouchableOpacity
                                         className={`h-12 flex-row items-center justify-center rounded-xl border ${headerData.f_dp ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}
                                         onPress={() => setHeaderData({ ...headerData, f_dp: !headerData.f_dp })}
@@ -263,7 +279,7 @@ export const KasBankInFormScreen = () => {
                                             {headerData.f_dp && <View className="w-2.5 h-2.5 bg-white rounded-sm" />}
                                         </View>
                                         <Text className={`text-sm font-medium ${headerData.f_dp ? 'text-blue-700' : 'text-gray-600'}`}>
-                                            Down Payment
+                                            DP
                                         </Text>
                                     </TouchableOpacity>
                                 </View>
@@ -300,7 +316,7 @@ export const KasBankInFormScreen = () => {
                                 >
                                     <Calendar color="#9CA3AF" size={18} />
                                     <Text className="flex-1 ml-2 text-gray-800 text-sm">
-                                        {headerData.d_bank}
+                                        {headerData.d_bank ? formatDate(new Date(headerData.d_bank)) : 'Pilih Tanggal'}
                                     </Text>
                                 </TouchableOpacity>
                                 {showDatePicker && (
@@ -374,14 +390,6 @@ export const KasBankInFormScreen = () => {
                     </Animated.View>
                 )}
             </ScrollView>
-
-            <ModalConfirm
-                visible={isConfirmVisible}
-                title="Konfirmasi Simpan"
-                message="Apakah Anda yakin data Kas/Bank Masuk ini sudah benar?"
-                onConfirm={confirmSave}
-                onCancel={() => setIsConfirmVisible(false)}
-            />
 
             <KasBankInDetailModal
                 visible={isDetailModalVisible}

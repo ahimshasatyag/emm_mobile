@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, FlatList, RefreshControl, TextInput } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { View, FlatList, RefreshControl, TextInput, DeviceEventEmitter } from 'react-native';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useKasBankIn } from '../hooks/useKasBankIn';
@@ -10,14 +10,33 @@ import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { EmptyState } from '../../../components/shared/EmptyState';
 import { ButtonAdd } from '../../../components/ui/buttonAdd';
 import { theme } from '../../../theme/theme';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export const KasBankInListScreen = () => {
     const navigation = useNavigation<any>();
+    const route = useRoute<any>();
     const { kasBankIns, isLoading, loadKasBankIns, error } = useKasBankIn();
 
     const [isInitializing, setIsInitializing] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'error' });
+
+    useEffect(() => {
+        const subscription = DeviceEventEmitter.addListener('kasBankInSaved', (message) => {
+            setToast({ visible: true, message, type: 'success' });
+        });
+
+        // Fallback for route params just in case
+        if (route.params?.successMessage) {
+            setToast({ visible: true, message: route.params.successMessage, type: 'success' });
+            navigation.setParams({ successMessage: undefined });
+        }
+
+        return () => {
+            subscription.remove();
+        };
+    }, [route.params?.successMessage]);
 
     useFocusEffect(
         useCallback(() => {
@@ -64,6 +83,13 @@ export const KasBankInListScreen = () => {
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.type === 'success' ? 'Success' : 'Pemberitahuan'}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
             <HeaderNavigator title="PENERIMAAN KAS DAN BANK" />
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-4 py-3">

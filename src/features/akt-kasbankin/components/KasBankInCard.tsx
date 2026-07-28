@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { KasBankInHeader } from '../types/kasbankin.types';
 import { formatRp } from '../../../utils/helpers/money';
+import { formatDate } from '../../../utils/helpers/date';
 
 interface KasBankInCardProps {
     item: KasBankInHeader;
@@ -18,7 +19,7 @@ export const KasBankInCard: React.FC<KasBankInCardProps> = ({ item, onPress }) =
             <View className="flex-row justify-between items-start mb-2">
                 <View>
                     <Text className="text-gray-900 font-bold text-base">{item.code_kb_masuk}</Text>
-                    <Text className="text-gray-500 text-xs mt-1">{item.d_bank}</Text>
+                    <Text className="text-gray-500 text-xs mt-1">{item.d_bank ? formatDate(new Date(item.d_bank)) : '-'}</Text>
                 </View>
             </View>
 

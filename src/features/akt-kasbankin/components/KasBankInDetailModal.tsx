@@ -110,6 +110,7 @@ export const KasBankInDetailModal: React.FC<KasBankInDetailModalProps> = ({
                                 className="border border-gray-200 rounded-xl bg-gray-50 h-12 px-4 text-gray-800"
                                 keyboardType="numeric"
                                 placeholder="0"
+                                placeholderTextColor="#9CA3AF"
                                 value={formatDisplayNumber(amount)}
                                 onChangeText={(text) => setAmount(formatNumber(text))}
                             />
@@ -120,6 +121,7 @@ export const KasBankInDetailModal: React.FC<KasBankInDetailModalProps> = ({
                             <TextInput
                                 className="border border-gray-200 rounded-xl bg-gray-50 p-4 text-gray-800"
                                 placeholder="Tuliskan keterangan..."
+                                placeholderTextColor="#9CA3AF"
                                 value={deskripsi}
                                 onChangeText={setDeskripsi}
                                 multiline
