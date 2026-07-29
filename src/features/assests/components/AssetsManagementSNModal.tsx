@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, ScrollView, Alert, Switch } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, ScrollView, Switch } from 'react-native';
 import { X, Save, Trash2 } from 'lucide-react-native';
 import { theme } from '../../../theme/theme';
 import { AssetSerialNumber } from '../types/assests.types';
+import { ToastMessages } from '../../../components/ui/ToastMessages';
+import { useAssestSNForm } from '../hooks/useAssests';
 
 interface Props {
     visible: boolean;
@@ -11,51 +13,34 @@ interface Props {
     initialData?: AssetSerialNumber | null;
     onDelete?: () => void;
     isReadOnly?: boolean;
+    onShowToast?: (message: string, type: 'success' | 'error') => void;
 }
 
-export function AssetsManagementSNModal({ visible, onClose, onSave, initialData, onDelete, isReadOnly = false }: Props) {
-    const [name, setName] = useState('');
-    const [sn, setSn] = useState('');
-    const [isMain, setIsMain] = useState(false);
+export function AssetsManagementSNModal({ visible, onClose, onSave, initialData, onDelete, isReadOnly = false, onShowToast }: Props) {
+    const { name, setName, sn, setSn, isMain, setIsMain, validateForm } = useAssestSNForm(initialData, visible);
 
-    useEffect(() => {
-        if (visible) {
-            if (initialData) {
-                setName(initialData.name_sn);
-                setSn(initialData.serial_number);
-                setIsMain(initialData.f_print === '1');
-            } else {
-                setName('');
-                setSn('');
-                setIsMain(false);
-            }
-        }
-    }, [visible, initialData]);
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+    const [toastType, setToastType] = useState<'success' | 'error'>('error');
 
     const handleSave = () => {
-        if (!name.trim() || !sn.trim()) {
-            Alert.alert('Peringatan', 'Nama dan Serial Number wajib diisi');
+        const errorMsg = validateForm();
+        if (errorMsg) {
+            setToastType('error');
+            setToastMessage(errorMsg);
+            setToastVisible(true);
             return;
         }
+
         onSave(name, sn, isMain);
+        if (onShowToast) {
+            onShowToast(initialData ? 'Serial Number berhasil diperbarui' : 'Serial Number berhasil ditambahkan', 'success');
+        }
         onClose();
     };
 
     const handleDelete = () => {
-        Alert.alert(
-            'Hapus Serial Number',
-            'Apakah Anda yakin ingin menghapus serial number ini?',
-            [
-                { text: 'Batal', style: 'cancel' },
-                {
-                    text: 'Hapus',
-                    style: 'destructive',
-                    onPress: () => {
-                        if (onDelete) onDelete();
-                    }
-                }
-            ]
-        );
+        if (onDelete) onDelete();
     };
 
     return (
@@ -65,6 +50,13 @@ export function AssetsManagementSNModal({ visible, onClose, onSave, initialData,
             transparent={true}
             onRequestClose={onClose}
         >
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastType === 'error' ? 'Validasi' : 'Sukses'}
+                message={toastMessage}
+                onClose={() => setToastVisible(false)}
+            />
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 className="flex-1 justify-end bg-black/50"

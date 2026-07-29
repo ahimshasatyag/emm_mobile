@@ -8,6 +8,8 @@ import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Dropdown, MultiSelect } from 'react-native-element-dropdown';
 import { useInventoryScheduleForm } from '../hooks/useInventoryScheduleForm';
 import { InventoryScheduleFormSkeleton } from '../skeleton/InventoryScheduleFormSkeleton';
+import { ToastMessages } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 export function InventoryScheduleFormScreen() {
     const navigation = useNavigation<any>();
@@ -19,7 +21,8 @@ export function InventoryScheduleFormScreen() {
         handleChange,
         handleReminderChange,
         handlePicChange,
-        handleSave
+        handleSave,
+        validateForm
     } = useInventoryScheduleForm();
 
     const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -34,18 +37,34 @@ export function InventoryScheduleFormScreen() {
 
     const [isRefreshing, setIsRefreshing] = useState(false);
 
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+    const [toastType, setToastType] = useState<'success' | 'error'>('error');
+    const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
+
     const onRefresh = useCallback(() => {
         setIsRefreshing(true);
         setTimeout(() => setIsRefreshing(false), 1000);
     }, []);
 
     const onSavePress = () => {
-        if (!formData.asset_id || !formData.name || !formData.due_date || (!formData.pic || formData.pic.length === 0)) {
-            alert('Silakan lengkapi data wajib (Asset, Name, Due Date, PIC)');
+        const errorMsg = validateForm();
+        if (errorMsg) {
+            setToastType('error');
+            setToastMessage(errorMsg);
+            setToastVisible(true);
             return;
         }
-        handleSave(() => {
-            navigation.goBack();
+        setIsModalConfirmVisible(true);
+    };
+
+    const handleConfirmSave = () => {
+        setIsModalConfirmVisible(false);
+        handleSave((savedData?: any) => {
+            navigation.replace('InventoryScheduleEditScreen', {
+                id: savedData?.id,
+                showSuccessToast: true
+            });
         });
     };
 
@@ -62,6 +81,25 @@ export function InventoryScheduleFormScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastType === 'error' ? 'Validasi' : 'Sukses'}
+                message={toastMessage}
+                onClose={() => setToastVisible(false)}
+            />
+
+            <ModalConfirm
+                visible={isModalConfirmVisible}
+                title="Konfirmasi"
+                message="Apakah Anda yakin ingin menyimpan data schedule ini?"
+                cancelText='Batal!'
+                confirmText='Simpan!'
+                onCancel={() => setIsModalConfirmVisible(false)}
+                onConfirm={handleConfirmSave}
+                isLoading={isSaving}
+            />
+
             <HeaderNavigator title={isRefreshing ? "MEMUAT DATA..." : "TAMBAH ASSET SCHEDULE"} showBackButton={true} />
 
             <ScrollView
@@ -198,12 +236,6 @@ export function InventoryScheduleFormScreen() {
                         </View>
 
                         <View className="flex-row gap-4 mt-2 mb-8">
-                            <TouchableOpacity
-                                onPress={() => navigation.goBack()}
-                                className="flex-1 py-4 rounded-xl items-center justify-center bg-gray-100"
-                            >
-                                <Text className="text-gray-700 font-bold text-lg">Batal</Text>
-                            </TouchableOpacity>
 
                             <TouchableOpacity
                                 onPress={onSavePress}

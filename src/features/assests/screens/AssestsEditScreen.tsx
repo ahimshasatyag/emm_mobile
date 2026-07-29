@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, RefreshControl, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
@@ -11,6 +11,8 @@ import { AssetsManagementSNTable } from '../components/AssetsManagementSNTable';
 import { AssestsEditSkeleton } from '../skeleton/AssestsEditSkeleton';
 import { Button } from '../../../components/ui/button';
 import Animated, { FadeIn, FadeOut, FadeInUp } from 'react-native-reanimated';
+import { ToastMessages } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 export function AssestsEditScreen() {
     const navigation = useNavigation();
@@ -29,11 +31,25 @@ export function AssestsEditScreen() {
         updateSerialNumber,
         removeSerialNumber,
         setMainSerialNumber,
-        handleSave
+        handleSave,
+        validateForm
     } = useAssestForm(asset);
 
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+    const [toastType, setToastType] = useState<'success' | 'error'>('error');
+    const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
+
+    useEffect(() => {
+        if (route.params?.showSuccessToast) {
+            setToastType('success');
+            setToastMessage('Data asset berhasil disimpan');
+            setToastVisible(true);
+            navigation.setParams({ showSuccessToast: undefined });
+        }
+    }, [route.params?.showSuccessToast, navigation]);
 
     const onRefresh = useCallback(() => {
         setIsRefreshing(true);
@@ -53,15 +69,23 @@ export function AssestsEditScreen() {
     const typeOptions = types.map(t => ({ label: t.name, value: t.id }));
 
     const handleSaveForm = () => {
-        if (!formData.name || !formData.inventory_category_id || !formData.inventory_type_id) {
-            Alert.alert('Peringatan', 'Harap isi kolom yang wajib (Name, Type, Category)');
+        const errorMsg = validateForm();
+        if (errorMsg) {
+            setToastType('error');
+            setToastMessage(errorMsg);
+            setToastVisible(true);
             return;
         }
+        setIsModalConfirmVisible(true);
+    };
 
+    const handleConfirmSave = () => {
+        setIsModalConfirmVisible(false);
         handleSave(() => {
-            Alert.alert('Sukses', 'Perubahan berhasil disimpan', [
-                { text: 'OK', onPress: () => setIsEditMode(false) }
-            ]);
+            setToastType('success');
+            setToastMessage('Perubahan berhasil disimpan');
+            setToastVisible(true);
+            setIsEditMode(false);
         });
     };
 
@@ -108,6 +132,25 @@ export function AssestsEditScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastType === 'error' ? 'Validasi' : 'Sukses'}
+                message={toastMessage}
+                onClose={() => setToastVisible(false)}
+            />
+
+            <ModalConfirm
+                visible={isModalConfirmVisible}
+                title="Konfirmasi"
+                message="Apakah Anda yakin ingin menyimpan perubahan data asset ini?"
+                cancelText='Batal!'
+                confirmText='Simpan!'
+                onCancel={() => setIsModalConfirmVisible(false)}
+                onConfirm={handleConfirmSave}
+                isLoading={isSaving}
+            />
+
             <HeaderNavigator
                 title={isRefreshing ? "MEMUAT DATA..." : (isEditMode ? `EDIT ${formData.name || 'ASSET'}` : `DETAIL ${formData.name || 'ASSET'}`)}
                 showBackButton={true}
@@ -254,6 +297,11 @@ export function AssestsEditScreen() {
                                 onRemove={handleRemoveSn}
                                 onSetMain={handleSetMainSn}
                                 isEditMode={isEditMode}
+                                onShowToast={(msg, type) => {
+                                    setToastMessage(msg);
+                                    setToastType(type);
+                                    setToastVisible(true);
+                                }}
                             />
                         </View>
 

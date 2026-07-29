@@ -63,7 +63,7 @@ export const useInventoryScheduleForm = (initialData?: InventorySchedule) => {
             const currentPics = prev.pic || [];
             const isSelected = currentPics.some((p) => p.username === username);
             let newPics;
-            
+
             if (isSelected) {
                 newPics = currentPics.filter((p) => p.username !== username);
             } else {
@@ -74,20 +74,37 @@ export const useInventoryScheduleForm = (initialData?: InventorySchedule) => {
         });
     };
 
-    const handleSave = async (onSuccess?: () => void) => {
+    const handleSave = async (onSuccess?: (savedData?: InventorySchedule) => void) => {
         setIsSaving(true);
         try {
+            let res;
             if (formData.id) {
-                await updateSchedule(formData.id, formData);
+                res = await updateSchedule(formData.id, formData);
             } else {
-                await saveSchedule(formData);
+                res = await saveSchedule(formData);
             }
-            if (onSuccess) onSuccess();
+            if (onSuccess) onSuccess(res);
         } catch (error) {
-            console.error('Failed to save schedule:', error);
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const validateForm = (): string | null => {
+        if (!formData.asset_id && !formData.name?.trim() && !formData.due_date && (!formData.pic || formData.pic.length === 0)) {
+            return 'Semua field wajib diisi';
+        }
+
+        if (!formData.asset_id) {
+            return 'Asset ID wajib dipilih!';
+        }
+        if (!formData.name?.trim()) {
+            return 'Payment Name wajib diisi!';
+        }
+        if (!formData.pic || formData.pic.length === 0) {
+            return 'PIC wajib dipilih minimal satu';
+        }
+        return null;
     };
 
     return {
@@ -98,6 +115,7 @@ export const useInventoryScheduleForm = (initialData?: InventorySchedule) => {
         handleChange,
         handleReminderChange,
         handlePicChange,
-        handleSave
+        handleSave,
+        validateForm
     };
 };

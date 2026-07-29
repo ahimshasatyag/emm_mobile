@@ -484,167 +484,146 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="ProductPriceMktList"
                 component={require('../../features/productpricemkt/screens/ProductPriceMktListScreen').ProductPriceMktListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="ProductPriceAgentList"
                 component={require('../../features/productpriceagent/screens/ProductPriceAgentListScreen').ProductPriceAgentListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="Brosur"
                 component={require('../../features/brosur/screens/BrosurScreen').BrosurScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="ProductPriceReqListScreen"
                 component={require('../../features/productpricereq/screens/ProductPriceReqListScreen').ProductPriceReqListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="CsrListScreen"
                 component={require('../../features/csr/screens/CsrListScreen').CsrListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="CstListScreen"
                 component={require('../../features/cst/screens/CstListScreen').CstListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="LktListScreen"
                 component={require('../../features/lkt/screens/LktListScreen').LktListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="LogbookProductListScreen"
                 component={require('../../features/logbookproduct/screens/LogbookProductListScreen').LogbookProductListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="LogbookCustomersListScreen"
                 component={require('../../features/logbookcustomers/screens/LogbookCustomersListScreen').LogbookCustomersListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="CekSerialNumberScreen"
                 component={require('../../features/cekserialnumber/screens/CekSerialNumberScreen').CekSerialNumberScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="QuotationList"
                 component={require('../../features/quotations/screens/QuotationListScreen').QuotationListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="SOList"
                 component={require('../../features/so/screens/SOListScreen').SOListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="SurveyList"
                 component={require('../../features/survey/screens/SurveyListScreen').SurveyListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="SalesContractList"
                 component={require('../../features/salescontract/screens/SalesContractListScreen').SalesContractListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="SalesContractListSO"
                 component={require('../../features/salescontract/screens/SalesContractListSOScreen').SalesContractListSOScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="SalesReturList"
                 component={require('../../features/salesretur/screens/SalesReturListScreen').SalesReturListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="ListSOScreen"
                 component={require('../../features/listso/screens/ListSOScreen').ListSOScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="LeadsScreen"
                 component={require('../../features/leads/screens/LeadsScreen').LeadsScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="PurchaseRequisitionListScreen"
                 component={require('../../features/purchaserequisitions/screens/PurchaseRequisitionListScreen').PurchaseRequisitionListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="SuppliersListScreen"
                 component={require('../../features/suppliers/screens/SuppliersListScreen').SuppliersListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="QuotationsAPListScreen"
                 component={require('../../features/quotationsap/screens/QuotationsAPListScreen').QuotationsAPListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="PoListScreen"
                 component={require('../../features/po/screens/PoListScreen').PoListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="IncshipmentListScreen"
                 component={require('../../features/incshipment/screens/IncshipmentListScreen').IncshipmentListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="ApproveListScreen"
                 component={require('../../features/approve/screens/ApproveListScreen').ApproveListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="ApprovebaruListScreen"
                 component={require('../../features/approvebaru/screens/ApprovebaruListScreen').ApprovebaruListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="DoListScreen"
                 component={require('../../features/do/screens/DoListScreen').DoListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="CustomerInvoiceListScreen"
                 component={CustomerInvoiceListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="PaymentList"
                 component={PaymentListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="KasBankInList"
                 component={require('../../features/akt-kasbankin/screens/KasBankInListScreen').KasBankInListScreen}
-                options={{ unmountOnBlur: true }}
+            />
+            <Drawer.Screen
+                name="ListPaymentScreen"
+                component={require('../../features/listpayment/screens/ListPaymentScreen').ListPaymentScreen}
+            />
+            <Drawer.Screen
+                name="MataUangScreen"
+                component={require('../../features/matauang/screens/MataUangScreen').MataUangScreen}
+            />
+            <Drawer.Screen
+                name="AssestsListScreen"
+                component={require('../../features/assests/screens/AssestsListScreen').AssestsListScreen}
             />
             <Drawer.Screen
                 name="InventoryScheduleListScreen"
                 component={require('../../features/inventoryschedule/screens/InventoryScheduleListScreen').InventoryScheduleListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="SopDivisionScreen"
                 component={require('../../features/sop/screens/SopDivisionScreen').SopDivisionScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="TandaTerimaCustListScreen"
                 component={require('../../features/tandaterimacust/screens/TandaTerimaCustListScreen').TandaTerimaCustListScreen}
-                options={{ unmountOnBlur: true }}
             />
             <Drawer.Screen
                 name="WhatsappChatListScreen"
                 component={require('../../features/whatsappchat/screens/WhatsappChatListScreen').WhatsappChatListScreen}
-                options={{ unmountOnBlur: true }}
             />
         </Drawer.Navigator>
     );

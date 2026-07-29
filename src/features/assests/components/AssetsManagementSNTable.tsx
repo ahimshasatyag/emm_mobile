@@ -12,9 +12,10 @@ interface AssetsManagementSNTableProps {
     onRemove: (id: string) => void;
     onSetMain: (id: string) => void;
     isEditMode?: boolean;
+    onShowToast?: (message: string, type: 'success' | 'error') => void;
 }
 
-export function AssetsManagementSNTable({ serialNumbers, onAdd, onUpdate, onRemove, onSetMain, isEditMode = true }: AssetsManagementSNTableProps) {
+export function AssetsManagementSNTable({ serialNumbers, onAdd, onUpdate, onRemove, onSetMain, isEditMode = true, onShowToast }: AssetsManagementSNTableProps) {
     const [modalVisible, setModalVisible] = useState(false);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
@@ -95,9 +96,11 @@ export function AssetsManagementSNTable({ serialNumbers, onAdd, onUpdate, onRemo
                 initialData={editingIndex !== null ? serialNumbers[editingIndex] : null}
                 onDelete={editingIndex !== null ? () => {
                     onRemove(serialNumbers[editingIndex].id);
+                    if (onShowToast) onShowToast('Serial Number berhasil dihapus', 'success');
                     setModalVisible(false);
                 } : undefined}
                 isReadOnly={!isEditMode}
+                onShowToast={onShowToast}
             />
         </View>
     );

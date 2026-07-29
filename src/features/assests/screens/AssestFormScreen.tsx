@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, RefreshControl } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Dropdown } from 'react-native-element-dropdown';
@@ -10,6 +10,8 @@ import { AssetSerialNumber } from '../types/assests.types';
 import { AssetsManagementSNTable } from '../components/AssetsManagementSNTable';
 import { AssetsFormSkeleton } from '../skeleton/AssetsFormSkeleton';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { ToastMessages } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 export function AssestFormScreen() {
     const navigation = useNavigation();
@@ -29,10 +31,15 @@ export function AssestFormScreen() {
         updateSerialNumber,
         removeSerialNumber,
         setMainSerialNumber,
-        handleSave
+        handleSave,
+        validateForm
     } = useAssestForm(mode === 'edit' ? asset : undefined);
 
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+    const [toastType, setToastType] = useState<'success' | 'error'>('error');
+    const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
 
     const onRefresh = useCallback(() => {
         setIsRefreshing(true);
@@ -51,15 +58,24 @@ export function AssestFormScreen() {
     const typeOptions = types.map(t => ({ label: t.name, value: t.id }));
 
     const handleSaveForm = () => {
-        if (!formData.name || !formData.inventory_category_id || !formData.inventory_type_id) {
-            Alert.alert('Peringatan', 'Harap isi kolom yang wajib (Name, Type, Category)');
+        const errorMsg = validateForm();
+        if (errorMsg) {
+            setToastType('error');
+            setToastMessage(errorMsg);
+            setToastVisible(true);
             return;
         }
+        setIsModalConfirmVisible(true);
+    };
 
-        handleSave(() => {
-            Alert.alert('Sukses', 'Data berhasil disimpan', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+    const handleConfirmSave = () => {
+        setIsModalConfirmVisible(false);
+        handleSave((savedAsset: any) => {
+            navigation.replace('AssestsEditScreen', {
+                assetId: savedAsset.id,
+                asset: savedAsset,
+                showSuccessToast: true
+            });
         });
     };
 
@@ -94,6 +110,25 @@ export function AssestFormScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastType === 'error' ? 'Validasi' : 'Sukses'}
+                message={toastMessage}
+                onClose={() => setToastVisible(false)}
+            />
+
+            <ModalConfirm
+                visible={isModalConfirmVisible}
+                title="Konfirmasi"
+                message="Apakah Anda yakin ingin menyimpan data asset ini?"
+                cancelText='Batal!'
+                confirmText='Simpan!'
+                onCancel={() => setIsModalConfirmVisible(false)}
+                onConfirm={handleConfirmSave}
+                isLoading={isSaving}
+            />
+
             <HeaderNavigator title={isRefreshing ? "MEMUAT DATA..." : "TAMBAH ASSET"} showBackButton={true} />
 
             <ScrollView
@@ -227,6 +262,11 @@ export function AssestFormScreen() {
                                 onUpdate={handleUpdateSn}
                                 onRemove={removeSerialNumber}
                                 onSetMain={setMainSerialNumber}
+                                onShowToast={(msg, type) => {
+                                    setToastMessage(msg);
+                                    setToastType(type);
+                                    setToastVisible(true);
+                                }}
                             />
                         </View>
 

@@ -10,6 +10,8 @@ import { useInventoryScheduleForm } from '../hooks/useInventoryScheduleForm';
 import { InventoryScheduleEditSkeleton } from '../skeleton/InventoryScheduleEditSkeleton';
 import { fetchScheduleById } from '../api/inventoryscheduleApi';
 import { InventorySchedule } from '../types/inventoryschedule.types';
+import { ToastMessages } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 export function InventoryScheduleEditScreen() {
     const navigation = useNavigation<any>();
@@ -20,6 +22,20 @@ export function InventoryScheduleEditScreen() {
     const [initialData, setInitialData] = useState<InventorySchedule | undefined>(undefined);
     const [isLoadingData, setIsLoadingData] = useState(true);
 
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+    const [toastType, setToastType] = useState<'success' | 'error'>('error');
+    const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
+
+    useEffect(() => {
+        if (route.params?.showSuccessToast) {
+            setToastType('success');
+            setToastMessage('Data berhasil disimpan');
+            setToastVisible(true);
+            navigation.setParams({ showSuccessToast: undefined });
+        }
+    }, [route.params?.showSuccessToast, navigation]);
+
     const {
         formData,
         assets,
@@ -28,7 +44,8 @@ export function InventoryScheduleEditScreen() {
         handleChange,
         handleReminderChange,
         handlePicChange,
-        handleSave
+        handleSave,
+        validateForm
     } = useInventoryScheduleForm(initialData);
 
     useEffect(() => {
@@ -54,11 +71,22 @@ export function InventoryScheduleEditScreen() {
     }, [id]);
 
     const onSavePress = () => {
-        if (!formData.asset_id || !formData.name || !formData.due_date || (!formData.pic || formData.pic.length === 0)) {
-            alert('Silakan lengkapi data wajib (Asset, Name, Due Date, PIC)');
+        const errorMsg = validateForm();
+        if (errorMsg) {
+            setToastType('error');
+            setToastMessage(errorMsg);
+            setToastVisible(true);
             return;
         }
+        setIsModalConfirmVisible(true);
+    };
+
+    const handleConfirmSave = () => {
+        setIsModalConfirmVisible(false);
         handleSave(() => {
+            setToastType('success');
+            setToastMessage('Data berhasil disimpan');
+            setToastVisible(true);
             setIsEditMode(false);
         });
     };
@@ -76,6 +104,25 @@ export function InventoryScheduleEditScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastType === 'error' ? 'Validasi' : 'Sukses'}
+                message={toastMessage}
+                onClose={() => setToastVisible(false)}
+            />
+
+            <ModalConfirm
+                visible={isModalConfirmVisible}
+                title="Konfirmasi"
+                message="Apakah Anda yakin ingin menyimpan perubahan data schedule ini?"
+                cancelText='Batal!'
+                confirmText='Simpan!'
+                onCancel={() => setIsModalConfirmVisible(false)}
+                onConfirm={handleConfirmSave}
+                isLoading={isSaving}
+            />
+
             <HeaderNavigator title={isRefreshing ? "MEMUAT DATA..." : (isEditMode ? "EDIT ASSET SCHEDULE" : "DETAIL ASSET SCHEDULE")} showBackButton={true} />
 
             <ScrollView

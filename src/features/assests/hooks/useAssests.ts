@@ -62,14 +62,14 @@ export const useAssestForm = (initialData?: AssetItem) => {
         })));
     };
 
-    const handleSave = async (onSuccess: () => void) => {
+    const handleSave = async (onSuccess: (savedAsset: any) => void) => {
         const dataToSave = {
             ...formData,
             serial_numbers: serialNumbers
         };
         const resultAction = await dispatch(submitAsset(dataToSave));
         if (submitAsset.fulfilled.match(resultAction)) {
-            onSuccess();
+            onSuccess(resultAction.payload);
         }
     };
 
@@ -78,6 +78,25 @@ export const useAssestForm = (initialData?: AssetItem) => {
     const isVehicle = selectedCategory?.name === 'Mobil' || selectedCategory?.name === 'Motor';
     const labelProcured = isVehicle ? 'BPKB Date' : 'Procured Date';
     const labelPurchased = isVehicle ? 'STNK Date' : 'Purchase Date';
+
+    const validateForm = (): string | null => {
+        if (!formData.name && !formData.inventory_type_id && !formData.inventory_category_id && !formData.procured_date && !formData.purchased_date && !formData.status && serialNumbers.length === 0) {
+            return 'Semua field wajib diisi';
+        }
+
+        if (!formData.name) return 'Asset Name harus diisi';
+        if (!formData.inventory_type_id) return 'Type harus diisi';
+        if (!formData.inventory_category_id) return 'Category harus diisi';
+        if (!formData.procured_date) return `${labelProcured} harus diisi`;
+        if (!formData.purchased_date) return `${labelPurchased} harus diisi`;
+        if (!formData.status) return 'Status harus diisi';
+        
+        if (serialNumbers.length === 0) {
+            return 'Serial Number minimal harus diisi 1';
+        }
+
+        return null;
+    };
 
     return {
         formData,
@@ -93,6 +112,44 @@ export const useAssestForm = (initialData?: AssetItem) => {
         updateSerialNumber,
         removeSerialNumber,
         setMainSerialNumber,
-        handleSave
+        handleSave,
+        validateForm
     };
 };
+
+export function useAssestSNForm(initialData?: AssetSerialNumber | null, visible?: boolean) {
+    const [name, setName] = useState('');
+    const [sn, setSn] = useState('');
+    const [isMain, setIsMain] = useState(false);
+
+    useEffect(() => {
+        if (visible) {
+            if (initialData) {
+                setName(initialData.name_sn);
+                setSn(initialData.serial_number);
+                setIsMain(initialData.f_print === '1');
+            } else {
+                setName('');
+                setSn('');
+                setIsMain(false);
+            }
+        }
+    }, [visible, initialData]);
+
+    const validateForm = (): string | null => {
+        if (!name.trim() || !sn.trim()) {
+            return 'Nama dan Serial Number wajib diisi';
+        }
+        return null;
+    };
+
+    return {
+        name,
+        setName,
+        sn,
+        setSn,
+        isMain,
+        setIsMain,
+        validateForm
+    };
+}

@@ -54,7 +54,7 @@ export function InventoryScheduleListScreen() {
     const filteredData = useMemo(() => {
         if (!searchQuery) return schedules;
         const query = searchQuery.toLowerCase();
-        return schedules.filter(schedule => 
+        return schedules.filter(schedule =>
             schedule.name.toLowerCase().includes(query) ||
             (schedule.asset_name && schedule.asset_name.toLowerCase().includes(query)) ||
             (schedule.deskripsi && schedule.deskripsi.toLowerCase().includes(query))
@@ -76,7 +76,7 @@ export function InventoryScheduleListScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator title="INVENTORY SCHEDULE" />
+            <HeaderNavigator title="ASSET SCHEDULE" />
 
             <View className="px-4 py-3">
                 <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4 py-3.5 shadow-sm">
@@ -99,9 +99,9 @@ export function InventoryScheduleListScreen() {
                     showsVerticalScrollIndicator={false}
                     renderItem={({ item, index }) => (
                         <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
-                            <InventoryScheduleCard 
-                                schedule={item} 
-                                onPress={() => navigateToDetail(item.id)} 
+                            <InventoryScheduleCard
+                                schedule={item}
+                                onPress={() => navigateToDetail(item.id)}
                             />
                         </Animated.View>
                     )}
