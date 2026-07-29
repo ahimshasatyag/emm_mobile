@@ -104,9 +104,12 @@ const sopSlice = createSlice({
             .addCase(addSop.fulfilled, (state, action: PayloadAction<SopItem>) => {
                 state.sops.push(action.payload);
                 // Also update division count locally
-                const div = state.divisions.find(d => d.divisi === action.payload.divisi);
-                if (div) {
-                    div.total += 1;
+                const index = state.divisions.findIndex(d => d.divisi === action.payload.divisi);
+                if (index !== -1) {
+                    state.divisions[index] = {
+                        ...state.divisions[index],
+                        total: state.divisions[index].total + 1
+                    };
                 }
             })
 

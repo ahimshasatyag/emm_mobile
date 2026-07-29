@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Text, TextInput, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -9,6 +9,8 @@ import { SopTableRevisi } from '../components/SopTableRevisi';
 import { Save, Upload, Pencil, CheckCircle, RefreshCcw, Download } from 'lucide-react-native';
 import Animated, { FadeIn, FadeOut, FadeInUp } from 'react-native-reanimated';
 import { theme } from '../../../theme/theme';
+import { ToastMessages } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 type RootStackParamList = {
     SopEditScreen: { id_sop: string };
@@ -27,6 +29,7 @@ export const SopEditScreen = () => {
         handleSave,
         handleConfirm,
         handleRevisi,
+        validateForm,
         isSaving,
         loading,
         isRefreshing,
@@ -35,11 +38,77 @@ export const SopEditScreen = () => {
     } = useSopForm(id_sop);
 
     const [isEditMode, setIsEditMode] = useState(false);
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+    const [toastType, setToastType] = useState<'success' | 'error'>('error');
+    const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
+    const [confirmAction, setConfirmAction] = useState<'save' | 'confirm' | 'revisi' | null>(null);
+
+    useEffect(() => {
+        if ((route.params as any)?.showSuccessToast) {
+            setToastType('success');
+            setToastMessage('SOP berhasil ditambahkan');
+            setToastVisible(true);
+            navigation.setParams({ showSuccessToast: undefined } as any);
+        }
+    }, [(route.params as any)?.showSuccessToast, navigation]);
 
     const onSavePress = () => {
-        handleSave(() => {
-            setIsEditMode(false);
-        });
+        const errorMsg = validateForm();
+        if (errorMsg) {
+            setToastType('error');
+            setToastMessage(errorMsg);
+            setToastVisible(true);
+            return;
+        }
+        setConfirmAction('save');
+        setIsModalConfirmVisible(true);
+    };
+
+    const onConfirmPress = () => {
+        setConfirmAction('confirm');
+        setIsModalConfirmVisible(true);
+    };
+
+    const onRevisiPress = () => {
+        setConfirmAction('revisi');
+        setIsModalConfirmVisible(true);
+    };
+
+    const executeAction = () => {
+        setIsModalConfirmVisible(false);
+        if (confirmAction === 'save') {
+            handleSave(() => {
+                setToastType('success');
+                setToastMessage('SOP berhasil diupdate');
+                setToastVisible(true);
+                setIsEditMode(false);
+            }).catch((err: any) => {
+                setToastType('error');
+                setToastMessage(err.message || 'Terjadi kesalahan');
+                setToastVisible(true);
+            });
+        } else if (confirmAction === 'confirm') {
+            handleConfirm(() => {
+                setToastType('success');
+                setToastMessage('SOP berhasil di-Confirm');
+                setToastVisible(true);
+            }).catch((err: any) => {
+                setToastType('error');
+                setToastMessage(err.message || 'Terjadi kesalahan');
+                setToastVisible(true);
+            });
+        } else if (confirmAction === 'revisi') {
+            handleRevisi(() => {
+                setToastType('success');
+                setToastMessage('SOP berhasil direvisi');
+                setToastVisible(true);
+            }).catch((err: any) => {
+                setToastType('error');
+                setToastMessage(err.message || 'Terjadi kesalahan');
+                setToastVisible(true);
+            });
+        }
     };
 
     const statusColor = () => {
@@ -53,6 +122,29 @@ export const SopEditScreen = () => {
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toastVisible}
+                type={toastType}
+                title={toastType === 'error' ? 'Validasi' : 'Sukses'}
+                message={toastMessage}
+                onClose={() => setToastVisible(false)}
+            />
+
+            <ModalConfirm
+                visible={isModalConfirmVisible}
+                title={confirmAction === 'confirm' ? 'Confirm SOP?' : confirmAction === 'revisi' ? 'Revisi SOP?' : 'Konfirmasi'}
+                message={
+                    confirmAction === 'confirm' ? 'Anda tidak dapat mengubah data ini lagi ketika sudah di confirm!' :
+                    confirmAction === 'revisi' ? 'Status akan kembali menjadi IN PROGRESS dan history akan dicatat.' :
+                    'Apakah Anda yakin ingin menyimpan perubahan SOP ini?'
+                }
+                cancelText={confirmAction === 'confirm' ? 'Tidak, batalkan!' : confirmAction === 'revisi' ? 'Batal' : 'Batal!'}
+                confirmText={confirmAction === 'confirm' ? 'Ya, Confirm!' : confirmAction === 'revisi' ? 'Ya, Revisi' : 'Simpan!'}
+                onCancel={() => setIsModalConfirmVisible(false)}
+                onConfirm={executeAction}
+                isLoading={isSaving}
+            />
+
             <HeaderNavigator title={isRefreshing ? "MEMUAT DATA..." : (isEditMode ? `EDIT DAFTAR INDUK DOCUMENT ${formData.divisi}` : `DETAIL DAFTAR INDUK DOCUMENT ${formData.divisi}`)} showBackButton={true} />
             <ScrollView
                 className="flex-1 px-4 pt-4"
@@ -173,14 +265,15 @@ export const SopEditScreen = () => {
                                             <>
                                                 <TouchableOpacity
                                                     onPress={() => setIsEditMode(true)}
-                                                    className="flex-1 min-w-[45%] h-14 rounded-xl flex-row items-center justify-center bg-blue-50 border border-blue-200"
+                                                    className="flex-1 min-w-[45%] h-14 rounded-xl flex-row items-center justify-center"
+                                                    style={{ backgroundColor: theme.colors.primary }}
                                                 >
-                                                    <Pencil color={theme.colors.primary} size={20} className="mr-2" />
-                                                    <Text style={{ color: theme.colors.primary }} className="font-bold text-base">Edit</Text>
+                                                    <Pencil color="white" size={20} className="mr-2" />
+                                                    <Text className="text-white font-bold text-base">Edit</Text>
                                                 </TouchableOpacity>
 
                                                 <TouchableOpacity
-                                                    onPress={() => handleConfirm()}
+                                                    onPress={onConfirmPress}
                                                     disabled={isSaving}
                                                     className="flex-1 min-w-[45%] h-14 rounded-xl flex-row items-center justify-center bg-green-500"
                                                 >
@@ -196,7 +289,7 @@ export const SopEditScreen = () => {
 
                                         {currentSop?.status === 'FINALIZE' && (
                                             <TouchableOpacity
-                                                onPress={() => setIsEditMode(true)}
+                                                onPress={onRevisiPress}
                                                 disabled={isSaving}
                                                 className="flex-1 h-14 rounded-xl flex-row items-center justify-center bg-orange-500"
                                             >

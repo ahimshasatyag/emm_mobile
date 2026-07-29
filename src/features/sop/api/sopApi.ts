@@ -1,5 +1,8 @@
-import { dummyDivisions, dummySops } from '../data/dummySop';
+import { dummyDivisions as initialDivisions, dummySops as initialSops } from '../data/dummySop';
 import { DivisionSopSummary, SopItem } from '../types/sop.types';
+
+let dummyDivisions: DivisionSopSummary[] = JSON.parse(JSON.stringify(initialDivisions));
+let dummySops: SopItem[] = JSON.parse(JSON.stringify(initialSops));
 
 // Simulate API delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -29,50 +32,62 @@ export const sopApi = {
             history: [],
             date_create: new Date().toISOString(),
         };
-        dummySops.push(newSop);
         
-        // Update division summary count
-        const divIndex = dummyDivisions.findIndex(d => d.divisi === payload.divisi);
-        if (divIndex !== -1) {
-            dummyDivisions[divIndex].total += 1;
-        }
+        dummySops = [...dummySops, newSop];
+        
+        dummyDivisions = dummyDivisions.map(d => 
+            d.divisi === payload.divisi 
+                ? { ...d, total: d.total + 1 }
+                : d
+        );
 
         return newSop;
     },
 
     updateSop: async (id: string, payload: Partial<SopItem>): Promise<SopItem> => {
         await delay(800);
-        const index = dummySops.findIndex(sop => sop.id_sop === id);
-        if (index === -1) throw new Error("SOP not found");
         
-        dummySops[index] = { ...dummySops[index], ...payload };
-        return dummySops[index];
+        const exists = dummySops.some(sop => sop.id_sop === id);
+        if (!exists) throw new Error("SOP not found");
+
+        dummySops = dummySops.map(sop => sop.id_sop === id ? { ...sop, ...payload } : sop);
+        return dummySops.find(sop => sop.id_sop === id)!;
     },
 
     confirmSop: async (id: string): Promise<SopItem> => {
         await delay(800);
-        const index = dummySops.findIndex(sop => sop.id_sop === id);
-        if (index === -1) throw new Error("SOP not found");
+        
+        const exists = dummySops.some(sop => sop.id_sop === id);
+        if (!exists) throw new Error("SOP not found");
 
-        dummySops[index].status = 'FINALIZE';
-        return dummySops[index];
+        dummySops = dummySops.map(sop => sop.id_sop === id ? { ...sop, status: 'FINALIZE' } : sop);
+        return dummySops.find(sop => sop.id_sop === id)!;
     },
 
     revisiSop: async (id: string): Promise<SopItem> => {
         await delay(800);
-        const index = dummySops.findIndex(sop => sop.id_sop === id);
-        if (index === -1) throw new Error("SOP not found");
-
-        const currentSop = dummySops[index];
         
-        // Add to history
-        currentSop.history.push({
-            id: Math.random().toString(36).substr(2, 9),
-            file_pdf: currentSop.file_pdf,
-            date_update: new Date().toISOString()
-        });
+        const exists = dummySops.some(sop => sop.id_sop === id);
+        if (!exists) throw new Error("SOP not found");
 
-        currentSop.status = 'IN PROGRESS';
-        return currentSop;
+        dummySops = dummySops.map(sop => {
+            if (sop.id_sop === id) {
+                return {
+                    ...sop,
+                    status: 'IN PROGRESS',
+                    history: [
+                        ...sop.history,
+                        {
+                            id: Math.random().toString(36).substr(2, 9),
+                            file_pdf: sop.file_pdf,
+                            date_update: new Date().toISOString()
+                        }
+                    ]
+                };
+            }
+            return sop;
+        });
+        
+        return dummySops.find(sop => sop.id_sop === id)!;
     }
 };

@@ -3,7 +3,6 @@ import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { addSop, updateSop, fetchSopById, clearCurrentSop, confirmSop, revisiSop } from '../stores/sopSlice';
 import { SopItem } from '../types/sop.types';
-import { Alert } from 'react-native';
 
 interface SopFormData {
     divisi: string;
@@ -65,31 +64,37 @@ export const useSopForm = (sopId?: string, defaultDivisi?: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
-    const handleSave = async (onSuccess?: (id: string) => void) => {
-        if (!formData.code_sop || !formData.nm_sop) {
-            Alert.alert('Validasi', 'No Document dan Nama Document wajib diisi');
-            return;
+    const validateForm = (): string | null => {
+        if (!formData.divisi && !formData.code_sop?.trim() && !formData.nm_sop?.trim()) {
+            return 'Semua field wajib diisi';
         }
+        if (!formData.divisi) {
+            return 'Divisi wajib dipilih';
+        }
+        if (!formData.code_sop?.trim()) {
+            return 'No Document wajib diisi';
+        }
+        if (!formData.nm_sop?.trim()) {
+            return 'Nama Document wajib diisi';
+        }
+        return null;
+    };
 
+    const handleSave = async (onSuccess?: (id: string) => void) => {
         setIsSaving(true);
         try {
             if (sopId) {
                 if (currentSop?.status === 'FINALIZE') {
-                    // Jika status FINALIZE, maka ini adalah proses revisi
-                    // Catat history dan ubah status ke IN PROGRESS terlebih dahulu
                     await dispatch(revisiSop(sopId)).unwrap();
                 }
-                
                 await dispatch(updateSop({ id: sopId, payload: formData })).unwrap();
-                Alert.alert('Sukses', 'SOP berhasil diupdate');
                 if (onSuccess) onSuccess(sopId);
             } else {
                 const newSop = await dispatch(addSop(formData)).unwrap();
-                Alert.alert('Sukses', 'SOP berhasil ditambahkan');
                 if (onSuccess) onSuccess(newSop.id_sop);
             }
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Terjadi kesalahan');
+            throw error;
         } finally {
             setIsSaving(false);
         }
@@ -97,58 +102,28 @@ export const useSopForm = (sopId?: string, defaultDivisi?: string) => {
 
     const handleConfirm = async (onSuccess?: () => void) => {
         if (!sopId) return;
-        
-        Alert.alert(
-            'Confirm SOP?',
-            'Anda tidak dapat mengubah data ini lagi ketika sudah di confirm!',
-            [
-                { text: 'Tidak, batalkan!', style: 'cancel' },
-                {
-                    text: 'Ya, Confirm!',
-                    style: 'destructive',
-                    onPress: async () => {
-                        setIsSaving(true);
-                        try {
-                            await dispatch(confirmSop(sopId)).unwrap();
-                            Alert.alert('Confirm !', 'SOP berhasil Confirm');
-                            if (onSuccess) onSuccess();
-                        } catch (error: any) {
-                            Alert.alert('Error', error.message || 'Terjadi kesalahan');
-                        } finally {
-                            setIsSaving(false);
-                        }
-                    }
-                }
-            ]
-        );
+        setIsSaving(true);
+        try {
+            await dispatch(confirmSop(sopId)).unwrap();
+            if (onSuccess) onSuccess();
+        } catch (error: any) {
+            throw error;
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleRevisi = async (onSuccess?: () => void) => {
         if (!sopId) return;
-        
-        Alert.alert(
-            'Revisi SOP?',
-            'Status akan kembali menjadi IN PROGRESS dan history akan dicatat.',
-            [
-                { text: 'Batal', style: 'cancel' },
-                {
-                    text: 'Ya, Revisi',
-                    style: 'default',
-                    onPress: async () => {
-                        setIsSaving(true);
-                        try {
-                            await dispatch(revisiSop(sopId)).unwrap();
-                            Alert.alert('Sukses', 'SOP berhasil direvisi');
-                            if (onSuccess) onSuccess();
-                        } catch (error: any) {
-                            Alert.alert('Error', error.message || 'Terjadi kesalahan');
-                        } finally {
-                            setIsSaving(false);
-                        }
-                    }
-                }
-            ]
-        );
+        setIsSaving(true);
+        try {
+            await dispatch(revisiSop(sopId)).unwrap();
+            if (onSuccess) onSuccess();
+        } catch (error: any) {
+            throw error;
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return {
@@ -157,6 +132,7 @@ export const useSopForm = (sopId?: string, defaultDivisi?: string) => {
         handleSave,
         handleConfirm,
         handleRevisi,
+        validateForm,
         isSaving,
         loading,
         isRefreshing,
