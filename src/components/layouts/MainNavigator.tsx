@@ -379,6 +379,10 @@ export function MainNavigator() {
                 name="QuotationEdit"
                 getComponent={() => require('../../features/quotations/screens/QuotationEditScreen').QuotationEditScreen}
             />
+            <Stack.Screen
+                name="QuotationEditSurvey"
+                getComponent={() => require('../../features/quotations/screens/QuotationEditSurveyScreen').QuotationEditSurveyScreen}
+            />
 
             {/* Sales Orders */}
             <Stack.Screen

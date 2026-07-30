@@ -32,6 +32,23 @@ export const useQuotations = () => {
         await deleteQuotation(id);
     };
 
+    const validateForm = (formData: any) => {
+        if (!formData.customer_name && !formData.sales_person_name) {
+            return 'Semua field harus diisi';
+        }
+        if (!formData.customer_name) return 'Customer harus dipilih';
+        if (!formData.sales_person_name) return 'Sales harus dipilih';
+        if (formData.items.length === 0) return 'Barang tidak boleh kosong';
+        return '';
+    };
+
+    const validateAddItem = (formData: any) => {
+        if (!formData.sales_person_name) {
+            return 'Silahkan pilih Sales Person';
+        }
+        return '';
+    };
+
     return {
         quotations,
         isLoading,
@@ -39,6 +56,8 @@ export const useQuotations = () => {
         refresh: fetchQuotations,
         addQuotation: handleAddQuotation,
         updateQuotation: handleUpdateQuotation,
-        deleteQuotation: handleDeleteQuotation
+        deleteQuotation: handleDeleteQuotation,
+        validateForm,
+        validateAddItem
     };
 };

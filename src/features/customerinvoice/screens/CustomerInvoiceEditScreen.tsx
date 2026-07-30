@@ -35,6 +35,18 @@ export const CustomerInvoiceEditScreen = () => {
         };
     }, [id]);
 
+    useEffect(() => {
+        const params = route.params as any;
+        if (params?.showInvoiceToast) {
+            setToast({
+                visible: true,
+                message: 'Create Invoice Berhasil',
+                type: 'success'
+            });
+            navigation.setParams({ showInvoiceToast: undefined } as never);
+        }
+    }, [route.params]);
+
     const onRefresh = async () => {
         setIsRefreshing(true);
         await getDetail(id);
@@ -47,7 +59,13 @@ export const CustomerInvoiceEditScreen = () => {
                 <HeaderNavigator
                     title="DETAIL"
                     showBackButton
-                    onBackPress={() => navigation.goBack()}
+                    onBackPress={() => {
+                        if (route.params?.fromCreateInvoice) {
+                            navigation.navigate('Drawer', { screen: 'CustomerInvoiceListScreen' });
+                        } else {
+                            navigation.goBack();
+                        }
+                    }}
                 />
                 <ErrorState error={error} onRetry={() => getDetail(id)} />
             </View>
@@ -66,7 +84,13 @@ export const CustomerInvoiceEditScreen = () => {
             <HeaderNavigator
                 title={loading || !detail ? "MEMUAT DATA..." : `DETAIL ${detail.code_invoice}`}
                 showBackButton
-                onBackPress={() => navigation.goBack()}
+                onBackPress={() => {
+                    if (route.params?.fromCreateInvoice) {
+                        navigation.navigate('Drawer', { screen: 'CustomerInvoiceListScreen' });
+                    } else {
+                        navigation.goBack();
+                    }
+                }}
             />
 
             <ScrollView

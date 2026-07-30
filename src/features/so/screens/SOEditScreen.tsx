@@ -8,8 +8,10 @@ import { SalesOrder, SOItem } from '../types/so.types';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Dropdown } from 'react-native-element-dropdown';
 import { theme } from '../../../theme/theme';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ProductSOModal } from '../components/ProductSOModal';
 import { ExtGaransiModal } from '../components/ExtGaransiModal';
+import { ExtGaransiTable } from '../components/ExtGaransiTable';
 import { SOEditSkeleton } from '../skeleton/SOEditSkeleton';
 
 const RadioGroup = ({ label, options, selectedValue, onSelect, disabled }: any) => (
@@ -75,6 +77,7 @@ export function SOEditScreen() {
     const { id } = route.params as { id: string };
     const { items } = useSO();
     const [isFetching, setIsFetching] = useState(true);
+    const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'info' });
 
     const [formData, setFormData] = useState<Partial<SalesOrder>>({
         nm_karyawan: '',
@@ -162,13 +165,13 @@ export function SOEditScreen() {
     const handleExtGaransi = (durasi: string) => {
         if (editingGaransiId) {
             setExtGaransis(prev => prev.map(p => p.id === editingGaransiId ? { ...p, name: `Garansi Sparepart ${durasi} Hari`, durasi } : p));
-            Alert.alert('Sukses', `Berhasil mengubah Extend Garansi menjadi ${durasi} hari!`);
+            setToast({ visible: true, message: `Berhasil mengubah Extend Garansi menjadi ${durasi} hari!`, type: 'success' });
         } else {
             setExtGaransis(prev => [
                 ...prev,
                 { id: Date.now().toString(), name: `Garansi Sparepart ${durasi} Hari`, status: 'Menunggu', durasi }
             ]);
-            Alert.alert('Sukses', `Berhasil menambahkan Extend Garansi selama ${durasi} hari!`);
+            setToast({ visible: true, message: `Berhasil menambahkan Extend Garansi selama ${durasi} hari!`, type: 'success' });
         }
         setIsGaransiModalVisible(false);
         setEditingGaransiId(undefined);
@@ -179,6 +182,13 @@ export function SOEditScreen() {
             className="flex-1 bg-gray-50"
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
+            <ToastMessages
+                visible={toast.visible}
+                title={toast.type === 'success' ? 'Sukses' : 'Info'}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
             <HeaderNavigator
                 title={isFetching ? "MEMUAT DATA..." : "DETAIL SALES ORDER"}
                 showBackButton
@@ -203,22 +213,18 @@ export function SOEditScreen() {
 
                             {/* SECTION: ACTION BUTTONS (TOP) */}
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4" contentContainerStyle={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <TouchableOpacity className="bg-blue-400 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => navigation.goBack()}>
-                                    <CornerDownLeft size={14} color="white" />
-                                    <Text className="text-white text-xs font-bold ml-1">Kembali</Text>
-                                </TouchableOpacity>
 
-                                <TouchableOpacity className="bg-gray-800 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => Alert.alert('Info', 'Fitur Print belum diimplementasikan')}>
+                                <TouchableOpacity className="bg-gray-800 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => setToast({ visible: true, message: 'Fitur Print belum diimplementasikan', type: 'info' })}>
                                     <Printer size={14} color="white" />
                                     <Text className="text-white text-xs font-bold ml-1">Print</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity className="bg-cyan-500 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => Alert.alert('Info', 'Fitur Print Q belum diimplementasikan')}>
+                                <TouchableOpacity className="bg-cyan-500 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => setToast({ visible: true, message: 'Fitur Print Q belum diimplementasikan', type: 'info' })}>
                                     <Printer size={14} color="white" />
                                     <Text className="text-white text-xs font-bold ml-1">Print Q</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity className="bg-emerald-600 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => Alert.alert('Info', 'Fitur View Invoice belum diimplementasikan')}>
+                                <TouchableOpacity className="bg-emerald-600 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => (navigation as any).navigate('CustomerInvoiceEditScreen', { id: id, fromSO: true })}>
                                     <FileText size={14} color="white" />
                                     <Text className="text-white text-xs font-bold ml-1">View Invoice</Text>
                                 </TouchableOpacity>
@@ -442,46 +448,21 @@ export function SOEditScreen() {
 
                             </View>
 
-                            {extGaransis.length > 0 && (
-                                <View className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mt-4">
-                                    <Text className="text-xs font-bold text-gray-500 uppercase mb-4 border-b border-gray-100 pb-2">Extend Garansi</Text>
-                                    <View className="border border-gray-200 rounded-xl overflow-hidden">
-                                        <View className="flex-row bg-gray-100 p-2 border-b border-gray-200">
-                                            <Text className="flex-1 text-xs font-bold text-gray-600">Nama</Text>
-                                            <Text className="w-24 text-xs font-bold text-gray-600 text-center">Status</Text>
-                                            <Text className="w-32 text-xs font-bold text-gray-600 text-center">Aksi</Text>
-                                        </View>
-                                        {extGaransis.map((eg, idx) => (
-                                            <View key={eg.id} className={`flex-row p-2 items-center ${idx < extGaransis.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                                                <Text className="flex-1 text-xs text-gray-800">{eg.name}</Text>
-                                                <View className="w-24 items-center justify-center">
-                                                    <View className={`px-2 py-1 rounded-full ${eg.status === 'Disetujui' ? 'bg-emerald-100' : 'bg-amber-100'}`}>
-                                                        <Text className={`text-[10px] font-bold ${eg.status === 'Disetujui' ? 'text-emerald-700' : 'text-amber-700'}`}>{eg.status}</Text>
-                                                    </View>
-                                                </View>
-                                                <View className="w-32 flex-row justify-center gap-3">
-                                                    <TouchableOpacity onPress={() => {
-                                                        setEditingGaransiId(eg.id);
-                                                        setIsGaransiModalVisible(true);
-                                                    }} className="p-1">
-                                                        <Pencil size={16} color="#4F46E5" />
-                                                    </TouchableOpacity>
-                                                    <TouchableOpacity onPress={() => {
-                                                        setExtGaransis(prev => prev.map(p => p.id === eg.id ? { ...p, status: 'Disetujui' } : p));
-                                                    }} className="p-1">
-                                                        <Check size={16} color="#10B981" />
-                                                    </TouchableOpacity>
-                                                    <TouchableOpacity onPress={() => {
-                                                        setExtGaransis(prev => prev.filter(p => p.id !== eg.id));
-                                                    }} className="p-1">
-                                                        <Trash2 size={16} color="#EF4444" />
-                                                    </TouchableOpacity>
-                                                </View>
-                                            </View>
-                                        ))}
-                                    </View>
-                                </View>
-                            )}
+                            <ExtGaransiTable 
+                                data={extGaransis}
+                                onEdit={(id) => {
+                                    setEditingGaransiId(id);
+                                    setIsGaransiModalVisible(true);
+                                }}
+                                onApprove={(id) => {
+                                    setExtGaransis(prev => prev.map(p => p.id === id ? { ...p, status: 'Disetujui' } : p));
+                                    setToast({ visible: true, message: 'Garansi berhasil disetujui', type: 'success' });
+                                }}
+                                onDelete={(id) => {
+                                    setExtGaransis(prev => prev.filter(p => p.id !== id));
+                                    setToast({ visible: true, message: 'Garansi berhasil dihapus', type: 'success' });
+                                }}
+                            />
 
                         </Animated.View>
                     </>
