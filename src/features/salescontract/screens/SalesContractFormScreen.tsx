@@ -9,12 +9,15 @@ import { theme } from '../../../theme/theme';
 import { useSalesContract } from '../hooks/useSalesContract';
 import { SalesContract } from '../types/salescontract.types';
 import { SalesContractFormSkeleton } from '../skeleton/SalesContractFormSkeleton';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type RootStackParamList = {
     SalesContractForm: { id_so: string };
     SalesContractListSO: undefined;
+    SalesContractEdit: { id: string, showSuccessToast?: boolean };
 };
 
 export function SalesContractFormScreen() {
@@ -22,11 +25,13 @@ export function SalesContractFormScreen() {
     const route = useRoute<RouteProp<RootStackParamList, 'SalesContractForm'>>();
     const { id_so } = route.params;
 
-    const { getSOWithoutContract, currentSOWithoutContract, createContract, isLoading } = useSalesContract();
+    const { getSOWithoutContract, currentSOWithoutContract, createContract, isLoading, validateForm } = useSalesContract();
 
     const [form, setForm] = useState<Partial<SalesContract>>({});
     const [fCompany, setFCompany] = useState(false);
     const [selectedItemIndices, setSelectedItemIndices] = useState<number[]>([]);
+    const [toast, setToast] = useState({ visible: false, message: '', type: 'info' as ToastType });
+    const [isConfirmVisible, setIsConfirmVisible] = useState(false);
 
     useEffect(() => {
         getSOWithoutContract(id_so);
@@ -72,32 +77,16 @@ export function SalesContractFormScreen() {
     const jmlCicilanRp = sisa / lamaCicilan;
 
     const handleSave = async () => {
-        if (!form.nik) {
-            Alert.alert("Info", "NIK Tidak Boleh kosong !");
+        const errorMsg = validateForm(form, fCompany, activeItems);
+        if (errorMsg) {
+            setToast({ visible: true, message: errorMsg, type: 'warning' });
             return;
         }
-        if (!form.alamat) {
-            Alert.alert("Info", "Alamat Tidak Boleh kosong !");
-            return;
-        }
-        if (fCompany) {
-            if (!form.nama_lengkap) {
-                Alert.alert("Info", "Nama Lengkap Tidak Boleh kosong !");
-                return;
-            }
-            if (!form.nib) {
-                Alert.alert("Info", "NIB Tidak Boleh kosong !");
-                return;
-            }
-            if (!form.npwp) {
-                Alert.alert("Info", "NPWP Tidak Boleh kosong !");
-                return;
-            }
-        }
-        if (!activeItems || activeItems.length === 0) {
-            Alert.alert("Info", "Pilih Barang Minimal 1 !");
-            return;
-        }
+        setIsConfirmVisible(true);
+    };
+
+    const processSave = async () => {
+        setIsConfirmVisible(false);
 
         const payload: SalesContract = {
             ...form as SalesContract,
@@ -110,17 +99,30 @@ export function SalesContractFormScreen() {
         };
 
         try {
-            await createContract(payload);
-            Alert.alert("Success", "Sales Contract berhasil dibuat", [
-                { text: "OK", onPress: () => navigation.goBack() }
-            ]);
+            const res = await createContract(payload);
+            navigation.replace('SalesContractEdit', { id: res.id_sales_contract, showSuccessToast: true });
         } catch (error: any) {
-            Alert.alert("Error", error?.message || "Terjadi kesalahan");
+            setToast({ visible: true, message: error?.message || "Terjadi kesalahan", type: 'error' });
         }
     };
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ModalConfirm
+                visible={isConfirmVisible}
+                title="Konfirmasi Simpan"
+                message="Apakah Anda yakin ingin menyimpan Sales Contract ini?"
+                confirmText="Ya, Simpan"
+                cancelText="Batal"
+                onConfirm={processSave}
+                onCancel={() => setIsConfirmVisible(false)}
+            />
+            <ToastMessages 
+                visible={toast.visible}
+                type={toast.type}
+                message={toast.message}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
             <HeaderNavigator 
                 title={!currentSOWithoutContract || isLoading ? "MEMUAT DATA..." : "TAMBAH SALES CONTRACT"} 
                 showBackButton={true} 

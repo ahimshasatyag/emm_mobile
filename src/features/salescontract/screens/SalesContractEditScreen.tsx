@@ -7,17 +7,27 @@ import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { theme } from '../../../theme/theme';
 import { SalesContractEditSkeleton } from '../skeleton/SalesContractEditSkeleton';
 import { useSalesContract } from '../hooks/useSalesContract';
+import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 type RootStackParamList = {
-    SalesContractEdit: { id: string };
+    SalesContractEdit: { id: string; showSuccessToast?: boolean };
+    SalesContractList: undefined;
 };
 
 export function SalesContractEditScreen() {
-    const navigation = useNavigation();
+    const navigation = useNavigation<any>();
     const route = useRoute<RouteProp<RootStackParamList, 'SalesContractEdit'>>();
-    const { id } = route.params;
+    const { id, showSuccessToast } = route.params;
 
     const { getContractById, currentContract, isLoading } = useSalesContract();
+
+    const [toast, setToast] = useState({ visible: false, message: '', type: 'info' as ToastType });
+
+    useEffect(() => {
+        if (showSuccessToast) {
+            setToast({ visible: true, message: "Sales Contract berhasil dibuat", type: 'success' });
+        }
+    }, [showSuccessToast]);
 
     useEffect(() => {
         getContractById(id);
@@ -37,10 +47,22 @@ export function SalesContractEditScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages 
+                visible={toast.visible}
+                type={toast.type}
+                message={toast.message}
+                onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+            />
             <HeaderNavigator
                 title={!currentContract || isLoading ? "MEMUAT DATA..." : "DETAIL SALES CONTRACT"}
                 showBackButton
-                onBackPress={() => navigation.goBack()}
+                onBackPress={() => {
+                    if (showSuccessToast) {
+                        navigation.navigate('Drawer', { screen: 'SalesContractList' });
+                    } else {
+                        navigation.goBack();
+                    }
+                }}
             />
 
             <KeyboardAvoidingView

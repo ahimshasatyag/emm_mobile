@@ -1,13 +1,13 @@
 import { useCallback } from 'react';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
-import { 
-    fetchSalesContracts, 
-    getSalesContractById, 
-    fetchSOWithoutContractList, 
-    getSOWithoutContractById, 
-    createSalesContract, 
-    updateSalesContract, 
+import {
+    fetchSalesContracts,
+    getSalesContractById,
+    fetchSOWithoutContractList,
+    getSOWithoutContractById,
+    createSalesContract,
+    updateSalesContract,
     clearCurrentContract,
     clearCurrentSOWithoutContract
 } from '../stores/salescontractSlice';
@@ -15,13 +15,13 @@ import { SalesContract } from '../types/salescontract.types';
 
 export function useSalesContract() {
     const dispatch = useAppDispatch();
-    const { 
-        items, 
-        soWithoutContracts, 
-        currentContract, 
-        currentSOWithoutContract, 
-        isLoading, 
-        error 
+    const {
+        items,
+        soWithoutContracts,
+        currentContract,
+        currentSOWithoutContract,
+        isLoading,
+        error
     } = useAppSelector(state => state.salescontract);
 
     const loadContracts = useCallback(() => {
@@ -56,6 +56,27 @@ export function useSalesContract() {
         dispatch(clearCurrentSOWithoutContract());
     }, [dispatch]);
 
+    const validateForm = useCallback((form: Partial<SalesContract>, fCompany: boolean, activeItems: any[]): string | null => {
+        const isAllEmpty = fCompany
+            ? (!form.nik && !form.alamat && !form.nama_lengkap && !form.nib && !form.npwp)
+            : (!form.nik && !form.alamat);
+
+        if (isAllEmpty) {
+            return "Semua field harus diisi!";
+        }
+
+        if (!form.nik) return "NIK Tidak Boleh kosong!";
+        if (!form.alamat) return "Alamat Tidak Boleh kosong!";
+        if (fCompany) {
+            if (!form.nama_lengkap) return "Nama Lengkap Tidak Boleh kosong!";
+            if (!form.nib) return "NIB Tidak Boleh kosong!";
+            if (!form.npwp) return "NPWP Tidak Boleh kosong!";
+        }
+        if (!activeItems || activeItems.length === 0) return "Pilih Barang Minimal 1 !";
+
+        return null;
+    }, []);
+
     return {
         items,
         soWithoutContracts,
@@ -70,6 +91,7 @@ export function useSalesContract() {
         createContract,
         updateContract,
         clearContract,
-        clearSOWithoutContract
+        clearSOWithoutContract,
+        validateForm
     };
 }
