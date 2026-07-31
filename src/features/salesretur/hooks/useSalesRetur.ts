@@ -56,6 +56,17 @@ export const useSalesRetur = () => {
         return result;
     }, []);
 
+    const validateForm = useCallback((id_customers: string, id_do: string, activeItems: any[]): string | null => {
+        const isAllEmpty = !id_customers && !id_do;
+
+        if (isAllEmpty) return "Semua field harus diisi!";
+        if (!id_customers) return "Pilih Customer terlebih dahulu";
+        if (!id_do) return "Pilih DO terlebih dahulu";
+        if (!activeItems || activeItems.length === 0) return "Pilih minimal 1 barang untuk diretur";
+
+        return null;
+    }, []);
+
     return {
         items,
         currentRetur,
@@ -70,6 +81,7 @@ export const useSalesRetur = () => {
         createRetur,
         updateRetur,
         confirmRetur,
-        cancelRetur
+        cancelRetur,
+        validateForm
     };
 };

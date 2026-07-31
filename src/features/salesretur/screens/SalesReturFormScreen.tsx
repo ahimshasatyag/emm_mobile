@@ -10,10 +10,12 @@ import { Button } from '../../../components/ui/button';
 import { theme } from '../../../theme/theme';
 import { SalesReturItem } from '../types/salesretur.types';
 import { SalesReturFormSkeleton } from '../skeleton/SalesReturFormSkeleton';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ToastMessages } from '../../../components/ui/ToastMessages';
 
 export function SalesReturFormScreen() {
     const navigation = useNavigation();
-    const { getCustomers, getDOByCustomer, getDODetails, createRetur } = useSalesRetur();
+    const { getCustomers, getDOByCustomer, getDODetails, createRetur, validateForm } = useSalesRetur();
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -21,6 +23,13 @@ export function SalesReturFormScreen() {
     const [customers, setCustomers] = useState<any[]>([]);
     const [doList, setDoList] = useState<any[]>([]);
     const [items, setItems] = useState<SalesReturItem[]>([]);
+
+    const [confirmVisible, setConfirmVisible] = useState(false);
+    const [toastConfig, setToastConfig] = useState<{ visible: boolean; type: 'success' | 'error' | 'warning' | 'info'; message: string }>({
+        visible: false,
+        type: 'info',
+        message: ''
+    });
 
     const [selectedCustomer, setSelectedCustomer] = useState<string>('');
     const [selectedDO, setSelectedDO] = useState<string>('');
@@ -81,36 +90,32 @@ export function SalesReturFormScreen() {
         setItems(newItems);
     };
 
-    const handleSave = async () => {
-        if (!selectedCustomer) {
-            Alert.alert("Warning", "Pilih Customer terlebih dahulu");
-            return;
-        }
-        if (!selectedDO) {
-            Alert.alert("Warning", "Pilih DO terlebih dahulu");
-            return;
-        }
-
+    const handleSave = () => {
         const selectedItems = items.filter(item => item.selected);
-        if (selectedItems.length === 0) {
-            Alert.alert("Warning", "Pilih minimal 1 barang untuk diretur");
+        const errorMsg = validateForm(selectedCustomer, selectedDO, selectedItems);
+
+        if (errorMsg) {
+            setToastConfig({ visible: true, type: 'warning', message: errorMsg });
             return;
         }
 
+        setConfirmVisible(true);
+    };
+
+    const executeSave = async () => {
+        setConfirmVisible(false);
         setIsSaving(true);
         try {
-            await createRetur({
+            const res = await createRetur({
                 id_customers: selectedCustomer,
                 id_do: selectedDO,
                 date: tanggal,
                 keterangan,
-                items: selectedItems
+                items: items.filter(item => item.selected)
             });
-            Alert.alert("Success", "Sales Retur berhasil disimpan", [
-                { text: "OK", onPress: () => navigation.goBack() }
-            ]);
+            navigation.replace('SalesReturEdit' as never, { id: res.id, showSuccessToast: true } as never);
         } catch (error: any) {
-            Alert.alert("Error", error.message || "Gagal menyimpan");
+            setToastConfig({ visible: true, type: 'error', message: error.message || "Gagal menyimpan" });
         } finally {
             setIsSaving(false);
         }
@@ -118,6 +123,19 @@ export function SalesReturFormScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toastConfig.visible}
+                type={toastConfig.type}
+                message={toastConfig.message}
+                onClose={() => setToastConfig(prev => ({ ...prev, visible: false }))}
+            />
+            <ModalConfirm
+                visible={confirmVisible}
+                title="Konfirmasi Simpan"
+                message="Apakah Anda yakin ingin menyimpan data Sales Retur ini?"
+                onConfirm={executeSave}
+                onCancel={() => setConfirmVisible(false)}
+            />
             <HeaderNavigator
                 title={isLoading ? "MEMUAT DATA..." : "TAMBAH SALES RETUR"}
                 showBackButton={true}

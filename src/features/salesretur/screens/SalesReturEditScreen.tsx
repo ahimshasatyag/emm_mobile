@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, RefreshControl, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Check, X, Save, Edit3 } from 'lucide-react-native';
@@ -10,17 +10,20 @@ import { Button } from '../../../components/ui/button';
 import { theme } from '../../../theme/theme';
 import { SalesReturItem } from '../types/salesretur.types';
 import { SalesReturEditSkeleton } from '../skeleton/SalesReturEditSkeleton';
+import { ToastMessages } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
 export function SalesReturEditScreen() {
-    const navigation = useNavigation();
+    const navigation = useNavigation<any>();
     const route = useRoute<any>();
-    const { id } = route.params;
+    const { id, showSuccessToast } = route.params;
 
-    const { currentRetur, getCustomers, getDOByCustomer, getDODetails, updateRetur, loadReturById, clearRetur } = useSalesRetur();
+    const { currentRetur, getCustomers, getDOByCustomer, getDODetails, updateRetur, loadReturById, clearRetur, validateForm } = useSalesRetur();
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [confirmVisible, setConfirmVisible] = useState(false);
 
     const [customers, setCustomers] = useState<any[]>([]);
     const [doList, setDoList] = useState<any[]>([]);
@@ -30,6 +33,18 @@ export function SalesReturEditScreen() {
     const [selectedDO, setSelectedDO] = useState<string>('');
     const [tanggal, setTanggal] = useState<string>('');
     const [keterangan, setKeterangan] = useState('');
+
+    const [toastConfig, setToastConfig] = useState<{ visible: boolean; type: 'success' | 'error' | 'warning' | 'info'; message: string }>({
+        visible: false,
+        type: 'info',
+        message: ''
+    });
+
+    useEffect(() => {
+        if (showSuccessToast) {
+            setToastConfig({ visible: true, type: 'success', message: "Sales Retur berhasil disimpan" });
+        }
+    }, [showSuccessToast]);
 
     useEffect(() => {
         loadData();
@@ -100,23 +115,22 @@ export function SalesReturEditScreen() {
         setItems(newItems);
     };
 
-    const handleSave = async () => {
-        if (!selectedCustomer) {
-            Alert.alert("Warning", "Pilih Customer terlebih dahulu");
-            return;
-        }
-        if (!selectedDO) {
-            Alert.alert("Warning", "Pilih DO terlebih dahulu");
-            return;
-        }
-
+    const handleSave = () => {
         const selectedItems = items.filter(item => item.selected);
-        if (selectedItems.length === 0) {
-            Alert.alert("Warning", "Pilih minimal 1 barang untuk diretur");
+        const errorMsg = validateForm(selectedCustomer, selectedDO, selectedItems);
+
+        if (errorMsg) {
+            setToastConfig({ visible: true, type: 'warning', message: errorMsg });
             return;
         }
 
+        setConfirmVisible(true);
+    };
+
+    const executeSave = async () => {
+        setConfirmVisible(false);
         setIsSaving(true);
+        const selectedItems = items.filter(item => item.selected);
         try {
             await updateRetur(id, {
                 id_customers: selectedCustomer,
@@ -125,11 +139,10 @@ export function SalesReturEditScreen() {
                 keterangan,
                 items: selectedItems
             });
-            Alert.alert("Success", "Sales Retur berhasil diperbarui", [
-                { text: "OK", onPress: () => navigation.goBack() }
-            ]);
+            setIsEditing(false);
+            setToastConfig({ visible: true, type: 'success', message: "Sales Retur berhasil diperbarui" });
         } catch (error: any) {
-            Alert.alert("Error", error.message || "Gagal menyimpan");
+            setToastConfig({ visible: true, type: 'error', message: error.message || "Gagal menyimpan" });
         } finally {
             setIsSaving(false);
         }
@@ -139,10 +152,29 @@ export function SalesReturEditScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toastConfig.visible}
+                type={toastConfig.type}
+                message={toastConfig.message}
+                onClose={() => setToastConfig(prev => ({ ...prev, visible: false }))}
+            />
+            <ModalConfirm
+                visible={confirmVisible}
+                title="Konfirmasi Update"
+                message="Apakah Anda yakin ingin memperbarui data Sales Retur ini?"
+                onConfirm={executeSave}
+                onCancel={() => setConfirmVisible(false)}
+            />
             <HeaderNavigator
                 title={isLoading ? "MEMUAT DATA..." : (isEditing ? "EDIT SALES RETUR" : "DETAIL SALES RETUR")}
                 showBackButton={true}
-                onBackPress={() => navigation.goBack()}
+                onBackPress={() => {
+                    if (showSuccessToast) {
+                        navigation.navigate('Drawer', { screen: 'SalesReturList' });
+                    } else {
+                        navigation.goBack();
+                    }
+                }}
             />
 
             <KeyboardAvoidingView
