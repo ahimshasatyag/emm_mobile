@@ -10,6 +10,8 @@ import { theme } from '../../../theme/theme';
 import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
+import { ToastMessages } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ProductModal } from '../components/ProductModal';
 import { VisitModal } from '../components/VisitModal';
 import { TabProduct } from '../components/TabProduct';
@@ -19,7 +21,7 @@ import { formatRp as formatRupiah } from '../../../utils/helpers/money';
 export function LeadsEditScreen() {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
-    const { id } = route.params || {};
+    const { id, showSuccessToast } = route.params || {};
 
     const { currentDetail, isLoadingDetail, loadDetail, resetDetail } = useLeads();
 
@@ -41,17 +43,27 @@ export function LeadsEditScreen() {
     const [activeTab, setActiveTab] = useState<'product' | 'visit'>('product');
     const [isProductModalVisible, setIsProductModalVisible] = useState(false);
     const [editingProductIndex, setEditingProductIndex] = useState<number | null>(null);
-    const [isVisitModalVisible, setIsVisitModalVisible] = useState(false);
     const [editingVisitIndex, setEditingVisitIndex] = useState<number | null>(null);
     const [isEditMode, setIsEditMode] = useState(false);
+    const [toastConfig, setToastConfig] = useState<{ visible: boolean; type: 'success' | 'error' | 'warning' | 'info'; message: string }>({ visible: false, type: 'info', message: '' });
+    const [isConfirmVisible, setIsConfirmVisible] = useState(false);
+
+    useEffect(() => {
+        if (showSuccessToast) {
+            setToastConfig({ visible: true, type: 'success', message: 'Data Leads berhasil disimpan' });
+            navigation.setParams({ showSuccessToast: false });
+        }
+    }, [showSuccessToast, navigation]);
 
     const handleSaveProduct = (product: any) => {
         if (editingProductIndex !== null) {
             const updatedProducts = [...formData.products];
             updatedProducts[editingProductIndex] = product;
             updateField('products', updatedProducts);
+            setToastConfig({ visible: true, type: 'success', message: 'Barang berhasil diubah' });
         } else {
             updateField('products', [...formData.products, product]);
+            setToastConfig({ visible: true, type: 'success', message: 'Barang berhasil ditambahkan' });
         }
     };
 
@@ -70,8 +82,10 @@ export function LeadsEditScreen() {
             const updatedVisits = [...formData.visits];
             updatedVisits[editingVisitIndex] = visit;
             updateField('visits', updatedVisits);
+            setToastConfig({ visible: true, type: 'success', message: 'Visit berhasil diubah' });
         } else {
             updateField('visits', [...formData.visits, visit]);
+            setToastConfig({ visible: true, type: 'success', message: 'Visit berhasil ditambahkan' });
         }
     };
 
@@ -85,12 +99,25 @@ export function LeadsEditScreen() {
         setIsVisitModalVisible(true);
     };
 
-    const onSavePress = async () => {
+    const onSavePress = () => {
+        const errorMsg = validateForm();
+        if (errorMsg) {
+            setToastConfig({ visible: true, type: 'warning', message: errorMsg });
+            return;
+        }
+        setIsConfirmVisible(true);
+    };
+
+    const handleConfirmSave = async () => {
+        setIsConfirmVisible(false);
         const success = await save();
         if (success) {
-            Alert.alert('Sukses', 'Data Leads berhasil diperbarui', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+            setToastConfig({ visible: true, type: 'success', message: 'Data Leads berhasil diperbarui' });
+            setTimeout(() => {
+                setIsEditMode(false);
+            }, 1000);
+        } else if (error) {
+            setToastConfig({ visible: true, type: 'error', message: error });
         }
     };
 
@@ -101,6 +128,21 @@ export function LeadsEditScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toastConfig.visible}
+                type={toastConfig.type}
+                message={toastConfig.message}
+                onClose={() => setToastConfig(prev => ({ ...prev, visible: false }))}
+            />
+            <ModalConfirm
+                visible={isConfirmVisible}
+                title="Konfirmasi Simpan"
+                message="Apakah Anda yakin ingin menyimpan perubahan pada data Leads ini?"
+                onConfirm={handleConfirmSave}
+                onCancel={() => setIsConfirmVisible(false)}
+                confirmText="Ya, Simpan"
+                cancelText="Kembali"
+            />
             <HeaderNavigator
                 title={isLoadingDetail ? "MEMUAT DATA..." : isEditMode ? "EDIT LEADS" : "DETAIL LEADS"}
                 showBackButton
@@ -125,11 +167,6 @@ export function LeadsEditScreen() {
                         </Animated.View>
                     ) : (
                         <Animated.View key="content" entering={FadeIn.duration(600)}>
-                            {error && (
-                                <View className="bg-red-50 p-4 rounded-xl mb-6 border border-red-100">
-                                    <Text className="text-red-600 font-medium">{error}</Text>
-                                </View>
-                            )}
 
                             <View className="bg-white rounded-3xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
                                 <View className="p-6">

@@ -152,24 +152,26 @@ export function useLeadsForm(initialData?: LeadsDetail) {
         });
     };
 
-    const validate = (): boolean => {
+    const validateForm = (): string | null => {
+        const isAllEmpty = !formData.id_customers && formData.products.length === 0 && formData.visits.length === 0;
+
+        if (isAllEmpty) {
+            return "Semua field harus diisi!";
+        }
+
         if (!formData.id_customers) {
-            setError('Customer wajib diisi');
-            return false;
+            return 'Customer wajib diisi';
         }
 
         const hasEmptyProduct = formData.products.some(p => !p.id_product || p.nqty <= 0);
         if (hasEmptyProduct) {
-            setError('Semua baris barang harus memiliki produk dan QTY > 0');
-            return false;
+            return 'Semua baris barang harus memiliki produk dan QTY > 0';
         }
 
-        setError(null);
-        return true;
+        return null;
     };
 
     const save = async (): Promise<boolean> => {
-        if (!validate()) return false;
 
         try {
             setIsSaving(true);
@@ -200,6 +202,7 @@ export function useLeadsForm(initialData?: LeadsDetail) {
         updateVisitRow,
         refreshOptions,
         resetForm,
-        save
+        save,
+        validateForm
     };
 }

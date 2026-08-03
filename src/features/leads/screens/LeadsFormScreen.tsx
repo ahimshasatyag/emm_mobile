@@ -8,6 +8,8 @@ import { theme } from '../../../theme/theme';
 import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
+import { ToastMessages } from '../../../components/ui/ToastMessages';
+import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { LeadsFormSkeleton } from '../skeleton/LeadsFormSkeleton';
 import { ProductModal } from '../components/ProductModal';
 import { VisitModal } from '../components/VisitModal';
@@ -22,8 +24,11 @@ export function LeadsFormScreen() {
         isLoading, isSaving, error,
         updateField, addProductRow, removeProductRow, updateProductRow,
         addVisitRow, removeVisitRow, updateVisitRow,
-        refreshOptions, save
+        refreshOptions, save, validateForm
     } = useLeadsForm();
+
+    const [toastConfig, setToastConfig] = useState<{ visible: boolean; type: 'success' | 'error' | 'warning' | 'info'; message: string }>({ visible: false, type: 'info', message: '' });
+    const [isConfirmVisible, setIsConfirmVisible] = useState(false);
 
     const [activeTab, setActiveTab] = useState<'product' | 'visit'>('product');
     const [isProductModalVisible, setIsProductModalVisible] = useState(false);
@@ -36,8 +41,10 @@ export function LeadsFormScreen() {
             const updatedProducts = [...formData.products];
             updatedProducts[editingProductIndex] = product;
             updateField('products', updatedProducts);
+            setToastConfig({ visible: true, type: 'success', message: 'Barang berhasil diubah' });
         } else {
             updateField('products', [...formData.products, product]);
+            setToastConfig({ visible: true, type: 'success', message: 'Barang berhasil ditambahkan' });
         }
     };
 
@@ -56,8 +63,10 @@ export function LeadsFormScreen() {
             const updatedVisits = [...formData.visits];
             updatedVisits[editingVisitIndex] = visit;
             updateField('visits', updatedVisits);
+            setToastConfig({ visible: true, type: 'success', message: 'Visit berhasil diubah' });
         } else {
             updateField('visits', [...formData.visits, visit]);
+            setToastConfig({ visible: true, type: 'success', message: 'Visit berhasil ditambahkan' });
         }
     };
 
@@ -71,17 +80,43 @@ export function LeadsFormScreen() {
         setIsVisitModalVisible(true);
     };
 
-    const onSavePress = async () => {
+    const onSavePress = () => {
+        const errorMsg = validateForm();
+        if (errorMsg) {
+            setToastConfig({ visible: true, type: 'warning', message: errorMsg });
+            return;
+        }
+
+        setIsConfirmVisible(true);
+    };
+
+    const handleConfirmSave = async () => {
+        setIsConfirmVisible(false);
         const success = await save();
         if (success) {
-            Alert.alert('Sukses', 'Data Leads berhasil disimpan', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+            navigation.replace('LeadsEditScreen' as never, { id: 'new-id', showSuccessToast: true } as never);
+        } else if (error) {
+            setToastConfig({ visible: true, type: 'error', message: error });
         }
     };
 
     return (
         <View className="flex-1 bg-gray-50">
+            <ToastMessages
+                visible={toastConfig.visible}
+                type={toastConfig.type}
+                message={toastConfig.message}
+                onClose={() => setToastConfig(prev => ({ ...prev, visible: false }))}
+            />
+            <ModalConfirm
+                visible={isConfirmVisible}
+                title="Konfirmasi Simpan"
+                message="Apakah Anda yakin data Leads yang dimasukkan sudah benar? Data akan disimpan ke dalam sistem."
+                onConfirm={handleConfirmSave}
+                onCancel={() => setIsConfirmVisible(false)}
+                confirmText="Ya, Simpan"
+                cancelText="Kembali"
+            />
             <HeaderNavigator
                 title={isLoading ? "MEMUAT DATA..." : "TAMBAH LEADS"}
                 showBackButton
@@ -107,12 +142,6 @@ export function LeadsFormScreen() {
                     ) : (
                         <>
                             <Animated.View key="content" entering={FadeIn.duration(600)}>
-                                {error && (
-                                    <View className="bg-red-50 p-4 rounded-xl mb-6 border border-red-100">
-                                        <Text className="text-red-600 font-medium">{error}</Text>
-                                    </View>
-                                )}
-
                                 <View className="bg-white rounded-3xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
                                     <View className="p-6">
 

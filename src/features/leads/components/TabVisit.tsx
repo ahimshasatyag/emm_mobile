@@ -33,8 +33,8 @@ export function TabVisit({
                 )}
             </View>
 
-            <View className="mb-4 bg-white border border-gray-100 rounded-2xl overflow-hidden">
-                <View className="flex-row bg-gray-50 p-3 border-b border-gray-100">
+            <View className="-mx-4 bg-white border-y border-gray-100 overflow-hidden">
+                <View className="flex-row bg-gray-50 px-4 py-3 border-b border-gray-100">
                     <Text className="w-24 text-xs font-bold text-gray-500">Tanggal</Text>
                     <Text className="flex-1 text-xs font-bold text-gray-500">Kegiatan</Text>
                 </View>
@@ -42,10 +42,10 @@ export function TabVisit({
                 {formData.visits.map((item: any, index: number) => (
                     <TouchableOpacity
                         key={index}
-                        className="flex-row p-3 items-center border-b border-gray-50 active:bg-gray-100"
+                        className="flex-row px-4 py-3 items-center border-b border-gray-50 active:bg-gray-100"
                         onPress={() => openEditVisitModal(index)}
                     >
-                        <Text className="w-24 text-xs font-bold text-gray-800">{item.date_visit}</Text>
+                        <Text className="w-24 text-xs text-gray-800">{item.date_visit}</Text>
                         <Text className="flex-1 text-xs text-gray-600" numberOfLines={2}>{item.visit_activity}</Text>
                     </TouchableOpacity>
                 ))}

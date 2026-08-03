@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import Slider from '@react-native-community/slider';
-import { formatRp } from '../../../utils/helpers/money';
+import { formatRp, formatInputNumber } from '../../../utils/helpers/money';
 import { theme } from '../../../theme/theme';
 import { X, Check, Trash2, Save } from 'lucide-react-native';
+import { ToastMessages } from '../../../components/ui/ToastMessages';
 
 interface ProductModalProps {
     visible: boolean;
@@ -32,6 +33,7 @@ export const ProductModal = ({ visible, onDismiss, onSave, onDelete, productsLis
     const [price, setPrice] = useState(0);
     const [qty, setQty] = useState(1);
     const [persentase, setPersentase] = useState(0);
+    const [toastConfig, setToastConfig] = useState<{ visible: boolean; type: 'success' | 'error' | 'error' | 'info'; message: string }>({ visible: false, type: 'info', message: '' });
 
     // Reset atau isi form saat modal dibuka
     useEffect(() => {
@@ -66,11 +68,11 @@ export const ProductModal = ({ visible, onDismiss, onSave, onDelete, productsLis
 
     const handleSave = () => {
         if (!idProduct) {
-            alert('Mohon pilih Kode Barang');
+            setToastConfig({ visible: true, type: 'error', message: 'Mohon pilih Kode Barang' });
             return;
         }
         if (qty <= 0) {
-            alert('Qty minimal 1');
+            setToastConfig({ visible: true, type: 'error', message: 'Qty minimal 1' });
             return;
         }
 
@@ -92,6 +94,13 @@ export const ProductModal = ({ visible, onDismiss, onSave, onDelete, productsLis
             transparent={true}
             onRequestClose={onDismiss}
         >
+            <ToastMessages
+                visible={toastConfig.visible}
+                title='Validasi'
+                type={toastConfig.type}
+                message={toastConfig.message}
+                onClose={() => setToastConfig(prev => ({ ...prev, visible: false }))}
+            />
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 className="flex-1 justify-end bg-black/50"
@@ -142,7 +151,7 @@ export const ProductModal = ({ visible, onDismiss, onSave, onDelete, productsLis
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Price (Rp)</Text>
                                 <TextInput
                                     className="bg-white px-4 py-3 rounded-xl border border-gray-200 text-gray-900"
-                                    value={price.toString()}
+                                    value={price ? formatInputNumber(price.toString()) : ''}
                                     onChangeText={t => setPrice(parseInt(t.replace(/[^0-9]/g, '')) || 0)}
                                     keyboardType="numeric"
                                     editable={!isReadOnly}

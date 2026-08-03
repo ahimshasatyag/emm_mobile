@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { formatDate } from '../../../utils/helpers/date';
 import { theme } from '../../../theme/theme';
-import { X, Check, Trash2, Save } from 'lucide-react-native';
+import { X, Check, Trash2, Save, Calendar } from 'lucide-react-native';
+import { ToastMessages } from '../../../components/ui/ToastMessages';
 
 interface VisitModalProps {
     visible: boolean;
@@ -21,6 +24,26 @@ interface VisitModalProps {
 export const VisitModal = ({ visible, onDismiss, onSave, onDelete, initialData, isReadOnly = false }: VisitModalProps) => {
     const [dateVisit, setDateVisit] = useState('');
     const [visitActivity, setVisitActivity] = useState('');
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [toastConfig, setToastConfig] = useState<{ visible: boolean; type: 'success' | 'error' | 'warning' | 'info'; message: string }>({ visible: false, type: 'info', message: '' });
+
+    const handleDateChange = (event: any, selectedDate?: Date) => {
+        if (Platform.OS === 'android') {
+            setShowDatePicker(false);
+        }
+
+        if (event.type === 'set' && selectedDate) {
+            if (Platform.OS === 'ios') {
+                setShowDatePicker(false);
+            }
+            const year = selectedDate.getFullYear();
+            const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+            const day = String(selectedDate.getDate()).padStart(2, '0');
+            setDateVisit(`${year}-${month}-${day}`);
+        } else if (event.type === 'dismissed') {
+            setShowDatePicker(false);
+        }
+    };
 
     // Reset atau isi form saat modal dibuka
     useEffect(() => {
@@ -38,11 +61,11 @@ export const VisitModal = ({ visible, onDismiss, onSave, onDelete, initialData, 
 
     const handleSave = () => {
         if (!dateVisit) {
-            alert('Mohon isi tanggal kunjungan');
+            setToastConfig({ visible: true, type: 'error', message: 'Mohon isi tanggal kunjungan' });
             return;
         }
         if (!visitActivity) {
-            alert('Mohon isi deskripsi kegiatan');
+            setToastConfig({ visible: true, type: 'error', message: 'Mohon isi deskripsi kegiatan' });
             return;
         }
 
@@ -60,6 +83,13 @@ export const VisitModal = ({ visible, onDismiss, onSave, onDelete, initialData, 
             transparent={true}
             onRequestClose={onDismiss}
         >
+            <ToastMessages
+                visible={toastConfig.visible}
+                title='Validasi'
+                type={toastConfig.type as 'success' | 'error' | 'warning' | 'info'}
+                message={toastConfig.message}
+                onClose={() => setToastConfig(prev => ({ ...prev, visible: false }))}
+            />
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 className="flex-1 justify-end bg-black/50"
@@ -77,13 +107,29 @@ export const VisitModal = ({ visible, onDismiss, onSave, onDelete, initialData, 
                         {/* Tanggal Kunjungan */}
                         <View className="mb-4">
                             <Text className="text-sm font-bold text-gray-700 mb-2">Tanggal</Text>
-                            <TextInput
-                                className={`px-4 py-3 rounded-xl border border-gray-200 text-gray-900 font-bold ${isReadOnly ? 'bg-gray-100' : 'bg-white'}`}
-                                value={dateVisit}
-                                onChangeText={setDateVisit}
-                                placeholder="YYYY-MM-DD"
-                                editable={!isReadOnly}
-                            />
+                            {isReadOnly ? (
+                                <View className="px-4 py-3 rounded-xl border border-gray-200 bg-gray-100 flex-row items-center justify-between">
+                                    <Text className="text-gray-900">{dateVisit ? formatDate(new Date(dateVisit + 'T00:00:00')) : ''}</Text>
+                                    <Calendar color="#9ca3af" size={20} />
+                                </View>
+                            ) : (
+                                <TouchableOpacity
+                                    onPress={() => setShowDatePicker(true)}
+                                    className="px-4 py-3 rounded-xl border border-gray-200 bg-white flex-row items-center justify-between"
+                                >
+                                    <Text className="text-gray-900">{dateVisit ? formatDate(new Date(dateVisit + 'T00:00:00')) : 'Pilih Tanggal'}</Text>
+                                    <Calendar color="#9ca3af" size={20} />
+                                </TouchableOpacity>
+                            )}
+
+                            {showDatePicker && (
+                                <DateTimePicker
+                                    value={dateVisit ? new Date(dateVisit + 'T00:00:00') : new Date()}
+                                    mode="date"
+                                    display="default"
+                                    onChange={handleDateChange}
+                                />
+                            )}
                         </View>
 
                         {/* Kegiatan */}
