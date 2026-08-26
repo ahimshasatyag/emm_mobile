@@ -1,7 +1,9 @@
 export interface User {
-    name: string;
-    email: string;
-    link_foto?: string;
+    id_user: number;
+    username: string;
+    nm_users: string;
+    id_users_level: number;
+    id_karyawan: number;
 }
 
 export interface LoginRequest {
@@ -11,5 +13,6 @@ export interface LoginRequest {
 
 export interface LoginResponse {
     user: User;
+    message?: string;
     token?: string;
 }
