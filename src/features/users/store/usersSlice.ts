@@ -1,14 +1,16 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { UserData } from '../types/users.types';
+import { UserData, UserLevel } from '../types/users.types';
 
 interface UsersState {
     data: UserData[];
+    levels: UserLevel[];
     isLoading: boolean;
     error: string | null;
 }
 
 const initialState: UsersState = {
     data: [],
+    levels: [],
     isLoading: false,
     error: null,
 };
@@ -22,6 +24,9 @@ const usersSlice = createSlice({
             state.error = null;
             state.isLoading = false;
         },
+        setLevels: (state, action: PayloadAction<UserLevel[]>) => {
+            state.levels = action.payload;
+        },
         setLoading: (state, action: PayloadAction<boolean>) => {
             state.isLoading = action.payload;
         },
@@ -32,5 +37,5 @@ const usersSlice = createSlice({
     },
 });
 
-export const { setData, setLoading, setError } = usersSlice.actions;
+export const { setData, setLevels, setLoading, setError } = usersSlice.actions;
 export default usersSlice.reducer;

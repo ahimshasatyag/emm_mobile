@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { ArrowLeft, Save } from 'lucide-react-native';
 import { useUserForm } from '../hooks/useUserForm';
@@ -11,18 +11,17 @@ import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Dropdown } from 'react-native-element-dropdown';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
-
-const levelAksesData = [
-    { label: 'Super Admin', value: 'Super Admin' },
-    { label: 'Admin', value: 'Admin' },
-    { label: 'HRD', value: 'HRD' },
-    { label: 'Teknisi', value: 'Teknisi' },
-    { label: 'Sales', value: 'Sales' },
-    { label: 'Finance', value: 'Finance' }
-];
+import { useAppSelector } from '../../../hooks/useAppSelector';
 
 export function UserFormScreen() {
     const navigation = useNavigation();
+    
+    // Get levels dynamically from the state
+    const levels = useAppSelector(state => state.users.levels);
+    const levelAksesData = levels.map(l => ({
+        label: l.nm_users_level,
+        value: l.id_users_level.toString()
+    }));
 
     const {
         formData,
@@ -130,8 +129,8 @@ export function UserFormScreen() {
                                 <TextInput
                                     className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 text-gray-900 focus:border-[#9e0b0f]"
                                     cursorColor={theme.colors.primary}
-                                    value={formData.name}
-                                    onChangeText={(text) => updateField('name', text)}
+                                    value={formData.nm_users}
+                                    onChangeText={(text) => updateField('nm_users', text)}
                                     placeholder="Contoh: Andi Wijaya"
                                 />
                             </Animated.View>
@@ -145,8 +144,8 @@ export function UserFormScreen() {
                                         labelField="label"
                                         valueField="value"
                                         placeholder="Pilih Level Akses..."
-                                        value={formData.level}
-                                        onChange={item => updateField('level', item.value)}
+                                        value={formData.id_users_level.toString()}
+                                        onChange={item => updateField('id_users_level', item.value)}
                                     />
                                 </View>
                             </Animated.View>
@@ -155,16 +154,16 @@ export function UserFormScreen() {
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Status</Text>
                                 <View className="flex-row gap-4">
                                     <TouchableOpacity
-                                        onPress={() => updateField('status', 'Active')}
-                                        className={`flex-1 h-12 rounded-xl border items-center justify-center ${formData.status === 'Active' ? 'bg-green-50 border-green-500' : 'bg-white border-gray-300'}`}
+                                        onPress={() => updateField('is_active', '1')}
+                                        className={`flex-1 h-12 rounded-xl border items-center justify-center ${formData.is_active === '1' ? 'bg-green-50 border-green-500' : 'bg-white border-gray-300'}`}
                                     >
-                                        <Text className={`font-bold ${formData.status === 'Active' ? 'text-green-700' : 'text-gray-500'}`}>Aktif</Text>
+                                        <Text className={`font-bold ${formData.is_active === '1' ? 'text-green-700' : 'text-gray-500'}`}>Aktif</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
-                                        onPress={() => updateField('status', 'Inactive')}
-                                        className={`flex-1 h-12 rounded-xl border items-center justify-center ${formData.status === 'Inactive' ? 'bg-gray-100 border-gray-400' : 'bg-white border-gray-300'}`}
+                                        onPress={() => updateField('is_active', '0')}
+                                        className={`flex-1 h-12 rounded-xl border items-center justify-center ${formData.is_active === '0' ? 'bg-gray-100 border-gray-400' : 'bg-white border-gray-300'}`}
                                     >
-                                        <Text className={`font-bold ${formData.status === 'Inactive' ? 'text-gray-700' : 'text-gray-500'}`}>Tidak Aktif</Text>
+                                        <Text className={`font-bold ${formData.is_active === '0' ? 'text-gray-700' : 'text-gray-500'}`}>Tidak Aktif</Text>
                                     </TouchableOpacity>
                                 </View>
                             </Animated.View>

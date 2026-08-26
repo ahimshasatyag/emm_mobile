@@ -3,8 +3,8 @@ import { View, Text, FlatList, RefreshControl, TextInput } from 'react-native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useUsers } from '../hooks/useUsers';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { setData, setLoading, setError } from '../store/usersSlice';
-import { fetchUsersApi } from '../api/users.api';
+import { setData, setLoading, setError, setLevels } from '../store/usersSlice';
+import { fetchUsersApi, fetchUserLevelsApi } from '../api/users.api';
 import { UserCard } from '../components/UserCard';
 import { UserListSkeleton } from '../skeleton/UserListSkeleton';
 import { ErrorState } from '../../../components/shared/ErrorState';
@@ -75,8 +75,12 @@ export function UserListScreen() {
     const handleRefresh = async () => {
         dispatch(setLoading(true));
         try {
-            const result = await fetchUsersApi();
-            dispatch(setData(result));
+            const [usersResult, levelsResult] = await Promise.all([
+                fetchUsersApi(),
+                fetchUserLevelsApi()
+            ]);
+            dispatch(setData(usersResult));
+            dispatch(setLevels(levelsResult));
         } catch (e: any) {
             dispatch(setError(e.message));
         }
@@ -87,14 +91,14 @@ export function UserListScreen() {
     };
 
     const handleUserPress = (user: UserData) => {
-        navigation.navigate('UserEdit', { userId: user.id });
+        navigation.navigate('UserEdit', { userId: user.username });
     };
 
     const filteredData = useMemo(() => {
         if (!searchQuery) return data;
         const query = searchQuery.toLowerCase();
         return data.filter(item =>
-            item.name.toLowerCase().includes(query) ||
+            item.nm_users.toLowerCase().includes(query) ||
             item.username.toLowerCase().includes(query)
         );
     }, [data, searchQuery]);
@@ -119,7 +123,7 @@ export function UserListScreen() {
             <View className="flex-1">
                 <FlatList
                     data={(isLoading || isInitializing) ? [] : filteredData}
-                    keyExtractor={(item) => item.id}
+                    keyExtractor={(item) => item.username}
                     renderItem={({ item, index }) => (
                         <UserCard user={item} index={index} onPress={handleUserPress} />
                     )}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { UserFormData } from '../types/users.types';
-import { createUserApi, updateUserApi, fetchUserByIdApi } from '../api/users.api';
+import { createUserApi, updateUserApi, fetchUserByIdApi, fetchUsersApi } from '../api/users.api';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { setData } from '../store/usersSlice';
@@ -13,9 +13,9 @@ export function useUserForm(userId?: string) {
     const [formData, setFormData] = useState<UserFormData>({
         username: '',
         password: '',
-        name: '',
-        level: '',
-        status: '',
+        nm_users: '',
+        id_users_level: '',
+        is_active: '',
     });
 
     const [isFetching, setIsFetching] = useState(false);
@@ -36,9 +36,9 @@ export function useUserForm(userId?: string) {
             setFormData({
                 username: user.username,
                 password: '', // Do not populate password
-                name: user.name,
-                level: user.level,
-                status: user.status,
+                nm_users: user.nm_users,
+                id_users_level: user.id_users_level?.toString() || '',
+                is_active: user.is_active?.toString() || '',
             });
         } catch (err: any) {
             setError(err.message || 'Gagal memuat data pengguna');
@@ -49,9 +49,9 @@ export function useUserForm(userId?: string) {
 
     const validateForm = (): string | null => {
         if (!formData.username) return 'Username wajib diisi';
-        if (!formData.name) return 'Nama wajib diisi';
-        if (!formData.level) return 'Level wajib dipilih';
-        if (!formData.status) return 'Status wajib dipilih';
+        if (!formData.nm_users) return 'Nama wajib diisi';
+        if (!formData.id_users_level) return 'Level wajib dipilih';
+        if (formData.is_active === '') return 'Status wajib dipilih';
 
         // Password validation
         if (!isEditMode || (isEditMode && formData.password)) {
@@ -78,25 +78,26 @@ export function useUserForm(userId?: string) {
         setError(null);
         try {
             if (isEditMode) {
-                const updatedUser = await updateUserApi(userId!, formData);
-                // Update local store
-                const newList = usersList.map(u => u.id === userId ? updatedUser : u);
-                dispatch(setData(newList));
+                await updateUserApi(userId!, formData);
+                // Update local store from server to get joined tables correctly
+                const result = await fetchUsersApi();
+                dispatch(setData(result));
             } else {
-                const newUser = await createUserApi(formData);
-                // Update local store
-                dispatch(setData([newUser, ...usersList]));
+                await createUserApi(formData);
+                // Refresh list from server to get fresh relation data
+                const result = await fetchUsersApi();
+                dispatch(setData(result));
             }
             return true;
         } catch (err: any) {
-            setError(err.message || 'Terjadi kesalahan saat menyimpan data');
+            setError(err.response?.data?.message || err.message || 'Terjadi kesalahan saat menyimpan data');
             return false;
         } finally {
             setIsSaving(false);
         }
     };
 
-    const updateField = (field: keyof UserFormData, value: string) => {
+    const updateField = (field: keyof UserFormData, value: string | number) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         if (error) setError(null); // Clear error on typing
     };
