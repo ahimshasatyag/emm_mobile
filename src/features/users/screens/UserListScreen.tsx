@@ -13,7 +13,7 @@ import { ButtonAdd } from '../../../components/ui/buttonAdd';
 import { theme } from '../../../theme/theme';
 import { Search } from 'lucide-react-native';
 import { UserData } from '../types/users.types';
-import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute, RouteProp, useIsFocused } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
@@ -24,6 +24,7 @@ type RootStackParamList = {
 export function UserListScreen() {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const route = useRoute<RouteProp<RootStackParamList, 'UserList'>>();
+    const isFocused = useIsFocused();
     const { data, isLoading, error } = useUsers();
 
     const [isInitializing, setIsInitializing] = useState(true);
@@ -31,6 +32,12 @@ export function UserListScreen() {
     const [toastVisible, setToastVisible] = useState(false);
     const [toastType, setToastType] = useState<ToastType>('success');
     const [toastMsg, setToastMsg] = useState('');
+
+    useEffect(() => {
+        if (!isFocused) {
+            setIsInitializing(true);
+        }
+    }, [isFocused]);
 
     useFocusEffect(
         useCallback(() => {
@@ -122,7 +129,7 @@ export function UserListScreen() {
 
             <View className="flex-1">
                 <FlatList
-                    data={(isLoading || isInitializing) ? [] : filteredData}
+                    data={isInitializing ? [] : filteredData}
                     keyExtractor={(item) => item.username}
                     renderItem={({ item, index }) => (
                         <UserCard user={item} index={index} onPress={handleUserPress} />
@@ -130,7 +137,7 @@ export function UserListScreen() {
                     contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100, flexGrow: 1 }}
                     showsVerticalScrollIndicator={false}
                     refreshControl={
-                        <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
+                        <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
                     }
                     ListEmptyComponent={() => {
                         if (error) {
@@ -143,7 +150,7 @@ export function UserListScreen() {
                                 />
                             );
                         }
-                        if (isLoading || isInitializing) {
+                        if (isInitializing) {
                             return (
                                 <View style={{ marginHorizontal: -24 }}>
                                     <UserListSkeleton />

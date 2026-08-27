@@ -53,12 +53,10 @@ export function UserFormScreen() {
         setConfirmModalVisible(false);
         const success = await handleSave();
         if (success) {
-            (navigation as any).navigate('Drawer', {
-                screen: 'UserList',
-                params: {
-                    toastMessage: 'Data pengguna baru berhasil ditambahkan!',
-                    toastType: 'success'
-                }
+            (navigation as any).replace('UserEdit', {
+                userId: formData.username,
+                toastMessage: 'Data pengguna baru berhasil ditambahkan!',
+                toastType: 'success'
             });
         }
     };

@@ -12,7 +12,6 @@ import { ErrorState } from '../../../components/shared/ErrorState';
 import { EmptyState } from '../../../components/shared/EmptyState';
 import { theme } from '../../../theme/theme';
 import { Search } from 'lucide-react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
 
 export function UsersLogListScreen() {
     const { data, isLoading, error } = useUsersLog();
