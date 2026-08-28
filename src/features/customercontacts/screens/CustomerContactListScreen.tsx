@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { View, FlatList, Text, RefreshControl, TextInput } from 'react-native';
+import { View, FlatList, Text, RefreshControl, TextInput, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCustomerContacts } from '../hooks/useCustomerContacts';
@@ -23,17 +23,12 @@ export function CustomerContactListScreen() {
     const { customerContacts, isLoading, error, searchQuery, fetchCustomerContacts, setSearchQuery } = useCustomerContacts();
 
     const [isInitializing, setIsInitializing] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
-    const filteredData = useMemo(() => {
-        if (!searchQuery) return customerContacts;
-        const query = searchQuery.toLowerCase();
-        return customerContacts.filter(item => 
-            (item.nm_customers_contact && item.nm_customers_contact.toLowerCase().includes(query)) ||
-            (item.nm_customers && item.nm_customers.toLowerCase().includes(query)) ||
-            (item.customers_contact_mobile && item.customers_contact_mobile.toLowerCase().includes(query)) ||
-            (item.customers_contact_phone && item.customers_contact_phone.toLowerCase().includes(query))
-        );
-    }, [customerContacts, searchQuery]);
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, customerContacts]);
 
     useFocusEffect(
         useCallback(() => {
@@ -42,10 +37,7 @@ export function CustomerContactListScreen() {
             const initialize = async () => {
                 setIsInitializing(true);
                 try {
-                    await Promise.all([
-                        onRefresh(),
-                        new Promise(resolve => setTimeout(resolve, 800))
-                    ]);
+                    await fetchCustomerContacts();
                 } catch (error) {
                     // console.error("Failed to load:", error);
                 } finally {
@@ -65,7 +57,7 @@ export function CustomerContactListScreen() {
     );
 
     useEffect(() => {
-        fetchCustomerContacts();
+        // fetchCustomerContacts(); handled by useFocusEffect
     }, []);
 
     const onAdd = () => {
@@ -76,9 +68,19 @@ export function CustomerContactListScreen() {
         navigation.navigate('CustomerContactEdit', { id: item.id_customers_contact });
     };
 
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < customerContacts.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, customerContacts.length, isLoadMore]);
+
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator title="KONTAK PELANGGAN" />
+            <HeaderNavigator title="CUSTOMER CONTACTS" />
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
                 <View className="bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2 shadow-sm">
@@ -95,16 +97,28 @@ export function CustomerContactListScreen() {
 
             <View className="flex-1">
                 <FlatList
-                    data={(isLoading || isInitializing) ? [] : filteredData}
+                    data={(isLoading || isInitializing) ? [] : customerContacts.slice(0, visibleCount)}
                     keyExtractor={(item) => item.id_customers_contact}
                     renderItem={({ item, index }) => (
                         <CustomerContactCard item={item} index={index} onPress={onItemPress} />
                     )}
                     contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100, flexGrow: 1 }}
                     showsVerticalScrollIndicator={false}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
                     refreshControl={
-                        <RefreshControl refreshing={isLoading} onRefresh={fetchCustomerContacts} colors={[theme.colors.primary]} />
+                        <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={fetchCustomerContacts} colors={[theme.colors.primary]} />
                     }
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
                     ListEmptyComponent={() => {
                         if (error) {
                             return (

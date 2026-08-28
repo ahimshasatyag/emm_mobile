@@ -1,70 +1,49 @@
 import { CustomerContact, CustomerContactFormData } from '../types/customerContacts.types';
-import { DUMMY_CUSTOMER_CONTACTS, setDummyCustomerContacts } from '../data/customerContacts.data';
+import api from '../../../services/api/api';
 
 export const customerContactsApi = {
     fetchCustomerContacts: async (): Promise<{ success: boolean; data: CustomerContact[] }> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve({ success: true, data: [...DUMMY_CUSTOMER_CONTACTS] });
-            }, 800); // Simulate network delay
-        });
+        try {
+            const response = await api.get('/customerscontact');
+            return { success: true, data: response.data.data };
+        } catch (error: any) {
+            return { success: false, data: [] };
+        }
     },
 
     fetchCustomerContactById: async (id: string): Promise<{ success: boolean; data: CustomerContact }> => {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                const contact = DUMMY_CUSTOMER_CONTACTS.find(c => c.id_customers_contact === id);
-                if (contact) {
-                    resolve({ success: true, data: { ...contact } });
-                } else {
-                    reject(new Error('Customer Contact not found'));
-                }
-            }, 600);
-        });
+        try {
+            const response = await api.get(`/customerscontact/${id}`);
+            return { success: true, data: response.data.data };
+        } catch (error: any) {
+            throw new Error(error.response?.data?.message || 'Customer Contact not found');
+        }
     },
 
     createCustomerContact: async (data: CustomerContactFormData): Promise<{ success: boolean; message?: string; data?: any }> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                const newId = (DUMMY_CUSTOMER_CONTACTS.length + 1).toString();
-                setDummyCustomerContacts([
-                    ...DUMMY_CUSTOMER_CONTACTS,
-                    {
-                        ...data,
-                        id_customers_contact: newId,
-                        nm_customers: 'Customer ' + data.id_customers // placeholder
-                    }
-                ]);
-                resolve({ success: true, message: 'Customer Contact created successfully', data: { id_customers_contact: newId } });
-            }, 800);
-        });
+        try {
+            const response = await api.post('/customerscontact', data);
+            return { success: true, message: 'Customer Contact created successfully', data: response.data.data };
+        } catch (error: any) {
+            return { success: false, message: error.response?.data?.message || 'Failed to create' };
+        }
     },
 
     updateCustomerContact: async (id: string, data: CustomerContactFormData): Promise<{ success: boolean; message?: string }> => {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                const index = DUMMY_CUSTOMER_CONTACTS.findIndex(c => c.id_customers_contact === id);
-                if (index !== -1) {
-                    const newArray = [...DUMMY_CUSTOMER_CONTACTS];
-                    newArray[index] = {
-                        ...newArray[index],
-                        ...data,
-                    };
-                    setDummyCustomerContacts(newArray);
-                    resolve({ success: true, message: 'Customer Contact updated successfully' });
-                } else {
-                    reject(new Error('Customer Contact not found'));
-                }
-            }, 800);
-        });
+        try {
+            await api.put(`/customerscontact/${id}`, data);
+            return { success: true, message: 'Customer Contact updated successfully' };
+        } catch (error: any) {
+            return { success: false, message: error.response?.data?.message || 'Failed to update' };
+        }
     },
 
     deleteCustomerContact: async (id: string): Promise<{ success: boolean; message?: string }> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                setDummyCustomerContacts(DUMMY_CUSTOMER_CONTACTS.filter(c => c.id_customers_contact !== id));
-                resolve({ success: true, message: 'Customer Contact deleted successfully' });
-            }, 600);
-        });
+        try {
+            await api.delete(`/customerscontact/${id}`);
+            return { success: true, message: 'Customer Contact deleted successfully' };
+        } catch (error: any) {
+            return { success: false, message: error.response?.data?.message || 'Failed to delete' };
+        }
     }
 };
