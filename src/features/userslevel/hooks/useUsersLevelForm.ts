@@ -4,6 +4,7 @@ import { fetchDashboardsApi, fetchMenusApi, fetchPowersApi, fetchUserLevelByIdAp
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { setData } from '../stores/userslevelSlice';
 import { useAppSelector } from '../../../hooks/useAppSelector';
+import { notificationService } from '../../../services/notification/notificationService';
 
 export function useUsersLevelForm(id?: string) {
     const [formData, setFormData] = useState<UserLevelFormData>({
@@ -23,6 +24,7 @@ export function useUsersLevelForm(id?: string) {
 
     const dispatch = useAppDispatch();
     const { data: globalData } = useAppSelector((state) => state.userslevel);
+    const authUser = useAppSelector((state) => state.auth.user);
 
     const loadData = async () => {
         setIsLoading(true);
@@ -87,9 +89,27 @@ export function useUsersLevelForm(id?: string) {
                 result = await updateUserLevelApi(id, formData);
                 const updatedList = globalData.map(d => d.id_users_level === id ? result : d);
                 dispatch(setData(updatedList));
+
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'USERS LEVEL',
+                    judul: 'User Level Diperbarui',
+                    pesan: `User Level ${formData.nm_users_level} telah berhasil diperbarui oleh ${authUser?.nm_users}`,
+                    action: 'Update'
+                }).catch(() => { });
             } else {
                 result = await createUserLevelApi(formData);
                 dispatch(setData([result, ...globalData]));
+
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'USERS LEVEL',
+                    judul: 'User Level Baru',
+                    pesan: `User Level ${formData.nm_users_level} telah berhasil ditambahkan oleh ${authUser?.nm_users}`,
+                    action: 'Create'
+                }).catch(() => { });
             }
             return true;
         } catch (err: any) {
@@ -106,6 +126,16 @@ export function useUsersLevelForm(id?: string) {
         try {
             await deleteUserLevelApi(id);
             dispatch(setData(globalData.filter(d => d.id_users_level !== id)));
+
+            await notificationService.store({
+                user_id: authUser?.id_user ?? 1,
+                id_users_level: authUser?.id_users_level ?? 1,
+                kode_trans: 'USERS LEVEL',
+                judul: 'User Level Dihapus',
+                pesan: `User Level dengan ID ${id} telah dihapus oleh ${authUser?.nm_users}`,
+                action: 'Delete'
+            }).catch(() => { });
+
             return true;
         } catch (err: any) {
             setError(err.message || 'Gagal menghapus data');

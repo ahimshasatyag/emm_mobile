@@ -4,6 +4,7 @@ import { fetchSettingByIdApi, createSettingApi, updateSettingApi, deleteSettingA
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { setData } from '../stores/settingSlice';
 import { useAppSelector } from '../../../hooks/useAppSelector';
+import { notificationService } from '../../../services/notification/notificationService';
 
 export function useSettingForm(id?: string) {
     const [formData, setFormData] = useState<SettingFormData>({
@@ -21,6 +22,7 @@ export function useSettingForm(id?: string) {
 
     const dispatch = useAppDispatch();
     const { data: globalData } = useAppSelector((state) => state.setting);
+    const authUser = useAppSelector((state) => state.auth.user);
 
     const loadData = async () => {
         setIsLoading(true);
@@ -84,9 +86,27 @@ export function useSettingForm(id?: string) {
                 result = await updateSettingApi(id, formData);
                 const updatedList = globalData.map((d) => d.setting_id === id ? result : d);
                 dispatch(setData(updatedList));
+
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'SETTING',
+                    judul: 'Setting Diperbarui',
+                    pesan: `Setting ${formData.setting_label} telah berhasil diperbarui oleh ${authUser?.nm_users}`,
+                    action: 'Update'
+                }).catch(() => { });
             } else {
                 result = await createSettingApi(formData);
                 dispatch(setData([result, ...globalData]));
+
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'SETTING',
+                    judul: 'Setting Baru',
+                    pesan: `Setting ${formData.setting_label} telah berhasil ditambahkan oleh ${authUser?.nm_users}`,
+                    action: 'Create'
+                }).catch(() => { });
             }
             return true;
         } catch (err: any) {
@@ -103,6 +123,16 @@ export function useSettingForm(id?: string) {
         try {
             await deleteSettingApi(id);
             dispatch(setData(globalData.filter((d) => d.setting_id !== id)));
+
+            await notificationService.store({
+                user_id: authUser?.id_user ?? 1,
+                id_users_level: authUser?.id_users_level ?? 1,
+                kode_trans: 'SETTING',
+                judul: 'Setting Dihapus',
+                pesan: `Setting dengan ID ${id} telah dihapus oleh ${authUser?.nm_users}`,
+                action: 'Delete'
+            }).catch(() => { });
+
             return true;
         } catch (err: any) {
             setError(err.message || 'Gagal menghapus data');

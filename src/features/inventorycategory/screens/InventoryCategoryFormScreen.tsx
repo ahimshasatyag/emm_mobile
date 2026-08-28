@@ -59,18 +59,18 @@ export function InventoryCategoryFormScreen() {
     };
 
     return (
-        <KeyboardAvoidingView 
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={{ flex: 1, backgroundColor: theme.colors.background }}
         >
-            <HeaderNavigator 
-                title={isLoading ? 'MEMUAT DATA...' : 'TAMBAH KATEGORI'} 
-                showBackButton 
-                onBackPress={() => navigation.goBack()} 
+            <HeaderNavigator
+                title={isLoading ? 'MEMUAT DATA...' : 'TAMBAH KATEGORI'}
+                showBackButton
+                onBackPress={() => navigation.goBack()}
             />
 
-            <ScrollView 
-                className="flex-1" 
+            <ScrollView
+                className="flex-1"
                 contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
@@ -86,14 +86,14 @@ export function InventoryCategoryFormScreen() {
                         {/* Error inline removed as it is handled by Toast */}
 
                         <Animated.View entering={FadeInUp.delay(50)} className="bg-white p-5 rounded-3xl border border-gray-100 mb-6" style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}>
-                            
+
                             <Animated.View entering={FadeInUp.delay(100)} className="mb-2">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Category Name</Text>
                                 <TextInput
                                     className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 text-gray-900 focus:border-indigo-500"
                                     value={formData.name}
                                     onChangeText={(text) => updateField('name', text)}
-                                    placeholder="Contoh: Elektronik"
+                                    placeholder="input category name"
                                 />
                             </Animated.View>
 
