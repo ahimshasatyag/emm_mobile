@@ -7,10 +7,13 @@ import {
     fetchApprovalRulesApi 
 } from '../api/approvalscheme.api';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { useAppSelector } from '../../../hooks/useAppSelector';
 import { fetchApprovalSchemes } from '../stores/approvalschemeSlice';
+import { notificationService } from '../../../services/notification/notificationService';
 
 export function useApprovalSchemeForm(id?: string) {
     const dispatch = useAppDispatch();
+    const authUser = useAppSelector((state) => state.auth.user);
 
     const [formData, setFormData] = useState<ApprovalSchemeFormData>({
         scheme_name: '',
@@ -85,8 +88,24 @@ export function useApprovalSchemeForm(id?: string) {
             let result;
             if (id) {
                 result = await updateApprovalSchemeApi(id, formData);
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'APPROVAL SCHEME',
+                    judul: 'Skema Approval Diperbarui',
+                    pesan: `Skema ${formData.scheme_name} telah berhasil diperbarui oleh ${authUser?.nm_users}`,
+                    action: 'Update'
+                }).catch(() => { });
             } else {
                 result = await createApprovalSchemeApi(formData);
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'APPROVAL SCHEME',
+                    judul: 'Skema Approval Baru',
+                    pesan: `Skema ${formData.scheme_name} telah berhasil ditambahkan oleh ${authUser?.nm_users}`,
+                    action: 'Create'
+                }).catch(() => { });
             }
             dispatch(fetchApprovalSchemes());
             return result;

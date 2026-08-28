@@ -13,7 +13,7 @@ interface ApprovalSchemeCardProps {
 
 export function ApprovalSchemeCard({ item, index, onPress }: ApprovalSchemeCardProps) {
     return (
-        <Animated.View entering={FadeInUp.delay(index * 100).duration(400)}>
+        <Animated.View entering={FadeInUp.delay(index < 10 ? index * 100 : 0).duration(400)}>
             <TouchableOpacity
                 onPress={() => onPress(item)}
                 activeOpacity={0.7}
