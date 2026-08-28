@@ -1,6 +1,9 @@
 import { useState, useCallback } from 'react';
 import { CustomerFormData, CustomerContact, Province, Regency } from '../types/customers.types';
 import { customersApi } from '../api/customers.api';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { useAppSelector } from '../../../hooks/useAppSelector';
+import { notificationService } from '../../../services/notification/notificationService';
 
 const initialFormData: CustomerFormData = {
     nm_customers: '',
@@ -24,6 +27,9 @@ const initialFormData: CustomerFormData = {
 };
 
 export function useCustomerForm(initialId?: string) {
+    const dispatch = useAppDispatch();
+    const authUser = useAppSelector((state) => state.auth.user);
+
     const [formData, setFormData] = useState<CustomerFormData>(initialFormData);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -154,6 +160,28 @@ export function useCustomerForm(initialId?: string) {
                 res = await customersApi.createCustomer(formData);
             }
             setIsSaving(false);
+            
+            if (res.success) {
+                if (initialId) {
+                    await notificationService.store({
+                        user_id: authUser?.id_user ?? 1,
+                        id_users_level: authUser?.id_users_level ?? 1,
+                        kode_trans: 'CUSTOMER',
+                        judul: 'Customer Diperbarui',
+                        pesan: `Customer ${formData.nm_customers} berhasil diperbarui oleh ${authUser?.nm_users}`,
+                        action: 'Update'
+                    }).catch(() => {});
+                } else {
+                    await notificationService.store({
+                        user_id: authUser?.id_user ?? 1,
+                        id_users_level: authUser?.id_users_level ?? 1,
+                        kode_trans: 'CUSTOMER',
+                        judul: 'Customer Baru',
+                        pesan: `Customer ${formData.nm_customers} berhasil ditambahkan oleh ${authUser?.nm_users}`,
+                        action: 'Create'
+                    }).catch(() => {});
+                }
+            }
             return res.success ? res.data : false;
         } catch (e: any) {
             setIsSaving(false);

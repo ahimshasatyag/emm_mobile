@@ -63,7 +63,9 @@ const customersSlice = createSlice({
                         item.nm_customers.toLowerCase().includes(query) || 
                         item.code_customers.toLowerCase().includes(query) ||
                         item.customers_phone?.toLowerCase().includes(query) ||
-                        item.customers_address?.toLowerCase().includes(query)
+                        item.customers_address?.toLowerCase().includes(query) ||
+                        item.provinsi_nama?.toLowerCase().includes(query) ||
+                        item.kabupaten_nama?.toLowerCase().includes(query)
                 );
             }
         },
@@ -86,7 +88,9 @@ const customersSlice = createSlice({
                             item.nm_customers.toLowerCase().includes(query) || 
                             item.code_customers.toLowerCase().includes(query) ||
                             item.customers_phone?.toLowerCase().includes(query) ||
-                            item.customers_address?.toLowerCase().includes(query)
+                            item.customers_address?.toLowerCase().includes(query) ||
+                            item.provinsi_nama?.toLowerCase().includes(query) ||
+                            item.kabupaten_nama?.toLowerCase().includes(query)
                     );
                 } else {
                     state.filteredData = action.payload;

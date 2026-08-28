@@ -13,7 +13,7 @@ interface CustomerCardProps {
 export function CustomerCard({ item, index, onPress }: CustomerCardProps) {
     return (
         <Animated.View 
-            entering={FadeInDown.delay(index * 100).springify()}
+            entering={FadeInDown.delay(index < 10 ? index * 100 : 0).springify()}
             className="bg-white rounded-2xl mb-4 border border-gray-100"
             style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}
         >
@@ -58,7 +58,7 @@ export function CustomerCard({ item, index, onPress }: CustomerCardProps) {
                     <View className="flex-row items-start mt-2">
                         <MapPin size={14} color="#9ca3af" className="mt-0.5" />
                         <Text className="text-gray-500 text-xs ml-2 flex-1">
-                            {item.kabupaten}, {item.provinsi}
+                            {item.kabupaten_nama}, {item.provinsi_nama}
                         </Text>
                     </View>
                 </View>
