@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, FlatList, RefreshControl, TextInput } from 'react-native';
+import { View, Text, FlatList, RefreshControl, TextInput, ActivityIndicator } from 'react-native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useUsersLog } from '../hooks/useUsersLog';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
@@ -18,6 +18,8 @@ export function UsersLogListScreen() {
 
     const [isInitializing, setIsInitializing] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
     const filteredData = useMemo(() => {
         if (!searchQuery) return data;
@@ -28,6 +30,10 @@ export function UsersLogListScreen() {
         );
     }, [data, searchQuery]);
 
+    React.useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, data]);
+
     useFocusEffect(
         useCallback(() => {
             let isActive = true;
@@ -35,10 +41,7 @@ export function UsersLogListScreen() {
             const initialize = async () => {
                 setIsInitializing(true);
                 try {
-                    await Promise.all([
-                        handleRefresh(),
-                        new Promise(resolve => setTimeout(resolve, 800))
-                    ]);
+                    await handleRefresh();
                 } catch (error) {
                     // console.error("Failed to load:", error);
                 } finally {
@@ -68,6 +71,16 @@ export function UsersLogListScreen() {
         }
     };
 
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < filteredData.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600); // 600ms artificial delay for loading sensation
+        }
+    }, [visibleCount, filteredData.length, isLoadMore]);
+
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
             <HeaderNavigator isLoading={isLoading} />
@@ -87,16 +100,28 @@ export function UsersLogListScreen() {
 
             <View className="flex-1">
                 <FlatList
-                    data={(isLoading || isInitializing) ? [] : filteredData} // Kosongkan saat loading agar memicu skeleton
+                    data={(isLoading || isInitializing) ? [] : filteredData.slice(0, visibleCount)} // Kosongkan saat loading agar memicu skeleton
                     keyExtractor={(item) => item.id}
                     renderItem={({ item, index }) => (
                         <UsersLogCard log={item} index={index} />
                     )}
                     contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100, flexGrow: 1 }}
                     showsVerticalScrollIndicator={false}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
                     refreshControl={
-                        <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
+                        <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
                     }
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
                     ListEmptyComponent={() => {
                         if (error) {
                             return (

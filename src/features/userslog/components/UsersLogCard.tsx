@@ -13,7 +13,7 @@ interface UsersLogCardProps {
 export function UsersLogCard({ log, index }: UsersLogCardProps) {
     return (
         <Animated.View 
-            entering={FadeInUp.delay(index * 100).duration(400)}
+            entering={FadeInUp.delay(index < 10 ? index * 100 : 0).duration(400)}
             className="bg-white p-4 rounded-2xl mb-4 border border-gray-100 shadow-sm"
         >
             <View className="flex-row items-center mb-3">
