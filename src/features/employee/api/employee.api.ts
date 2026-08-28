@@ -1,69 +1,58 @@
+import api from '../../../services/api/api';
 import { EmployeeData, DivisionData, PositionData } from '../types/employee.types';
-import { dummyEmployees, dummyDivisions, dummyPositions } from '../data/employee.dummy';
-
-// Simulate network delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const fetchEmployeesApi = async (): Promise<EmployeeData[]> => {
-    await delay(800);
-    return [...dummyEmployees];
+    try {
+        const response = await api.get('/employee');
+        return response.data.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Gagal mengambil data karyawan');
+    }
 };
 
 export const fetchEmployeeByIdApi = async (id: string): Promise<EmployeeData> => {
-    await delay(500);
-    const employee = dummyEmployees.find(e => e.id_karyawan === id);
-    if (!employee) throw new Error('Karyawan tidak ditemukan');
-    return { ...employee };
+    try {
+        const response = await api.get(`/employee/${id}`);
+        return response.data.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Gagal mengambil detail karyawan');
+    }
+};
+
+export const fetchSupportDataApi = async (): Promise<{ divisions: DivisionData[], positions: PositionData[] }> => {
+    try {
+        const response = await api.get('/employee/support-data');
+        return {
+            divisions: response.data.data.data_divisi,
+            positions: response.data.data.data_posisi
+        };
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Gagal mengambil data pendukung');
+    }
 };
 
 export const createEmployeeApi = async (data: Omit<EmployeeData, 'id_karyawan' | 'nm_karyawan_divisi' | 'nm_karyawan_posisi'>): Promise<EmployeeData> => {
-    await delay(800);
-    const newId = `E${String(dummyEmployees.length + 1).padStart(3, '0')}`;
-    
-    const division = dummyDivisions.find(d => d.id_karyawan_divisi === data.id_karyawan_divisi);
-    const position = dummyPositions.find(p => p.id_karyawan_posisi === data.id_karyawan_posisi);
-    
-    const newEmployee: EmployeeData = {
-        ...data,
-        id_karyawan: newId,
-        nm_karyawan_divisi: division?.nm_karyawan_divisi || '',
-        nm_karyawan_posisi: position?.nm_karyawan_posisi || '',
-    };
-    
-    dummyEmployees.push(newEmployee);
-    return newEmployee;
+    try {
+        const response = await api.post('/employee', data);
+        return response.data.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Gagal membuat karyawan');
+    }
 };
 
 export const updateEmployeeApi = async (id: string, data: Partial<EmployeeData>): Promise<EmployeeData> => {
-    await delay(800);
-    const index = dummyEmployees.findIndex(e => e.id_karyawan === id);
-    if (index === -1) throw new Error('Karyawan tidak ditemukan');
-    
-    const division = data.id_karyawan_divisi 
-        ? dummyDivisions.find(d => d.id_karyawan_divisi === data.id_karyawan_divisi)
-        : null;
-        
-    const position = data.id_karyawan_posisi
-        ? dummyPositions.find(p => p.id_karyawan_posisi === data.id_karyawan_posisi)
-        : null;
-    
-    const updatedEmployee = { 
-        ...dummyEmployees[index], 
-        ...data,
-        ...(division && { nm_karyawan_divisi: division.nm_karyawan_divisi }),
-        ...(position && { nm_karyawan_posisi: position.nm_karyawan_posisi }),
-    };
-    
-    dummyEmployees[index] = updatedEmployee;
-    return updatedEmployee;
+    try {
+        const response = await api.put(`/employee/${id}`, data);
+        return response.data.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Gagal memperbarui karyawan');
+    }
 };
 
-export const fetchDivisionsApi = async (): Promise<DivisionData[]> => {
-    await delay(300);
-    return [...dummyDivisions];
-};
-
-export const fetchPositionsApi = async (): Promise<PositionData[]> => {
-    await delay(300);
-    return [...dummyPositions];
+export const deleteEmployeeApi = async (id: string): Promise<void> => {
+    try {
+        await api.delete(`/employee/${id}`);
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Gagal menghapus karyawan');
+    }
 };

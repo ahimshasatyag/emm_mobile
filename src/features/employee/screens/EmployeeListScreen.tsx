@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, FlatList, Text, RefreshControl, TextInput } from 'react-native';
+import { View, FlatList, Text, RefreshControl, TextInput, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useEmployee } from '../hooks/useEmployee';
@@ -23,6 +23,8 @@ export function EmployeeListScreen() {
     const { data, isLoading, error, searchQuery, setSearchQuery, loadData } = useEmployee();
 
     const [isInitializing, setIsInitializing] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
     const filteredData = useMemo(() => {
         if (!searchQuery) return data;
@@ -34,6 +36,10 @@ export function EmployeeListScreen() {
         );
     }, [data, searchQuery]);
 
+    React.useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, data]);
+
     useFocusEffect(
         useCallback(() => {
             let isActive = true;
@@ -41,10 +47,7 @@ export function EmployeeListScreen() {
             const initialize = async () => {
                 setIsInitializing(true);
                 try {
-                    await Promise.all([
-                        loadData(),
-                        new Promise(resolve => setTimeout(resolve, 800))
-                    ]);
+                    await loadData();
                 } catch (error) {
                     // console.error("Failed to load:", error);
                 } finally {
@@ -71,6 +74,16 @@ export function EmployeeListScreen() {
         navigation.navigate('EmployeeEdit', { id: item.id_karyawan });
     };
 
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < filteredData.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, filteredData.length, isLoadMore]);
+
     return (
         <View className="flex-1 bg-gray-50">
             <HeaderNavigator title="DATA KARYAWAN" />
@@ -90,16 +103,28 @@ export function EmployeeListScreen() {
 
             <View className="flex-1">
                 <FlatList
-                    data={(isLoading || isInitializing) ? [] : filteredData}
+                    data={(isLoading || isInitializing) ? [] : filteredData.slice(0, visibleCount)}
                     keyExtractor={(item) => item.id_karyawan}
                     renderItem={({ item, index }) => (
                         <EmployeeCard item={item} index={index} onPress={onItemPress} />
                     )}
                     contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100, flexGrow: 1 }}
                     showsVerticalScrollIndicator={false}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
                     refreshControl={
-                        <RefreshControl refreshing={isLoading} onRefresh={loadData} colors={[theme.colors.primary]} />
+                        <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={loadData} colors={[theme.colors.primary]} />
                     }
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
                     ListEmptyComponent={() => {
                         if (error) {
                             return (

@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { EmployeeData, DivisionData, PositionData } from '../types/employee.types';
-import { 
-    createEmployeeApi, 
-    updateEmployeeApi, 
+import {
+    createEmployeeApi,
+    updateEmployeeApi,
     fetchEmployeeByIdApi,
-    fetchDivisionsApi,
-    fetchPositionsApi
+    fetchSupportDataApi
 } from '../api/employee.api';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { useAppSelector } from '../../../hooks/useAppSelector';
 import { fetchEmployees } from '../stores/employeeSlice';
+import { notificationService } from '../../../services/notification/notificationService';
 
 const initialFormData: Omit<EmployeeData, 'id_karyawan' | 'nm_karyawan_divisi' | 'nm_karyawan_posisi'> = {
     nm_karyawan: '',
@@ -26,11 +27,12 @@ const initialFormData: Omit<EmployeeData, 'id_karyawan' | 'nm_karyawan_divisi' |
 
 export function useEmployeeForm(id?: string) {
     const dispatch = useAppDispatch();
-    
+    const authUser = useAppSelector((state) => state.auth.user);
+
     const [formData, setFormData] = useState(initialFormData);
     const [divisions, setDivisions] = useState<DivisionData[]>([]);
     const [positions, setPositions] = useState<PositionData[]>([]);
-    
+
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -45,9 +47,8 @@ export function useEmployeeForm(id?: string) {
         setError(null);
         try {
             // Load dropdown references
-            const [divs, pos] = await Promise.all([
-                fetchDivisionsApi(),
-                fetchPositionsApi()
+            const [{ divisions: divs, positions: pos }] = await Promise.all([
+                fetchSupportDataApi()
             ]);
             setDivisions(divs);
             setPositions(pos);
@@ -99,8 +100,24 @@ export function useEmployeeForm(id?: string) {
             let result;
             if (id) {
                 result = await updateEmployeeApi(id, formData);
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'EMPLOYEE',
+                    judul: 'Employee Diperbarui',
+                    pesan: `Employee ${formData.nm_karyawan} berhasil diperbarui oleh ${authUser?.nm_users}`,
+                    action: 'Update'
+                }).catch(() => { });
             } else {
                 result = await createEmployeeApi(formData);
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'EMPLOYEE',
+                    judul: 'Employee Baru',
+                    pesan: `Employee ${formData.nm_karyawan} berhasil ditambahkan oleh ${authUser?.nm_users}`,
+                    action: 'Create'
+                }).catch(() => { });
             }
             dispatch(fetchEmployees()); // Refresh list
             return result;

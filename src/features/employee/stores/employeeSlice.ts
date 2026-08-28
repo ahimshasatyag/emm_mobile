@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { EmployeeData } from '../types/employee.types';
-import { fetchEmployeesApi } from '../api/employee.api';
+import { fetchEmployeesApi, deleteEmployeeApi } from '../api/employee.api';
 
 interface EmployeeState {
     data: EmployeeData[];
@@ -26,6 +26,18 @@ export const fetchEmployees = createAsyncThunk(
             return data;
         } catch (error: any) {
             return rejectWithValue(error.message || 'Gagal mengambil data karyawan');
+        }
+    }
+);
+
+export const deleteEmployee = createAsyncThunk(
+    'employee/delete',
+    async (id: string, { rejectWithValue }) => {
+        try {
+            await deleteEmployeeApi(id);
+            return id;
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Gagal menghapus karyawan');
         }
     }
 );
@@ -77,6 +89,10 @@ const employeeSlice = createSlice({
             .addCase(fetchEmployees.rejected, (state, action) => {
                 state.isLoading = false;
                 state.error = action.payload as string;
+            })
+            .addCase(deleteEmployee.fulfilled, (state, action) => {
+                state.data = state.data.filter(item => item.id_karyawan !== action.payload);
+                state.filteredData = state.filteredData.filter(item => item.id_karyawan !== action.payload);
             });
     },
 });
