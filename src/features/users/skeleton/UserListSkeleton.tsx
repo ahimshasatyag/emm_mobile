@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 
-export function UserListSkeleton() {
+export function UserListSkeleton({ count = 5 }: { count?: number }) {
     const opacity = useSharedValue(0.5);
 
     useEffect(() => {
@@ -22,7 +22,7 @@ export function UserListSkeleton() {
 
     return (
         <Animated.View style={animatedStyle} className="px-6 pt-4">
-            {[1, 2, 3, 4, 5].map((i) => (
+            {Array.from({ length: count }).map((_, i) => (
                 <View 
                     key={i} 
                     className="bg-white rounded-2xl p-4 mb-4 flex-row items-center border border-gray-100"

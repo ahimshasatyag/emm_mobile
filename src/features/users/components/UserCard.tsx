@@ -17,7 +17,7 @@ export function UserCard({ user, index, onPress }: UserCardProps) {
     const avatar = user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nm_users)}&background=random`;
 
     return (
-        <Animated.View entering={FadeInDown.delay(index * 100).duration(500).springify()}>
+        <Animated.View entering={FadeInDown.delay(index < 10 ? index * 100 : 0).duration(500).springify()}>
             <TouchableOpacity 
                 activeOpacity={0.7} 
                 onPress={() => onPress(user)}

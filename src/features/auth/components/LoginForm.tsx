@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import { useLogin } from '../hooks/useLogin';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { setUser as setUserAction } from '../store/authSlice';
 import * as Location from 'expo-location';
 import { theme } from '../../../theme/theme';
 
@@ -15,7 +14,7 @@ export function LoginForm() {
     const handleSubmit = async () => {
         if (!username || !password) return;
         const success = await login({ username, password });
-        
+
         if (success) {
             const proceedWithLogin = async () => {
                 try {
@@ -27,12 +26,6 @@ export function LoginForm() {
                     }
                 } catch (e) {
                     console.log("Location permission error:", e);
-                } finally {
-                    dispatch(setUserAction({
-                        name: 'Administrator (Dummy)',
-                        email: 'admin@emma.com',
-                        link_foto: 'https://ui-avatars.com/api/?name=Admin+EMMA'
-                    }));
                 }
             };
 
@@ -92,9 +85,8 @@ export function LoginForm() {
                 onPress={handleSubmit}
                 disabled={loading || !username || !password}
                 style={{ backgroundColor: theme.colors.primary }}
-                className={`h-12 rounded-lg items-center justify-center flex-row ${
-                    loading || !username || !password ? 'opacity-60' : 'opacity-100'
-                }`}
+                className={`h-12 rounded-lg items-center justify-center flex-row ${loading || !username || !password ? 'opacity-60' : 'opacity-100'
+                    }`}
                 activeOpacity={0.8}
             >
                 {loading ? (

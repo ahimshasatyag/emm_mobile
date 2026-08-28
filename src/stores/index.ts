@@ -1,4 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
+import notificationReducer from './notificationSlice';
 import authReducer from '../features/auth/store/authSlice';
 import homeReducer from '../features/home/store/homeSlice';
 import profileReducer from '../features/profile/store/profileSlice';
@@ -116,6 +117,7 @@ export const store = configureStore({
     customerinvoice: customerinvoiceReducer,
     payment: paymentReducer,
     kasbankin: kasbankinReducer,
+    notification: notificationReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

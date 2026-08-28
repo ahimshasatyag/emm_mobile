@@ -12,11 +12,13 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { useAppSelector } from '../../../hooks/useAppSelector';
+import { notificationService } from '../../../services/notification/notificationService';
 
 export function UserEditScreen() {
     const route = useRoute<any>();
     const navigation = useNavigation();
     const userId = route.params?.userId;
+    const authUser = useAppSelector(state => state.auth.user);
 
     // Get levels dynamically from the state
     const levels = useAppSelector(state => state.users.levels);
@@ -67,13 +69,22 @@ export function UserEditScreen() {
         setConfirmModalVisible(false);
         const success = await handleSave();
         if (success) {
-            (navigation as any).navigate('Drawer', {
-                screen: 'UserList',
-                params: {
-                    toastMessage: 'Data pengguna berhasil diperbarui!',
-                    toastType: 'success'
-                }
-            });
+            try {
+                await notificationService.store({
+                    user_id: authUser?.id_user || 1,
+                    id_users_level: authUser?.id_users_level || 1,
+                    kode_trans: 'USR',
+                    judul: 'Users',
+                    pesan: `Data users ${formData.username} telah diperbarui.`,
+                    action: 'Update'
+                });
+            } catch (err) {
+                console.error('Gagal mengirim notifikasi', err);
+            }
+            setIsEditable(false);
+            setToastMsg('Data pengguna berhasil diperbarui!');
+            setToastType('success');
+            setToastVisible(true);
         }
     };
 
@@ -84,18 +95,18 @@ export function UserEditScreen() {
     };
 
     return (
-        <KeyboardAvoidingView 
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={{ flex: 1, backgroundColor: theme.colors.background }}
         >
-            <HeaderNavigator 
-                title={isFetching || isRefreshing ? "MEMUAT DATA..." : (isEditable ? "EDIT PENGGUNA" : "DETAIL PENGGUNA")} 
-                showBackButton 
-                onBackPress={() => navigation.goBack()} 
+            <HeaderNavigator
+                title={isFetching || isRefreshing ? "MEMUAT DATA..." : (isEditable ? "EDIT PENGGUNA" : "DETAIL PENGGUNA")}
+                showBackButton
+                onBackPress={() => navigation.goBack()}
             />
 
-            <ScrollView 
-                className="flex-1" 
+            <ScrollView
+                className="flex-1"
                 contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
@@ -108,8 +119,8 @@ export function UserEditScreen() {
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
-                        <Animated.View 
-                            entering={FadeInUp.delay(50)} 
+                        <Animated.View
+                            entering={FadeInUp.delay(50)}
                             className="bg-white p-5 rounded-3xl border border-gray-100"
                             style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}
                         >

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { View, Text, FlatList, RefreshControl, TextInput } from 'react-native';
+import { View, Text, FlatList, RefreshControl, TextInput, ActivityIndicator } from 'react-native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useUsers } from '../hooks/useUsers';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
@@ -32,6 +32,8 @@ export function UserListScreen() {
     const [toastVisible, setToastVisible] = useState(false);
     const [toastType, setToastType] = useState<ToastType>('success');
     const [toastMsg, setToastMsg] = useState('');
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
     useEffect(() => {
         if (!isFocused) {
@@ -46,10 +48,7 @@ export function UserListScreen() {
             const initialize = async () => {
                 setIsInitializing(true);
                 try {
-                    await Promise.all([
-                        handleRefresh(),
-                        new Promise(resolve => setTimeout(resolve, 800))
-                    ]);
+                    await handleRefresh();
                 } catch (error) {
                     // console.error("Failed to load:", error);
                 } finally {
@@ -110,6 +109,20 @@ export function UserListScreen() {
         );
     }, [data, searchQuery]);
 
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, data]);
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < filteredData.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600); // Added delay to simulate pagination loading
+        }
+    }, [visibleCount, filteredData.length, isLoadMore]);
+
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
             <HeaderNavigator isLoading={isLoading} />
@@ -129,16 +142,28 @@ export function UserListScreen() {
 
             <View className="flex-1">
                 <FlatList
-                    data={isInitializing ? [] : filteredData}
+                    data={isInitializing || isLoading ? [] : filteredData.slice(0, visibleCount)}
                     keyExtractor={(item) => item.username}
                     renderItem={({ item, index }) => (
                         <UserCard user={item} index={index} onPress={handleUserPress} />
                     )}
                     contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100, flexGrow: 1 }}
                     showsVerticalScrollIndicator={false}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
                     refreshControl={
                         <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
                     }
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
                     ListEmptyComponent={() => {
                         if (error) {
                             return (
@@ -150,7 +175,7 @@ export function UserListScreen() {
                                 />
                             );
                         }
-                        if (isInitializing) {
+                        if (isInitializing || isLoading) {
                             return (
                                 <View style={{ marginHorizontal: -24 }}>
                                     <UserListSkeleton />

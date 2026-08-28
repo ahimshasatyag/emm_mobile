@@ -7,6 +7,7 @@ import { DrawerNavigationProp } from '@react-navigation/drawer';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { theme } from '../../../theme/theme';
+import { Notification } from '../../../components/layouts/Notification';
 
 interface HomeHeaderProps {
     isLoading: boolean;
@@ -16,6 +17,8 @@ export function HomeHeader({ isLoading }: HomeHeaderProps) {
     const user = useAppSelector((state) => state.auth.user);
     const navigation = useNavigation<DrawerNavigationProp<any>>();
     const insets = useSafeAreaInsets();
+
+    const [isNotificationVisible, setIsNotificationVisible] = useState(false);
 
     const bellRotation = useSharedValue(0);
 
@@ -88,6 +91,7 @@ export function HomeHeader({ isLoading }: HomeHeaderProps) {
 
                 <TouchableOpacity 
                     activeOpacity={0.7}
+                    onPress={() => setIsNotificationVisible(true)}
                 >
                     <View className="w-12 h-12 rounded-2xl bg-gray-50 items-center justify-center relative border border-gray-100">
                         <Animated.View style={!isLoading ? animatedBellStyle : {}}>
@@ -129,6 +133,7 @@ export function HomeHeader({ isLoading }: HomeHeaderProps) {
                     )}
                 </View>
             </View>
+            <Notification visible={isNotificationVisible} onClose={() => setIsNotificationVisible(false)} />
         </Animated.View>
     );
 }

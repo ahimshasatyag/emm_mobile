@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withSequence, withTiming } from 'react-native-reanimated';
 import { Bell, Menu, ArrowLeft } from 'lucide-react-native';
@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { DrawerNavigationProp } from '@react-navigation/drawer';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../theme/theme';
+import { Notification } from './Notification';
 
 interface HeaderNavigatorProps {
     isLoading?: boolean;
@@ -20,6 +21,8 @@ interface HeaderNavigatorProps {
 export function HeaderNavigator({ isLoading = false, title = 'Eka Maju Mesinindo', showBackButton = false, onBackPress, disableAnimation = false, noBottomRadius = false, noShadow = false }: HeaderNavigatorProps) {
     const navigation = useNavigation<DrawerNavigationProp<any>>();
     const insets = useSafeAreaInsets();
+
+    const [isNotificationVisible, setIsNotificationVisible] = useState(false);
 
     const bellRotation = useSharedValue(0);
 
@@ -99,7 +102,7 @@ export function HeaderNavigator({ isLoading = false, title = 'Eka Maju Mesinindo
                 {showBackButton ? (
                     <View className="w-12 h-12" />
                 ) : (
-                    <TouchableOpacity activeOpacity={0.7}>
+                    <TouchableOpacity activeOpacity={0.7} onPress={() => setIsNotificationVisible(true)}>
                         <View className="w-12 h-12 rounded-2xl bg-gray-50 items-center justify-center relative border border-gray-100">
                             <Animated.View style={!isLoading ? animatedBellStyle : {}}>
                                 <Bell color={theme.colors.text} size={22} strokeWidth={2.5} />
@@ -114,6 +117,7 @@ export function HeaderNavigator({ isLoading = false, title = 'Eka Maju Mesinindo
                     </TouchableOpacity>
                 )}
             </View>
+            <Notification visible={isNotificationVisible} onClose={() => setIsNotificationVisible(false)} />
         </Animated.View>
     );
 }
