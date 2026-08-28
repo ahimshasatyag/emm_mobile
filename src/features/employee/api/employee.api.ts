@@ -4,7 +4,11 @@ import { EmployeeData, DivisionData, PositionData } from '../types/employee.type
 export const fetchEmployeesApi = async (): Promise<EmployeeData[]> => {
     try {
         const response = await api.get('/employee');
-        return response.data.data;
+        return response.data.data.map((item: any) => ({
+            ...item,
+            nm_karyawan_divisi: item.divisi?.nm_karyawan_divisi || '-',
+            nm_karyawan_posisi: item.posisi?.nm_karyawan_posisi || '-'
+        }));
     } catch (error: any) {
         throw new Error(error.response?.data?.message || 'Gagal mengambil data karyawan');
     }

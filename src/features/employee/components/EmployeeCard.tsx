@@ -41,10 +41,15 @@ export function EmployeeCard({ item, index, onPress }: EmployeeCardProps) {
                             {item.no_hp || '-'}
                         </Text>
                         
-                        <View className="ml-auto flex-row items-center">
-                            <View className={`px-2 py-0.5 rounded-md ${item.flag_status === '1' ? 'bg-green-100' : 'bg-red-100'}`}>
-                                <Text className={`text-[10px] font-bold ${item.flag_status === '1' ? 'text-green-700' : 'text-red-700'}`}>
-                                    {item.flag_status === '1' ? 'Aktif' : 'Non-Aktif'}
+                        <View className="ml-auto flex-row items-center gap-1">
+                            {String(item.flag_agent) === '1' && (
+                                <View className="px-2 py-0.5 rounded-md bg-purple-100">
+                                    <Text className="text-[10px] font-bold text-purple-700">Agent</Text>
+                                </View>
+                            )}
+                            <View className={`px-2 py-0.5 rounded-md ${String(item.flag_status) === '1' ? 'bg-green-100' : 'bg-red-100'}`}>
+                                <Text className={`text-[10px] font-bold ${String(item.flag_status) === '1' ? 'text-green-700' : 'text-red-700'}`}>
+                                    {String(item.flag_status) === '1' ? 'Aktif' : 'Non-Aktif'}
                                 </Text>
                             </View>
                         </View>

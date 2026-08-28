@@ -26,16 +26,6 @@ export function EmployeeListScreen() {
     const [visibleCount, setVisibleCount] = useState(10);
     const [isLoadMore, setIsLoadMore] = useState(false);
 
-    const filteredData = useMemo(() => {
-        if (!searchQuery) return data;
-        const query = searchQuery.toLowerCase();
-        return data.filter(item => 
-            item.nm_karyawan.toLowerCase().includes(query) ||
-            item.no_hp.toLowerCase().includes(query) ||
-            (item.nm_karyawan_divisi && item.nm_karyawan_divisi.toLowerCase().includes(query))
-        );
-    }, [data, searchQuery]);
-
     React.useEffect(() => {
         setVisibleCount(10);
     }, [searchQuery, data]);
@@ -75,14 +65,14 @@ export function EmployeeListScreen() {
     };
 
     const handleLoadMore = useCallback(() => {
-        if (visibleCount < filteredData.length && !isLoadMore) {
+        if (visibleCount < data.length && !isLoadMore) {
             setIsLoadMore(true);
             setTimeout(() => {
                 setVisibleCount(prev => prev + 10);
                 setIsLoadMore(false);
             }, 600);
         }
-    }, [visibleCount, filteredData.length, isLoadMore]);
+    }, [visibleCount, data.length, isLoadMore]);
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -103,7 +93,7 @@ export function EmployeeListScreen() {
 
             <View className="flex-1">
                 <FlatList
-                    data={(isLoading || isInitializing) ? [] : filteredData.slice(0, visibleCount)}
+                    data={(isLoading || isInitializing) ? [] : data.slice(0, visibleCount)}
                     keyExtractor={(item) => item.id_karyawan}
                     renderItem={({ item, index }) => (
                         <EmployeeCard item={item} index={index} onPress={onItemPress} />

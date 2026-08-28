@@ -65,9 +65,9 @@ export function useEmployeeForm(id?: string) {
                     no_hp: data.no_hp,
                     jenis_kelamin: data.jenis_kelamin,
                     karyawan_address: data.karyawan_address,
-                    karyawan_email: data.karyawan_email,
-                    flag_agent: data.flag_agent,
-                    flag_status: data.flag_status,
+                    karyawan_email: data.karyawan_email || '',
+                    flag_agent: String(data.flag_agent || '0') as '0'|'1',
+                    flag_status: String(data.flag_status || '0') as '0'|'1',
                 });
             }
         } catch (err: any) {
