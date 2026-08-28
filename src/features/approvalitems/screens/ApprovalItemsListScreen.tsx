@@ -37,7 +37,7 @@ export function ApprovalItemsListScreen() {
         const query = searchQuery.toLowerCase();
         return data.filter(item =>
             item.approval_name.toLowerCase().includes(query) ||
-            item.module_name.toLowerCase().includes(query)
+            (item.description && item.description.toLowerCase().includes(query))
         );
     }, [data, searchQuery]);
 

@@ -13,7 +13,11 @@ export const fetchApprovalItemsApi = async (): Promise<ApprovalItemData[]> => {
 export const fetchApprovalItemByIdApi = async (id: string): Promise<ApprovalItemData> => {
     try {
         const response = await api.get(`/approvalitems/${id}`);
-        return response.data.data;
+        const data = response.data.data;
+        return {
+            ...data.rule,
+            level_ids: data.selected_level_ids || [],
+        };
     } catch (error: any) {
         throw new Error(error.response?.data?.message || 'Gagal mengambil detail rule persetujuan');
     }

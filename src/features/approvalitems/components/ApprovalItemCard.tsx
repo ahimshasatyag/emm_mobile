@@ -29,7 +29,7 @@ export function ApprovalItemCard({ item, index, onPress }: ApprovalItemCardProps
                         <Text className="text-[15px] font-bold text-gray-800 mb-1" numberOfLines={1}>{item.approval_name}</Text>
                         <View className="flex-row items-center flex-wrap gap-2 mt-1">
                             <View className="bg-gray-100 px-2 py-0.5 rounded-md">
-                                <Text className="text-[11px] text-gray-500 font-medium">Modul: {item.module_name}</Text>
+                                <Text className="text-[11px] text-gray-500 font-medium" numberOfLines={1}>{item.description}</Text>
                             </View>
                             <View className={`${isAuto ? 'bg-orange-100' : 'bg-emerald-100'} px-2 py-0.5 rounded-md`}>
                                 <Text className={`text-[11px] font-bold uppercase ${isAuto ? 'text-orange-600' : 'text-emerald-600'}`}>{item.approval_type}</Text>
