@@ -4,6 +4,7 @@ import { fetchInventoryTypeByIdApi, createInventoryTypeApi, updateInventoryTypeA
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { setData } from '../stores/inventorytypeSlice';
 import { useAppSelector } from '../../../hooks/useAppSelector';
+import { notificationService } from '../../../services/notification/notificationService';
 
 export function useInventoryTypeForm(id?: string) {
     const [formData, setFormData] = useState<InventoryTypeFormData>({
@@ -17,6 +18,7 @@ export function useInventoryTypeForm(id?: string) {
 
     const dispatch = useAppDispatch();
     const { data: globalData } = useAppSelector((state) => state.inventorytype);
+    const authUser = useAppSelector((state) => state.auth.user);
 
     const loadData = async () => {
         setIsLoading(true);
@@ -69,9 +71,27 @@ export function useInventoryTypeForm(id?: string) {
                 result = await updateInventoryTypeApi(id, formData);
                 const updatedList = globalData.map((d) => d.id === id ? result : d);
                 dispatch(setData(updatedList));
+
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'INVENTORY TYPE',
+                    judul: 'Inventory Type Diperbarui',
+                    pesan: `Inventory Type ${formData.name} telah berhasil diperbarui oleh ${authUser?.nm_users}`,
+                    action: 'Update'
+                }).catch(() => { });
             } else {
                 result = await createInventoryTypeApi(formData);
                 dispatch(setData([result, ...globalData]));
+
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'INVENTORY TYPE',
+                    judul: 'Inventory Type Baru',
+                    pesan: `Inventory Type ${formData.name} telah berhasil ditambahkan oleh ${authUser?.nm_users}`,
+                    action: 'Create'
+                }).catch(() => { });
             }
             return true;
         } catch (err: any) {
@@ -88,6 +108,16 @@ export function useInventoryTypeForm(id?: string) {
         try {
             await deleteInventoryTypeApi(id);
             dispatch(setData(globalData.filter((d) => d.id !== id)));
+
+            await notificationService.store({
+                user_id: authUser?.id_user ?? 1,
+                id_users_level: authUser?.id_users_level ?? 1,
+                kode_trans: 'INVENTORY TYPE',
+                judul: 'Inventory Type Dihapus',
+                pesan: `Inventory Type dengan kode ${id} telah dihapus oleh ${authUser?.nm_users}`,
+                action: 'Delete'
+            }).catch(() => { });
+
             return true;
         } catch (err: any) {
             setError(err.message || 'Gagal menghapus data');

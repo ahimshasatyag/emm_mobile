@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, FlatList, RefreshControl, TextInput } from 'react-native';
+import { View, Text, FlatList, RefreshControl, TextInput, ActivityIndicator } from 'react-native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useInventoryType } from '../hooks/useInventoryType';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
@@ -30,6 +30,8 @@ export function InventoryTypeListScreen() {
 
     const [isInitializing, setIsInitializing] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
     const route = useRoute();
     const [toastVisible, setToastVisible] = useState(false);
@@ -57,6 +59,10 @@ export function InventoryTypeListScreen() {
         );
     }, [data, searchQuery]);
 
+    React.useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, data]);
+
     useFocusEffect(
         useCallback(() => {
             let isActive = true;
@@ -64,10 +70,7 @@ export function InventoryTypeListScreen() {
             const initialize = async () => {
                 setIsInitializing(true);
                 try {
-                    await Promise.all([
-                        handleRefresh(),
-                        new Promise(resolve => setTimeout(resolve, 800))
-                    ]);
+                    await handleRefresh();
                 } catch (error) {
                     // console.error("Failed to load:", error);
                 } finally {
@@ -106,6 +109,16 @@ export function InventoryTypeListScreen() {
         navigation.navigate('InventoryTypeForm');
     };
 
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < filteredData.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, filteredData.length, isLoadMore]);
+
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
             <HeaderNavigator isLoading={isLoading} />
@@ -125,16 +138,28 @@ export function InventoryTypeListScreen() {
 
             <View className="flex-1">
                 <FlatList
-                    data={(isLoading || isInitializing) ? [] : filteredData}
+                    data={(isLoading || isInitializing) ? [] : filteredData.slice(0, visibleCount)}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item, index }) => (
                         <InventoryTypeCard item={item} index={index} onPress={handlePressCard} />
                     )}
                     contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100, flexGrow: 1 }}
                     showsVerticalScrollIndicator={false}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
                     refreshControl={
-                        <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
+                        <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
                     }
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
                     ListEmptyComponent={() => {
                         if (error) {
                             return (
