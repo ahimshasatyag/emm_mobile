@@ -5,7 +5,7 @@ import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { setData } from '../stores/counterSlice';
 
-export function useCounterEdit(id: string) {
+export function useCounterEdit(id_counter: string, periode: string) {
     const dispatch = useAppDispatch();
     const counterList = useAppSelector((state) => state.counter.data);
 
@@ -24,16 +24,16 @@ export function useCounterEdit(id: string) {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (id) {
+        if (id_counter && periode) {
             loadCounter();
         }
-    }, [id]);
+    }, [id_counter, periode]);
 
     const loadCounter = async () => {
         setIsFetching(true);
         setError(null);
         try {
-            const data = await fetchCounterByIdApi(id);
+            const data = await fetchCounterByIdApi(id_counter, periode);
             setFormData({
                 no_counter: data.no_counter.toString(),
             });
@@ -59,8 +59,8 @@ export function useCounterEdit(id: string) {
         setIsSaving(true);
         setError(null);
         try {
-            const updated = await updateCounterApi(id, formData);
-            const newList = counterList.map(item => item.id_counter === id ? updated : item);
+            const updated = await updateCounterApi(id_counter, periode, formData);
+            const newList = counterList.map(item => (item.id_counter === id_counter && item.periode === periode) ? updated : item);
             dispatch(setData(newList));
             return true;
         } catch (err: any) {

@@ -14,7 +14,7 @@ import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 export function CounterEditScreen() {
     const route = useRoute();
     const navigation = useNavigation();
-    const { id } = (route.params as { id: string }) || { id: '' };
+    const { id_counter, periode } = (route.params as { id_counter: string, periode: string }) || { id_counter: '', periode: '' };
 
     const [isEditing, setIsEditing] = useState(false);
 
@@ -28,7 +28,7 @@ export function CounterEditScreen() {
         handleSave,
         loadCounter,
         validateForm,
-    } = useCounterEdit(id);
+    } = useCounterEdit(id_counter, periode);
 
     const [confirmModalVisible, setConfirmModalVisible] = useState(false);
     const [toastVisible, setToastVisible] = useState(false);

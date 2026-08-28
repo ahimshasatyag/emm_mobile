@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, FlatList, RefreshControl, TextInput } from 'react-native';
+import { View, Text, FlatList, RefreshControl, TextInput, ActivityIndicator } from 'react-native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useCounter } from '../hooks/useCounter';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
@@ -11,7 +11,6 @@ import { ErrorState } from '../../../components/shared/ErrorState';
 import { EmptyState } from '../../../components/shared/EmptyState';
 import { theme } from '../../../theme/theme';
 import { Search } from 'lucide-react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CounterData } from '../types/counter.types';
@@ -22,6 +21,8 @@ export function CounterListScreen() {
 
     const [isInitializing, setIsInitializing] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
     const filteredData = useMemo(() => {
         if (!searchQuery) return data;
@@ -33,6 +34,10 @@ export function CounterListScreen() {
         );
     }, [data, searchQuery]);
 
+    React.useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, data]);
+
     useFocusEffect(
         useCallback(() => {
             let isActive = true;
@@ -40,10 +45,7 @@ export function CounterListScreen() {
             const initialize = async () => {
                 setIsInitializing(true);
                 try {
-                    await Promise.all([
-                        handleRefresh(),
-                        new Promise(resolve => setTimeout(resolve, 800))
-                    ]);
+                    await handleRefresh();
                 } catch (error) {
                     // console.error("Failed to load:", error);
                 } finally {
@@ -74,8 +76,18 @@ export function CounterListScreen() {
     };
 
     const handlePressCard = (item: CounterData) => {
-        navigation.navigate('CounterEdit', { id: item.id_counter });
+        navigation.navigate('CounterEdit', { id_counter: item.id_counter, periode: item.periode });
     };
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < filteredData.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600); // 600ms artificial delay for loading sensation
+        }
+    }, [visibleCount, filteredData.length, isLoadMore]);
 
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -96,16 +108,28 @@ export function CounterListScreen() {
 
             <View className="flex-1">
                 <FlatList
-                    data={(isLoading || isInitializing) ? [] : filteredData}
-                    keyExtractor={(item) => item.id_counter}
+                    data={(isLoading || isInitializing) ? [] : filteredData.slice(0, visibleCount)}
+                    keyExtractor={(item) => `${item.id_counter}-${item.periode}`}
                     renderItem={({ item, index }) => (
                         <CounterCard item={item} index={index} onPress={handlePressCard} />
                     )}
                     contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100, flexGrow: 1 }}
                     showsVerticalScrollIndicator={false}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
                     refreshControl={
-                        <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
+                        <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
                     }
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
                     ListEmptyComponent={() => {
                         if (error) {
                             return (

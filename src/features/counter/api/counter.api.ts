@@ -1,57 +1,29 @@
+import api from '../../../services/api/api';
 import { CounterData, CounterFormData } from '../types/counter.types';
-import { DUMMY_COUNTERS } from '../data/counter.dummy';
-
-const DELAY = 1500;
-
-let currentData = [...DUMMY_COUNTERS];
 
 export const fetchCountersApi = async (): Promise<CounterData[]> => {
-    return new Promise((resolve) => {
-        setTimeout(() => resolve([...currentData]), DELAY);
-    });
+    try {
+        const response = await api.get('/counter');
+        return response.data.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Gagal mengambil data counter');
+    }
 };
 
-export const fetchCounterByIdApi = async (id: string): Promise<CounterData> => {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const data = currentData.find((item) => item.id_counter === id);
-            if (data) resolve({ ...data });
-            else reject(new Error('Data counter tidak ditemukan'));
-        }, DELAY);
-    });
+export const fetchCounterByIdApi = async (id_counter: string, periode: string): Promise<CounterData> => {
+    try {
+        const response = await api.get(`/counter/${id_counter}/${periode}`);
+        return response.data.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Gagal mengambil detail counter');
+    }
 };
 
-export const updateCounterApi = async (id: string, data: CounterFormData): Promise<CounterData> => {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const index = currentData.findIndex(d => d.id_counter === id);
-            if (index === -1) {
-                reject(new Error('Data counter tidak ditemukan'));
-                return;
-            }
-            
-            const updated: CounterData = {
-                ...currentData[index],
-                no_counter: Number(data.no_counter) || 0,
-            };
-            
-            currentData[index] = updated;
-            resolve(updated);
-        }, DELAY);
-    });
-};
-
-export const deleteCounterApi = async (id: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const initialLength = currentData.length;
-            currentData = currentData.filter(d => d.id_counter !== id);
-            
-            if (currentData.length === initialLength) {
-                reject(new Error('Data counter tidak ditemukan'));
-            } else {
-                resolve();
-            }
-        }, DELAY);
-    });
+export const updateCounterApi = async (id_counter: string, periode: string, data: CounterFormData): Promise<CounterData> => {
+    try {
+        const response = await api.put(`/counter/${id_counter}/${periode}`, data);
+        return response.data.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Gagal memperbarui data counter');
+    }
 };
