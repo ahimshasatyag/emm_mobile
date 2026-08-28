@@ -15,7 +15,7 @@ export function SettingCard({ item, index, onPress }: SettingCardProps) {
     const isActive = item.setting_flag === '1';
 
     return (
-        <Animated.View entering={FadeInUp.delay(index * 100).duration(400)}>
+        <Animated.View entering={FadeInUp.delay(index < 10 ? index * 100 : 0).duration(400)}>
             <TouchableOpacity
                 onPress={() => onPress(item)}
                 activeOpacity={0.7}
@@ -29,7 +29,7 @@ export function SettingCard({ item, index, onPress }: SettingCardProps) {
                         <Text className="text-[15px] font-bold text-gray-800 mb-1" numberOfLines={1}>{item.setting_label}</Text>
                         <View className="flex-row flex-wrap items-center mt-1">
                             <View className="bg-gray-100 self-start px-2 py-0.5 rounded-md mr-2 mb-1">
-                                <Text className="text-[11px] text-gray-500 font-medium">Key: {item.setting_key}</Text>
+                                <Text className="text-[11px] text-gray-500 font-medium" numberOfLines={1} style={{ maxWidth: 150 }}>Value: {item.setting_value}</Text>
                             </View>
                             <View className={`${isActive ? 'bg-green-50' : 'bg-gray-100'} self-start px-2 py-0.5 rounded-md mb-1`}>
                                 <Text className={`text-[11px] font-bold ${isActive ? 'text-green-600' : 'text-gray-500'}`}>

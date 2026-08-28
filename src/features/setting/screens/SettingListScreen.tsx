@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, FlatList, RefreshControl, TextInput } from 'react-native';
+import { View, Text, FlatList, RefreshControl, TextInput, ActivityIndicator } from 'react-native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useSetting } from '../hooks/useSetting';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
@@ -12,7 +12,6 @@ import { EmptyState } from '../../../components/shared/EmptyState';
 import { ButtonAdd } from '../../../components/ui/buttonAdd';
 import { theme } from '../../../theme/theme';
 import { Search } from 'lucide-react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SettingData } from '../types/setting.types';
@@ -30,6 +29,8 @@ export function SettingListScreen() {
 
     const [isInitializing, setIsInitializing] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
     const route = useRoute();
     const [toastVisible, setToastVisible] = useState(false);
@@ -45,7 +46,7 @@ export function SettingListScreen() {
             setToastType(params.toastType || 'success');
             setToastTitle(params.toastType === 'error' ? 'Gagal' : 'Sukses');
             setToastVisible(true);
-            
+
             // Clear params so it doesn't show again on re-focus
             navigation.setParams({ toastMessage: undefined, toastType: undefined });
         }
@@ -56,9 +57,13 @@ export function SettingListScreen() {
         const query = searchQuery.toLowerCase();
         return data.filter(item =>
             item.setting_label.toLowerCase().includes(query) ||
-            item.setting_key.toLowerCase().includes(query)
+            (item.setting_value && item.setting_value.toLowerCase().includes(query))
         );
     }, [data, searchQuery]);
+
+    React.useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, data]);
 
     useFocusEffect(
         useCallback(() => {
@@ -67,10 +72,7 @@ export function SettingListScreen() {
             const initialize = async () => {
                 setIsInitializing(true);
                 try {
-                    await Promise.all([
-                        handleRefresh(),
-                        new Promise(resolve => setTimeout(resolve, 800))
-                    ]);
+                    await handleRefresh();
                 } catch (error) {
                     // console.error("Failed to load:", error);
                 } finally {
@@ -109,6 +111,16 @@ export function SettingListScreen() {
         navigation.navigate('SettingForm');
     };
 
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < filteredData.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600); // 600ms artificial delay for loading sensation
+        }
+    }, [visibleCount, filteredData.length, isLoadMore]);
+
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
             <HeaderNavigator isLoading={isLoading} />
@@ -117,7 +129,7 @@ export function SettingListScreen() {
                 <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm mb-2">
                     <Search size={20} color="#9CA3AF" />
                     <TextInput
-                        placeholder="Cari label atau key setting..."
+                        placeholder="Cari label atau value setting..."
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                         className="flex-1 ml-3 text-sm text-gray-800 p-0"
@@ -128,16 +140,28 @@ export function SettingListScreen() {
 
             <View className="flex-1">
                 <FlatList
-                    data={(isLoading || isInitializing) ? [] : filteredData}
+                    data={(isLoading || isInitializing) ? [] : filteredData.slice(0, visibleCount)}
                     keyExtractor={(item) => item.setting_id}
                     renderItem={({ item, index }) => (
                         <SettingCard item={item} index={index} onPress={handlePressCard} />
                     )}
                     contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100, flexGrow: 1 }}
                     showsVerticalScrollIndicator={false}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
                     refreshControl={
-                        <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
+                        <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
                     }
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
                     ListEmptyComponent={() => {
                         if (error) {
                             return (
