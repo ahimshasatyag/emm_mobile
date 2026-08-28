@@ -6,6 +6,7 @@ import { UserLevelData } from '../../userslevel/types/userslevel.types';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { setData } from '../stores/approvalitemsSlice';
 import { useAppSelector } from '../../../hooks/useAppSelector';
+import { notificationService } from '../../../services/notification/notificationService';
 
 export function useApprovalItemsForm(id?: string) {
     const [formData, setFormData] = useState<ApprovalItemFormData>({
@@ -31,40 +32,31 @@ export function useApprovalItemsForm(id?: string) {
 
     const dispatch = useAppDispatch();
     const { data: globalData } = useAppSelector((state) => state.approvalitems);
+    const authUser = useAppSelector((state) => state.auth.user);
 
     const loadData = async () => {
         setIsLoading(true);
         setError(null);
         try {
             if (id) {
-                await Promise.all([
-                    (async () => {
-                        const levels = await fetchUsersLevelApi();
-                        setLevelsOption(levels);
-                        const itemData = await fetchApprovalItemByIdApi(id);
-                        setFormData({
-                            approval_name: itemData.approval_name,
-                            description: itemData.description,
-                            approval_type: itemData.approval_type,
-                            module_name: itemData.module_name,
-                            table_name: itemData.table_name,
-                            status_column_name: itemData.status_column_name,
-                            new_status_approve: itemData.new_status_approve,
-                            new_status_reject: itemData.new_status_reject,
-                            rule: itemData.rule,
-                            level_ids: [...itemData.level_ids],
-                        });
-                    })(),
-                    new Promise(resolve => setTimeout(resolve, 800))
-                ]);
+                const levels = await fetchUsersLevelApi();
+                setLevelsOption(levels);
+                const itemData = await fetchApprovalItemByIdApi(id);
+                setFormData({
+                    approval_name: itemData.approval_name,
+                    description: itemData.description,
+                    approval_type: itemData.approval_type,
+                    module_name: itemData.module_name,
+                    table_name: itemData.table_name,
+                    status_column_name: itemData.status_column_name,
+                    new_status_approve: itemData.new_status_approve,
+                    new_status_reject: itemData.new_status_reject,
+                    rule: itemData.rule,
+                    level_ids: [...itemData.level_ids],
+                });
             } else {
-                await Promise.all([
-                    (async () => {
-                        const levels = await fetchUsersLevelApi();
-                        setLevelsOption(levels);
-                    })(),
-                    new Promise(resolve => setTimeout(resolve, 800))
-                ]);
+                const levels = await fetchUsersLevelApi();
+                setLevelsOption(levels);
                 setFormData({
                     approval_name: '',
                     description: '',
@@ -127,9 +119,27 @@ export function useApprovalItemsForm(id?: string) {
                 result = await updateApprovalItemApi(id, formData);
                 const updatedList = globalData.map((d) => d.id === id ? result : d);
                 dispatch(setData(updatedList));
+
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'APPROVAL ITEMS',
+                    judul: 'Approval Rule Diperbarui',
+                    pesan: `Rule ${formData.approval_name} telah berhasil diperbarui oleh ${authUser?.nm_users}`,
+                    action: 'Update'
+                }).catch(() => { });
             } else {
                 result = await createApprovalItemApi(formData);
                 dispatch(setData([result, ...globalData]));
+
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'APPROVAL ITEMS',
+                    judul: 'Approval Rule Baru',
+                    pesan: `Rule ${formData.approval_name} telah berhasil ditambahkan oleh ${authUser?.nm_users}`,
+                    action: 'Create'
+                }).catch(() => { });
             }
             return result;
         } catch (err: any) {
@@ -146,6 +156,16 @@ export function useApprovalItemsForm(id?: string) {
         try {
             await deleteApprovalItemApi(id);
             dispatch(setData(globalData.filter((d) => d.id !== id)));
+
+            await notificationService.store({
+                user_id: authUser?.id_user ?? 1,
+                id_users_level: authUser?.id_users_level ?? 1,
+                kode_trans: 'APPROVAL ITEMS',
+                judul: 'Approval Rule Dihapus',
+                pesan: `Rule dengan kode ${id} telah dihapus oleh ${authUser?.nm_users}`,
+                action: 'Delete'
+            }).catch(() => { });
+
             return true;
         } catch (err: any) {
             setError(err.message || 'Gagal menghapus data');
