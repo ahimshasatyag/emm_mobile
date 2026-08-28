@@ -13,7 +13,7 @@ interface UsersLevelCardProps {
 
 export function UsersLevelCard({ level, index, onPress }: UsersLevelCardProps) {
     return (
-        <Animated.View entering={FadeInUp.delay(index * 100).duration(400)}>
+        <Animated.View entering={FadeInUp.delay(index < 10 ? index * 100 : 0).duration(400)}>
             <TouchableOpacity
                 onPress={() => onPress(level)}
                 activeOpacity={0.7}
