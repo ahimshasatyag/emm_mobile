@@ -1,4 +1,4 @@
-import React, { useState, useEffect , useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, RefreshControl, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
@@ -29,12 +29,12 @@ export function ProductBrandListScreen() {
             let isActive = true;
 
             const initialize = async () => {
-                setIsInitializing(true);
+                if (brands?.length === 0) {
+                    setIsInitializing(true);
+                }
+
                 try {
-                    await Promise.all([
-                        refreshData(),
-                        new Promise(resolve => setTimeout(resolve, 800))
-                    ]);
+                    await refreshData();
                 } catch (error) {
                     // console.error("Failed to load:", error);
                 } finally {
@@ -48,9 +48,8 @@ export function ProductBrandListScreen() {
 
             return () => {
                 isActive = false;
-                setIsInitializing(true);
             };
-        }, [])
+        }, [brands?.length])
     );
     const [selectedBrandIds, setSelectedBrandIds] = useState<string[]>([]);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -88,7 +87,7 @@ export function ProductBrandListScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator title="MEREK PRODUK" />
+            <HeaderNavigator title="PRODUK BRAND" />
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
                 <View className="flex-row items-center justify-between">
@@ -96,7 +95,7 @@ export function ProductBrandListScreen() {
                         <Search color="#9ca3af" size={20} />
                         <TextInput
                             className="flex-1 ml-2 text-gray-900 h-full"
-                            placeholder="Cari merek..."
+                            placeholder="Cari brand..."
                             value={searchQuery}
                             onChangeText={setSearchQuery}
                             placeholderTextColor="#9ca3af"
@@ -107,7 +106,7 @@ export function ProductBrandListScreen() {
 
             <View className="flex-1">
                 <FlatList
-                    data={(isLoading || isInitializing) ? [] : (brands || []).slice(0, visibleCount)}
+                    data={isInitializing ? [] : (brands || []).slice(0, visibleCount)}
                     keyExtractor={(item) => String(item?.id_product_brand)}
                     renderItem={({ item, index }) => (
                         <ProductBrandCard
@@ -139,7 +138,7 @@ export function ProductBrandListScreen() {
                     onEndReached={handleLoadMore}
                     onEndReachedThreshold={0.5}
                     refreshControl={
-                        <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
+                        <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
                     }
                     ListFooterComponent={() => {
                         if (isLoadMore) {
