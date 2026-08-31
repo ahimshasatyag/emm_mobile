@@ -20,7 +20,11 @@ export const fetchCategories = createAsyncThunk(
     'productCategory/fetchAll',
     async (_, { rejectWithValue }) => {
         try {
-            return await productCategoryApi.fetchCategories();
+            const response = await productCategoryApi.fetchCategories();
+            if (response.success && response.data) {
+                return response.data;
+            }
+            return rejectWithValue(response.message || 'Gagal memuat kategori');
         } catch (error: any) {
             return rejectWithValue(error.message || 'Gagal memuat kategori');
         }
@@ -31,7 +35,11 @@ export const createCategory = createAsyncThunk(
     'productCategory/create',
     async (data: ProductCategoryFormData, { rejectWithValue }) => {
         try {
-            return await productCategoryApi.createCategory(data);
+            const response = await productCategoryApi.createCategory(data);
+            if (response.success && response.data) {
+                return response.data;
+            }
+            return rejectWithValue(response.message || 'Gagal menyimpan kategori');
         } catch (error: any) {
             return rejectWithValue(error.message || 'Gagal menyimpan kategori');
         }
@@ -40,9 +48,13 @@ export const createCategory = createAsyncThunk(
 
 export const updateCategory = createAsyncThunk(
     'productCategory/update',
-    async ({ id, data }: { id: string, data: Partial<ProductCategoryFormData> }, { rejectWithValue }) => {
+    async ({ id, data }: { id: string | number, data: Partial<ProductCategoryFormData> }, { rejectWithValue }) => {
         try {
-            return await productCategoryApi.updateCategory(id, data);
+            const response = await productCategoryApi.updateCategory(id, data);
+            if (response.success && response.data) {
+                return response.data;
+            }
+            return rejectWithValue(response.message || 'Gagal mengubah kategori');
         } catch (error: any) {
             return rejectWithValue(error.message || 'Gagal mengubah kategori');
         }
@@ -51,10 +63,13 @@ export const updateCategory = createAsyncThunk(
 
 export const deleteCategory = createAsyncThunk(
     'productCategory/delete',
-    async (id: string, { rejectWithValue }) => {
+    async (id: string | number, { rejectWithValue }) => {
         try {
-            await productCategoryApi.deleteCategory(id);
-            return id;
+            const response = await productCategoryApi.deleteCategory(id);
+            if (response.success) {
+                return id;
+            }
+            return rejectWithValue(response.message || 'Gagal menghapus kategori');
         } catch (error: any) {
             return rejectWithValue(error.message || 'Gagal menghapus kategori');
         }

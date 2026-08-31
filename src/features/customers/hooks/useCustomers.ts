@@ -1,5 +1,3 @@
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState, AppDispatch } from '../../../stores';
 import { fetchCustomers, deleteCustomer, setSearchQuery } from '../stores/customersSlice';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';

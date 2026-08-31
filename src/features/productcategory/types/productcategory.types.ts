@@ -1,5 +1,5 @@
 export interface ProductCategoryData {
-    id_product_kategori: string;
+    id_product_kategori: string | number;
     kode_product_kategori: string;
     nm_product_kategori: string;
     f_status?: 't' | 'f';

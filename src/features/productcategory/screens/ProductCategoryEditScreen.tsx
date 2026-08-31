@@ -5,7 +5,6 @@ import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Save, Edit2, X } from 'lucide-react-native';
 import { theme } from '../../../theme/theme';
 import { useProductCategories } from '../hooks/useProductCategories';
-import { ProductCategoryFormData } from '../types/productcategory.types';
 import Animated, { FadeInUp, LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { ProductCategoryEditSkeleton } from '../skeleton/ProductCategoryEditSkeleton';
@@ -16,7 +15,7 @@ export function ProductCategoryEditScreen() {
     const route = useRoute<any>();
     const navigation = useNavigation<any>();
     const { categories, editCategory, isLoading, refreshData, formData, setFormData, validateForm } = useProductCategories();
-    
+
     const categoryId = route.params?.id;
     const [isInitializing, setIsInitializing] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
@@ -30,7 +29,7 @@ export function ProductCategoryEditScreen() {
     });
 
     useEffect(() => {
-        const category = categories.find(c => c.id_product_kategori === categoryId);
+        const category = categories.find(c => String(c.id_product_kategori) === String(categoryId));
         if (category) {
             setFormData({
                 nm_product_kategori: category.nm_product_kategori
@@ -87,7 +86,7 @@ export function ProductCategoryEditScreen() {
 
     const handleCancel = () => {
         setIsEditing(false);
-        const category = categories.find(c => c.id_product_kategori === categoryId);
+        const category = categories.find(c => String(c.id_product_kategori) === String(categoryId));
         if (category) {
             setFormData({
                 nm_product_kategori: category.nm_product_kategori
@@ -99,10 +98,10 @@ export function ProductCategoryEditScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator 
-                title={isInitializing || isLoading ? "MEMUAT DATA..." : (isEditing ? "EDIT KATEGORI" : "DETAIL KATEGORI")} 
-                showBackButton={true} 
-                onBackPress={() => navigation.goBack()} 
+            <HeaderNavigator
+                title={isInitializing || isLoading ? "MEMUAT DATA..." : (isEditing ? "EDIT KATEGORI" : "DETAIL KATEGORI")}
+                showBackButton={true}
+                onBackPress={() => navigation.goBack()}
             />
 
             <ToastMessages
@@ -124,7 +123,7 @@ export function ProductCategoryEditScreen() {
                 isLoading={isLoading}
             />
 
-            <ScrollView 
+            <ScrollView
                 className="flex-1"
                 contentContainerStyle={{ padding: 16, paddingTop: 24, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
@@ -138,21 +137,13 @@ export function ProductCategoryEditScreen() {
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
-                        <Animated.View 
+                        <Animated.View
                             key={`form-container-${isEditing}`}
                             entering={FadeInUp.delay(50)}
                             layout={LinearTransition.springify()}
                             className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-4"
                             style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}
                         >
-                            <View className="mb-4">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Kode Kategori</Text>
-                                <TextInput
-                                    className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 text-gray-500"
-                                    value={categories.find(c => c.id_product_kategori === categoryId)?.kode_product_kategori || ''}
-                                    editable={false}
-                                />
-                            </View>
                             <View>
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Category Name <Text className="text-red-500">*</Text></Text>
                                 <TextInput
@@ -168,7 +159,7 @@ export function ProductCategoryEditScreen() {
                             </View>
                         </Animated.View>
 
-                        <Animated.View 
+                        <Animated.View
                             key={`actions-${isEditing}`}
                             entering={FadeInUp.delay(100)}
                             layout={LinearTransition.springify()}
@@ -193,7 +184,7 @@ export function ProductCategoryEditScreen() {
                                         <X color={theme.colors.primary} size={20} className="mr-2" />
                                         <Text className="font-bold text-lg" style={{ color: theme.colors.primary }}>Batal</Text>
                                     </Button>
-                                    
+
                                     <Button
                                         onPress={handleSavePress}
                                         disabled={isLoading}

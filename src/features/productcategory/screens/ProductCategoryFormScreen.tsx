@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, Alert, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
-import { Save, ArrowLeft } from 'lucide-react-native';
+import { Save } from 'lucide-react-native';
 import { theme } from '../../../theme/theme';
 import { useProductCategories } from '../hooks/useProductCategories';
 import Animated, { FadeInUp, LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
@@ -42,6 +42,7 @@ export function ProductCategoryFormScreen() {
         setIsModalConfirmVisible(false);
         try {
             const newCategory = await addCategory(formData);
+
             navigation.replace('ProductCategoryEdit', {
                 id: newCategory.id_product_kategori,
                 showSuccessToast: true

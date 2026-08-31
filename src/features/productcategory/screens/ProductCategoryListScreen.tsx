@@ -1,7 +1,7 @@
-import React, { useState, useEffect , useCallback } from 'react';
-import { View, Text, FlatList, RefreshControl, TextInput, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, FlatList, RefreshControl, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { Plus, Search, CheckCircle2, XCircle } from 'lucide-react-native';
+import { Search } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useProductCategories } from '../hooks/useProductCategories';
 import { ProductCategoryCard } from '../components/ProductCategoryCard';
@@ -17,6 +17,8 @@ export function ProductCategoryListScreen() {
     const { categories, isLoading, error, successMessage, searchQuery, setSearchQuery, refreshData, editCategory, dismissSuccess, dismissError } = useProductCategories();
 
     const [isInitializing, setIsInitializing] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
     useFocusEffect(
         useCallback(() => {
@@ -46,7 +48,7 @@ export function ProductCategoryListScreen() {
             };
         }, [])
     );
-    const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+    const [selectedCategoryIds, setSelectedCategoryIds] = useState<Array<string | number>>([]);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
@@ -57,6 +59,7 @@ export function ProductCategoryListScreen() {
 
     const handleRefresh = () => {
         setIsRefreshing(true);
+        setVisibleCount(10);
         refreshData();
     };
 
@@ -72,6 +75,16 @@ export function ProductCategoryListScreen() {
     const handleToggleStatus = () => {
         // Feature removed as category has no status
     };
+
+    const handleLoadMore = useCallback(() => {
+        if (categories && visibleCount < categories.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, categories?.length, isLoadMore, categories]);
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -93,10 +106,9 @@ export function ProductCategoryListScreen() {
             </Animated.View>
 
             <View className="flex-1">
-                <Animated.FlatList
-                    entering={FadeInDown}
-                    data={(isLoading || isInitializing) ? [] : categories}
-                    keyExtractor={(item) => item.id_product_kategori}
+                <FlatList
+                    data={(isLoading || isInitializing) ? [] : (categories || []).slice(0, visibleCount)}
+                    keyExtractor={(item) => String(item.id_product_kategori)}
                     renderItem={({ item, index }) => (
                         <ProductCategoryCard
                             category={item}
@@ -151,6 +163,15 @@ export function ProductCategoryListScreen() {
                             />
                         );
                     }}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={
+                        isLoadMore ? (
+                            <View className="py-4 items-center">
+                                <ActivityIndicator size="small" color={theme.colors.primary} />
+                            </View>
+                        ) : null
+                    }
                 />
             </View>
 
