@@ -13,7 +13,11 @@ export const fetchSubCategories = createAsyncThunk(
     'productSubCategory/fetchAll',
     async (_, { rejectWithValue }) => {
         try {
-            return await productSubCategoryApi.fetchSubCategories();
+            const response = await productSubCategoryApi.fetchSubCategories();
+            if (response.success && response.data) {
+                return response.data;
+            }
+            return rejectWithValue(response.message || 'Gagal memuat sub kategori');
         } catch (error: any) {
             return rejectWithValue(error.message || 'Gagal memuat sub kategori');
         }
@@ -24,7 +28,11 @@ export const createSubCategory = createAsyncThunk(
     'productSubCategory/create',
     async (data: ProductSubCategoryFormData, { rejectWithValue }) => {
         try {
-            return await productSubCategoryApi.createSubCategory(data);
+            const response = await productSubCategoryApi.createSubCategory(data);
+            if (response.success && response.data) {
+                return response.data;
+            }
+            return rejectWithValue(response.message || 'Gagal menambahkan sub kategori');
         } catch (error: any) {
             return rejectWithValue(error.message || 'Gagal menambahkan sub kategori');
         }
@@ -35,9 +43,28 @@ export const updateSubCategory = createAsyncThunk(
     'productSubCategory/update',
     async ({ id, data }: { id: string; data: Partial<ProductSubCategoryFormData> }, { rejectWithValue }) => {
         try {
-            return await productSubCategoryApi.updateSubCategory(id, data);
+            const response = await productSubCategoryApi.updateSubCategory(id, data);
+            if (response.success && response.data) {
+                return response.data;
+            }
+            return rejectWithValue(response.message || 'Gagal mengubah sub kategori');
         } catch (error: any) {
             return rejectWithValue(error.message || 'Gagal mengubah sub kategori');
+        }
+    }
+);
+
+export const deleteSubCategory = createAsyncThunk(
+    'productSubCategory/delete',
+    async (id: string | number, { rejectWithValue }) => {
+        try {
+            const response = await productSubCategoryApi.deleteSubCategory(id);
+            if (response.success) {
+                return id;
+            }
+            return rejectWithValue(response.message || 'Gagal menghapus sub kategori');
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Gagal menghapus sub kategori');
         }
     }
 );
@@ -92,6 +119,20 @@ const productSubCategorySlice = createSlice({
                 }
             })
             .addCase(updateSubCategory.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+            })
+            // Delete
+            .addCase(deleteSubCategory.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(deleteSubCategory.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.data = state.data.filter(c => String(c.id_product_sub_kategori) !== String(action.payload));
+                state.successMessage = 'Sub Kategori berhasil dihapus';
+            })
+            .addCase(deleteSubCategory.rejected, (state, action) => {
                 state.isLoading = false;
                 state.error = action.payload as string;
             });

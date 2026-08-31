@@ -13,7 +13,7 @@ interface ProductSubCategoryCardProps {
 
 export function ProductSubCategoryCard({ subCategory, onPress, index }: ProductSubCategoryCardProps) {
     return (
-        <Animated.View entering={FadeInUp.delay(index * 100)}>
+        <Animated.View entering={FadeInUp.delay(index < 10 ? index * 100 : 0)}>
             <TouchableOpacity
                 onPress={onPress}
                 activeOpacity={0.7}
@@ -26,7 +26,7 @@ export function ProductSubCategoryCard({ subCategory, onPress, index }: ProductS
 
                 <View className="flex-1">
                     <Text className="text-xs font-bold text-gray-400 mb-1">
-                        {subCategory.kode_product_sub_kategori} • {subCategory.nm_product_kategori}
+                        {subCategory.nm_product_kategori}
                     </Text>
                     <Text className="text-base font-bold text-gray-800" numberOfLines={1}>
                         {subCategory.nm_product_sub_kategori}

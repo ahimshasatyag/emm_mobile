@@ -1,5 +1,5 @@
-import React, { useEffect, useCallback, useState } from 'react';
-import { View, Text, FlatList, TextInput, RefreshControl } from 'react-native';
+import React, { useEffect, useCallback, useState, useMemo } from 'react';
+import { View, Text, FlatList, TextInput, RefreshControl, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
 import { useProductSubCategories } from '../hooks/useProductSubCategories';
@@ -25,6 +25,12 @@ export function ProductSubCategoryListScreen() {
     } = useProductSubCategories();
 
     const [isInitializing, setIsInitializing] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
+
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, subCategories]);
 
     useFocusEffect(
         useCallback(() => {
@@ -75,8 +81,19 @@ export function ProductSubCategoryListScreen() {
 
     const onRefresh = () => {
         setIsRefreshing(true);
+        setVisibleCount(10);
         loadSubCategories();
     };
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < subCategories.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, subCategories.length, isLoadMore]);
 
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -99,8 +116,8 @@ export function ProductSubCategoryListScreen() {
 
             <View className="flex-1">
                 <FlatList
-                    data={(isLoading || isInitializing) ? [] : subCategories}
-                    keyExtractor={(item) => item.id_product_sub_kategori}
+                    data={(isLoading || isInitializing) ? [] : subCategories.slice(0, visibleCount)}
+                    keyExtractor={(item) => String(item.id_product_sub_kategori)}
                     renderItem={({ item, index }) => (
                         <ProductSubCategoryCard
                             subCategory={item}
@@ -110,9 +127,21 @@ export function ProductSubCategoryListScreen() {
                     )}
                     contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100, flexGrow: 1 }}
                     showsVerticalScrollIndicator={false}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
                     refreshControl={
                         <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
                     }
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
                     ListEmptyComponent={() => {
                         if (error) {
                             return (

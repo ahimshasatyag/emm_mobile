@@ -5,12 +5,17 @@ import {
     fetchSubCategories, 
     createSubCategory, 
     updateSubCategory,
+    deleteSubCategory,
     clearMessages 
 } from '../stores/productSubCategorySlice';
 import { ProductSubCategoryFormData } from '../types/productsubcategory.types';
+import { notificationService } from '../../../services/notification/notificationService';
+import { useAppSelector } from '../../../hooks/useAppSelector';
 
 export function useProductSubCategories() {
     const dispatch = useDispatch<AppDispatch>();
+    
+    const authUser = useAppSelector((state: RootState) => state.auth.user);
     
     const { 
         data: subCategories, 
@@ -44,9 +49,9 @@ export function useProductSubCategories() {
         if (!searchQuery) return subCategories;
         const lowerQuery = searchQuery.toLowerCase();
         return subCategories.filter(sc => 
-            sc.nm_product_sub_kategori.toLowerCase().includes(lowerQuery) ||
-            sc.kode_product_sub_kategori.toLowerCase().includes(lowerQuery) ||
-            sc.nm_product_kategori.toLowerCase().includes(lowerQuery)
+            (sc.nm_product_sub_kategori || '').toLowerCase().includes(lowerQuery) ||
+            (sc.kode_product_sub_kategori || '').toLowerCase().includes(lowerQuery) ||
+            (sc.nm_product_kategori || '').toLowerCase().includes(lowerQuery)
         );
     }, [subCategories, searchQuery]);
 
@@ -56,13 +61,49 @@ export function useProductSubCategories() {
 
     const addSubCategory = useCallback(async (data: ProductSubCategoryFormData) => {
         const result = await dispatch(createSubCategory(data)).unwrap();
+        if (authUser?.id_user) {
+            await notificationService.store({
+                user_id: authUser.id_user,
+                id_users_level: authUser.id_users_level || 1,
+                kode_trans: 'PRODUCT SUBCATEGORY',
+                judul: 'Sub Category Baru',
+                pesan: `Sub Category ${result.nm_product_sub_kategori} berhasil ditambahkan oleh ${authUser.nm_users}`,
+                action: 'Create'
+            }).catch(() => { });
+        }
         return result;
-    }, [dispatch]);
+    }, [dispatch, authUser]);
 
     const editSubCategory = useCallback(async (id: string, data: Partial<ProductSubCategoryFormData>) => {
         const result = await dispatch(updateSubCategory({ id, data })).unwrap();
+        if (authUser?.id_user) {
+            await notificationService.store({
+                user_id: authUser.id_user,
+                id_users_level: authUser.id_users_level || 1,
+                kode_trans: 'PRODUCT SUBCATEGORY',
+                judul: 'Sub Category Diperbarui',
+                pesan: `Sub Category ${result.nm_product_sub_kategori} berhasil diperbarui oleh ${authUser.nm_users}`,
+                action: 'Update'
+            }).catch(() => { });
+        }
         return result;
-    }, [dispatch]);
+    }, [dispatch, authUser]);
+
+    const removeSubCategory = useCallback(async (id: string | number) => {
+        const subCategory = subCategories.find(c => String(c.id_product_sub_kategori) === String(id));
+        const result = await dispatch(deleteSubCategory(id)).unwrap();
+        if (authUser?.id_user) {
+            await notificationService.store({
+                user_id: authUser.id_user,
+                id_users_level: authUser.id_users_level || 1,
+                kode_trans: 'PRODUCT SUBCATEGORY',
+                judul: 'Sub Category Dihapus',
+                pesan: `Sub Category ${subCategory?.nm_product_sub_kategori || id} berhasil dihapus oleh ${authUser.nm_users}`,
+                action: 'Delete'
+            }).catch(() => { });
+        }
+        return result;
+    }, [dispatch, authUser, subCategories]);
 
     const clearStatusMessages = useCallback(() => {
         dispatch(clearMessages());
@@ -79,6 +120,7 @@ export function useProductSubCategories() {
         loadSubCategories,
         addSubCategory,
         editSubCategory,
+        removeSubCategory,
         clearStatusMessages,
         formData,
         setFormData,
