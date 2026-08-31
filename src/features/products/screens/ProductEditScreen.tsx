@@ -2,18 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, TouchableOpacity, Alert, RefreshControl, Image } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Save, Plus, Trash2, Edit3, UploadCloud, ImageIcon, X } from 'lucide-react-native';
+import { Save, Plus, Trash2, Edit3, UploadCloud, ImageIcon, X, Copy } from 'lucide-react-native';
 import { useProductForm } from '../hooks/useProductForm';
 import { ToastMessages } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { theme } from '../../../theme/theme';
-import Animated, { FadeInUp, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
+import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { ProductEditSkeleton } from '../skeleton/ProductEditSkeleton';
 
 export function ProductEditScreen() {
-    const navigation = useNavigation();
+    const navigation = useNavigation<any>();
     const route = useRoute<any>();
     const id = route.params?.id;
 
@@ -83,7 +83,13 @@ export function ProductEditScreen() {
             <HeaderNavigator
                 title={isLoading ? "MEMUAT DATA..." : (isEditing ? "EDIT PRODUCT" : "DETAIL PRODUCT")}
                 showBackButton
-                onBackPress={() => navigation.goBack()}
+                onBackPress={() => {
+                    if (route.params?.isFromCopy) {
+                        navigation.popToTop();
+                    } else {
+                        navigation.goBack();
+                    }
+                }}
             />
 
             <ToastMessages
@@ -309,14 +315,24 @@ export function ProductEditScreen() {
 
                             <Animated.View entering={FadeInUp.delay(100)}>
                                 {!isEditing ? (
-                                    <Button
-                                        onPress={() => setIsEditing(true)}
-                                        className="w-full h-14 rounded-2xl flex-row items-center justify-center bg-indigo-600"
-                                        style={{ elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
-                                    >
-                                        <Edit3 color="white" size={20} className="mr-2" />
-                                        <Text className="text-white font-bold text-lg">Edit</Text>
-                                    </Button>
+                                    <View className="flex-row gap-4">
+                                        <Button
+                                            onPress={() => setIsEditing(true)}
+                                            className="flex-1 h-14 rounded-2xl flex-row items-center justify-center bg-indigo-600"
+                                            style={{ elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
+                                        >
+                                            <Edit3 color="white" size={20} className="mr-2" />
+                                            <Text className="text-white font-bold text-lg">Edit</Text>
+                                        </Button>
+                                        <Button
+                                            onPress={() => navigation.navigate('ProductForm', { initialData: { ...formData, code_product: `${formData.code_product} (copy)` } })}
+                                            className="flex-1 h-14 rounded-2xl flex-row items-center justify-center bg-green-600"
+                                            style={{ elevation: 4, shadowColor: '#16a34a', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
+                                        >
+                                            <Copy color="white" size={20} className="mr-2" />
+                                            <Text className="text-white font-bold text-lg">Duplicate</Text>
+                                        </Button>
+                                    </View>
                                 ) : (
                                     <View className="flex-row gap-4">
                                         <Button

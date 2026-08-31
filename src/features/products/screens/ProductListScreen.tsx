@@ -1,8 +1,8 @@
-import React, { useState , useCallback } from 'react';
-import { View, Text, FlatList, RefreshControl, TextInput, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, FlatList, RefreshControl, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Plus, Search, CheckCircle2, XCircle } from 'lucide-react-native';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useProducts } from '../hooks/useProducts';
 import { ProductCard } from '../components/ProductCard';
 import { ProductListSkeleton } from '../skeleton/ProductListSkeleton';
@@ -21,6 +21,12 @@ export function ProductListScreen() {
     const { products, isLoading, error, searchQuery, setSearchQuery, refreshData } = useProducts();
 
     const [isInitializing, setIsInitializing] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
+
+    React.useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, products]);
 
     useFocusEffect(
         useCallback(() => {
@@ -29,10 +35,7 @@ export function ProductListScreen() {
             const initialize = async () => {
                 setIsInitializing(true);
                 try {
-                    await Promise.all([
-                        refreshData(),
-                        new Promise(resolve => setTimeout(resolve, 800))
-                    ]);
+                    await refreshData();
                 } catch (error) {
                     // console.error("Failed to load:", error);
                 } finally {
@@ -57,16 +60,16 @@ export function ProductListScreen() {
     const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
     const [modalActionWord, setModalActionWord] = useState('');
     const [modalNewStatus, setModalNewStatus] = useState('');
-    
+
     const [toastVisible, setToastVisible] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
 
     const handleToggleStatus = () => {
         if (selectedProductIds.length === 0) return;
-        const isCurrentlyInactive = firstSelectedProduct?.f_status === 'f';
-        const newStatus = isCurrentlyInactive ? 't' : 'f';
+        const isCurrentlyInactive = String(firstSelectedProduct?.flag_active) === '0';
+        const newStatus = isCurrentlyInactive ? '1' : '0';
         const actionWord = isCurrentlyInactive ? 'Mengaktifkan' : 'Menonaktifkan';
-        
+
         setModalActionWord(actionWord);
         setModalNewStatus(newStatus);
         setIsModalConfirmVisible(true);
@@ -74,19 +77,64 @@ export function ProductListScreen() {
 
     const confirmToggleStatus = async () => {
         setIsModalConfirmVisible(false);
-        
-        await Promise.all(
-            selectedProductIds.map(id => 
-                productsApi.updateProduct(id, { f_status: modalNewStatus } as any)
-            )
-        );
-        
-        refreshData();
-        
-        setToastMessage(`${selectedProductIds.length} produk berhasil di${modalActionWord.toLowerCase()}.`);
-        setToastVisible(true);
-        setSelectedProductIds([]);
+
+        try {
+            await Promise.all(
+                selectedProductIds.map(id => {
+                    const product = products.find(p => p.id_product === id);
+                    if (product) {
+                        const updatePayload: any = {
+                            code_product: product.code_product,
+                            nm_product: product.nm_product,
+                            flag_active: modalNewStatus
+                        };
+
+                        if (product.id_product_kategori) updatePayload.id_product_kategori = product.id_product_kategori;
+                        else if (product.kategori?.id_product_kategori) updatePayload.id_product_kategori = product.kategori.id_product_kategori;
+                        
+                        if (product.id_product_sub_kategori) updatePayload.id_product_sub_kategori = product.id_product_sub_kategori;
+                        else if (product.sub_kategori?.id_product_sub_kategori) updatePayload.id_product_sub_kategori = product.sub_kategori.id_product_sub_kategori;
+                        else if (product.subKategori?.id_product_sub_kategori) updatePayload.id_product_sub_kategori = product.subKategori.id_product_sub_kategori;
+                        
+                        if (product.id_product_brand) updatePayload.id_product_brand = String(product.id_product_brand);
+                        else if (product.brand?.id_product_brand) updatePayload.id_product_brand = String(product.brand.id_product_brand);
+                        else if (product.brand?.nm_product_brand) updatePayload.id_product_brand = String(product.brand.nm_product_brand);
+                        
+                        if (product.id_product_satuan) updatePayload.id_product_satuan = String(product.id_product_satuan);
+                        else if (product.satuan?.id_product_satuan) updatePayload.id_product_satuan = String(product.satuan.id_product_satuan);
+                        
+                        if (product.product_deskripsi) updatePayload.product_deskripsi = product.product_deskripsi;
+                        
+                        if (product.product_refference) updatePayload.product_refference = product.product_refference;
+                        
+                        updatePayload.options = product.options || [];
+
+                        return productsApi.updateProduct(id, updatePayload);
+                    }
+                    return Promise.resolve();
+                })
+            );
+            
+            refreshData();
+
+            setToastMessage(`${selectedProductIds.length} produk berhasil di${modalActionWord.toLowerCase()}.`);
+            setToastVisible(true);
+            setSelectedProductIds([]);
+        } catch (error: any) {
+            console.error('Error toggling status:', error);
+            Alert.alert("Gagal Menyimpan", JSON.stringify(error.response?.data?.message || error.message));
+        }
     };
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < products.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, products.length, isLoadMore]);
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -122,12 +170,12 @@ export function ProductListScreen() {
                     </View>
                     {selectedProductIds.length > 0 && firstSelectedProduct && (
                         <TouchableOpacity
-                            className={`ml-2 h-12 px-4 rounded-xl items-center justify-center flex-row shadow-sm mb-2 ${firstSelectedProduct.f_status === 'f' ? 'bg-green-600' : 'bg-red-500'}`}
+                            className={`ml-2 h-12 px-4 rounded-xl items-center justify-center flex-row shadow-sm mb-2 ${String(firstSelectedProduct.flag_active) === '0' ? 'bg-green-600' : 'bg-red-500'}`}
                             onPress={handleToggleStatus}
                         >
-                            {firstSelectedProduct.f_status === 'f' ? <CheckCircle2 color="white" size={18} /> : <XCircle color="white" size={18} />}
+                            {String(firstSelectedProduct.flag_active) === '0' ? <CheckCircle2 color="white" size={18} /> : <XCircle color="white" size={18} />}
                             <Text className="text-white font-bold text-xs ml-2">
-                                {firstSelectedProduct.f_status === 'f' ? 'Aktif' : 'Tidak Aktif'}
+                                {String(firstSelectedProduct.flag_active) === '0' ? 'Aktif' : 'Tidak Aktif'}
                                 {selectedProductIds.length > 1 ? ` (${selectedProductIds.length})` : ''}
                             </Text>
                         </TouchableOpacity>
@@ -137,7 +185,7 @@ export function ProductListScreen() {
 
             <View className="flex-1">
                 <FlatList
-                    data={(isInitializing || (isLoading && products.length === 0)) ? [] : products}
+                    data={(isInitializing || (isLoading && products.length === 0)) ? [] : products.slice(0, visibleCount)}
                     keyExtractor={(item) => item.id_product}
                     renderItem={({ item, index }) => (
                         <ProductCard
@@ -149,7 +197,7 @@ export function ProductListScreen() {
                                     if (selectedProductIds.includes(item.id_product)) {
                                         setSelectedProductIds(prev => prev.filter(id => id !== item.id_product));
                                     } else {
-                                        if (firstSelectedProduct && firstSelectedProduct.f_status !== item.f_status) {
+                                        if (firstSelectedProduct && firstSelectedProduct.flag_active !== item.flag_active) {
                                             return;
                                         }
                                         setSelectedProductIds(prev => [...prev, item.id_product]);
@@ -160,7 +208,7 @@ export function ProductListScreen() {
                             }}
                             onLongPress={() => {
                                 if (!selectedProductIds.includes(item.id_product)) {
-                                    if (selectedProductIds.length > 0 && firstSelectedProduct && firstSelectedProduct.f_status !== item.f_status) {
+                                    if (selectedProductIds.length > 0 && firstSelectedProduct && firstSelectedProduct.flag_active !== item.flag_active) {
                                         return;
                                     }
                                     setSelectedProductIds(prev => [...prev, item.id_product]);
@@ -170,9 +218,21 @@ export function ProductListScreen() {
                     )}
                     contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
                     showsVerticalScrollIndicator={false}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
                     refreshControl={
-                        <RefreshControl refreshing={isLoading} onRefresh={refreshData} colors={[theme.colors.primary]} />
+                        <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={refreshData} colors={[theme.colors.primary]} />
                     }
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
                     ListEmptyComponent={() => {
                         if (error) {
                             return (

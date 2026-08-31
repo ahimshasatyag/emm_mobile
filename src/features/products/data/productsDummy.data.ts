@@ -15,7 +15,7 @@ export const initialDummyProducts: ProductData[] = [
         nm_product_satuan: 'Pcs',
         product_deskripsi: 'Laptop gaming asus republic of gamers dengan spesifikasi tinggi.',
         link_foto: 'https://via.placeholder.com/150',
-        f_status: 't',
+        flag_active: 't',
         options: [
             { id_product_price_opt: 'OPT-01', nm_product_opt: 'Warna Hitam' },
             { id_product_price_opt: 'OPT-02', nm_product_opt: 'Warna Merah' }
@@ -34,7 +34,7 @@ export const initialDummyProducts: ProductData[] = [
         id_product_satuan: 'SAT-01',
         nm_product_satuan: 'Pcs',
         product_deskripsi: 'Smartphone flagship dari samsung terbaru.',
-        f_status: 't',
+        flag_active: 't',
         options: []
     },
     {
@@ -50,7 +50,7 @@ export const initialDummyProducts: ProductData[] = [
         id_product_satuan: 'SAT-01',
         nm_product_satuan: 'Pcs',
         product_deskripsi: 'MacBook Pro terbaru dengan chip M3 super cepat.',
-        f_status: 'f',
+        flag_active: 'f',
         options: [
             { id_product_price_opt: 'OPT-03', nm_product_opt: 'Space Grey' },
             { id_product_price_opt: 'OPT-04', nm_product_opt: 'Silver' }
@@ -69,7 +69,7 @@ export const initialDummyProducts: ProductData[] = [
         id_product_satuan: 'SAT-01',
         nm_product_satuan: 'Pcs',
         product_deskripsi: 'Kemeja flanel lengan panjang yang nyaman dipakai.',
-        f_status: 't',
+        flag_active: 't',
         options: [
             { id_product_price_opt: 'OPT-05', nm_product_opt: 'Ukuran M' },
             { id_product_price_opt: 'OPT-06', nm_product_opt: 'Ukuran L' }
@@ -88,7 +88,7 @@ export const initialDummyProducts: ProductData[] = [
         id_product_satuan: 'SAT-01',
         nm_product_satuan: 'Pcs',
         product_deskripsi: 'Celana chino kasual cocok untuk kegiatan sehari-hari.',
-        f_status: 't',
+        flag_active: 't',
         options: []
     }
 ];

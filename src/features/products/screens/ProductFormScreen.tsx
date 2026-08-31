@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, TouchableOpacity, Alert, Image, RefreshControl } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { Save, Trash2, Plus, UploadCloud, ImageIcon } from 'lucide-react-native';
 import { useProductForm } from '../hooks/useProductForm';
 import { ToastMessages } from '../../../components/ui/ToastMessages';
@@ -13,11 +13,12 @@ import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { ProductFormSkeleton } from '../skeleton/ProductFormSkeleton';
 
 export function ProductFormScreen() {
-    const navigation = useNavigation();
+    const navigation = useNavigation<any>();
+    const route = useRoute<any>();
     const {
         formData, categories, subCategories, brands, satuans,
         isLoading, isSaving, error, updateField, addOption, removeOption, updateOption, save, refreshOptions, validateForm
-    } = useProductForm();
+    } = useProductForm(undefined, route.params?.initialData);
 
     const [toastVisible, setToastVisible] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
@@ -39,7 +40,8 @@ export function ProductFormScreen() {
         if (res) {
             navigation.replace('ProductEdit', {
                 id: res.id_product,
-                showSuccessToast: true
+                showSuccessToast: true,
+                isFromCopy: true
             });
         }
     };

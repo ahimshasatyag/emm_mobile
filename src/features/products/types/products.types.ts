@@ -19,7 +19,27 @@ export interface ProductData {
     link_brosur?: string;
     link_foto?: string;
     product_refference?: string;
-    f_status?: 't' | 'f';
+    flag_active?: '1' | '0';
+    kategori?: {
+        id_product_kategori: string;
+        nm_product_kategori: string;
+    };
+    brand?: {
+        id_product_brand: string;
+        nm_product_brand: string;
+    };
+    subKategori?: {
+        id_product_sub_kategori: string;
+        nm_product_sub_kategori: string;
+    };
+    sub_kategori?: {
+        id_product_sub_kategori: string;
+        nm_product_sub_kategori: string;
+    };
+    satuan?: {
+        id_product_satuan: string;
+        nm_product_satuan: string;
+    };
     options: ProductOption[];
 }
 

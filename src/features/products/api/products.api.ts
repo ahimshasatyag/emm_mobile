@@ -1,116 +1,107 @@
 import { ProductData, CategoryOption, SubCategoryOption, BrandOption, SatuanOption, ProductFormData } from '../types/products.types';
-
-import { initialDummyProducts } from '../data/productsDummy.data';
-
-let dummyProducts: ProductData[] = [...initialDummyProducts];
+import api from '../../../services/api/api';
 
 export const productsApi = {
     fetchProducts: async (): Promise<ProductData[]> => {
-        return new Promise((resolve) => setTimeout(() => resolve([...dummyProducts]), 600));
+        try {
+            const response = await api.get('/product');
+            return response.data.data;
+        } catch (error: any) {
+            throw new Error(error.response?.data?.message || 'Gagal mengambil data produk');
+        }
     },
 
     fetchProductById: async (id: string): Promise<ProductData> => {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                const product = dummyProducts.find(p => p.id_product === id);
-                if (product) resolve(product);
-                else reject(new Error('Product not found'));
-            }, 500);
-        });
+        try {
+            const response = await api.get(`/product/${id}`);
+            return response.data.data.product;
+        } catch (error: any) {
+            throw new Error(error.response?.data?.message || 'Product not found');
+        }
     },
 
     createProduct: async (data: ProductFormData): Promise<ProductData> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                const newProduct: ProductData = {
-                    ...data,
-                    id_product: Math.random().toString(36).substr(2, 9),
-                    nm_product_kategori: 'Kategori Dummy',
-                    nm_product_brand: 'Brand Dummy',
-                    nm_product_satuan: 'Satuan Dummy',
-                };
-                dummyProducts.push(newProduct);
-                resolve(newProduct);
-            }, 800);
-        });
+        try {
+            // Count options for backend format if necessary
+            const payload = {
+                ...data,
+                jml: data.options?.length || 0
+            };
+            const response = await api.post('/product', payload);
+            return response.data.data;
+        } catch (error: any) {
+            throw new Error(error.response?.data?.message || 'Failed to create product');
+        }
     },
 
     updateProduct: async (id: string, data: Partial<ProductFormData>): Promise<ProductData> => {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                const index = dummyProducts.findIndex(p => p.id_product === id);
-                if (index > -1) {
-                    dummyProducts[index] = { ...dummyProducts[index], ...data } as ProductData;
-                    resolve(dummyProducts[index]);
-                } else {
-                    reject(new Error('Product not found'));
-                }
-            }, 800);
-        });
+        try {
+            const payload = {
+                ...data,
+                jml: data.options?.length || 0
+            };
+            // Backend uses POST method for update because of multipart/form-data constraints
+            const response = await api.post(`/product/${id}`, payload);
+            return response.data.data;
+        } catch (error: any) {
+            throw new Error(error.response?.data?.message || 'Failed to update product');
+        }
     },
 
     deleteProduct: async (id: string): Promise<void> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                dummyProducts = dummyProducts.filter(p => p.id_product !== id);
-                resolve();
-            }, 600);
-        });
+        try {
+            await api.delete(`/product/${id}`);
+        } catch (error: any) {
+            throw new Error(error.response?.data?.message || 'Failed to delete product');
+        }
     },
 
     // Dropdown Options
     fetchCategories: async (): Promise<CategoryOption[]> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve([
-                    { id_product_kategori: 'KAT-01', nm_product_kategori: 'Elektronik' },
-                    { id_product_kategori: 'KAT-02', nm_product_kategori: 'Pakaian' },
-                ]);
-            }, 300);
-        });
+        try {
+            const response = await api.get('/product/support-data');
+            return (response.data.data.data_kategori || []).map((c: any) => ({
+                ...c,
+                id_product_kategori: c.id_product_kategori?.toString()
+            }));
+        } catch (error: any) {
+            return [];
+        }
     },
 
     fetchSubCategories: async (categoryId: string): Promise<SubCategoryOption[]> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                if (categoryId === 'KAT-01') {
-                    resolve([
-                        { id_product_sub_kategori: 'SUB-01', nm_product_sub_kategori: 'Laptop' },
-                        { id_product_sub_kategori: 'SUB-02', nm_product_sub_kategori: 'Handphone' },
-                    ]);
-                } else if (categoryId === 'KAT-02') {
-                    resolve([
-                        { id_product_sub_kategori: 'SUB-03', nm_product_sub_kategori: 'Baju' },
-                        { id_product_sub_kategori: 'SUB-04', nm_product_sub_kategori: 'Celana' },
-                    ]);
-                } else {
-                    resolve([]);
-                }
-            }, 300);
-        });
+        try {
+            const response = await api.get(`/product/sub-kategori?id_product_kategori=${categoryId}`);
+            return (response.data.data || []).map((c: any) => ({
+                ...c,
+                id_product_sub_kategori: c.id_product_sub_kategori?.toString()
+            }));
+        } catch (error: any) {
+            return [];
+        }
     },
 
     fetchBrands: async (): Promise<BrandOption[]> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve([
-                    { id_product_brand: 'BRD-01', nm_product_brand: 'Asus' },
-                    { id_product_brand: 'BRD-02', nm_product_brand: 'Samsung' },
-                    { id_product_brand: 'BRD-03', nm_product_brand: 'Apple' },
-                ]);
-            }, 300);
-        });
+        try {
+            const response = await api.get('/product/support-data');
+            return (response.data.data.data_brand || []).map((b: any) => ({
+                ...b,
+                id_product_brand: b.id_product_brand?.toString()
+            }));
+        } catch (error: any) {
+            return [];
+        }
     },
 
     fetchSatuans: async (): Promise<SatuanOption[]> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve([
-                    { id_product_satuan: 'SAT-01', nm_product_satuan: 'Pcs' },
-                    { id_product_satuan: 'SAT-02', nm_product_satuan: 'Box' },
-                    { id_product_satuan: 'SAT-03', nm_product_satuan: 'Lusin' },
-                ]);
-            }, 300);
-        });
+        try {
+            const response = await api.get('/product/support-data');
+            return (response.data.data.data_satuan || []).map((s: any) => ({
+                ...s,
+                id_product_satuan: s.id_product_satuan?.toString()
+            }));
+        } catch (error: any) {
+            return [];
+        }
     }
 };
