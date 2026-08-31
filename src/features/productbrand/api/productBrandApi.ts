@@ -1,40 +1,76 @@
-import { ProductBrand, ProductBrandFormData } from '../types/productbrand.types';
-import { productBrandDummyData } from '../data/productBrandDummy.data';
-
-let dummyData = [...productBrandDummyData];
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import { api } from '../../../services/api/api';
+import { ProductBrandFormData, ProductBrandResponse, ProductBrandListResponse } from '../types/productbrand.types';
 
 export const productBrandApi = {
-    getAll: async (): Promise<ProductBrand[]> => {
-        await delay(1500); // Simulate network delay
-        return [...dummyData];
+    getAll: async (): Promise<ProductBrandListResponse> => {
+        try {
+            const response = await api.get('/productbrand');
+            return {
+                status: 'success',
+                data: response.data.data
+            };
+        } catch (error: any) {
+            throw error.response?.data?.message || 'Gagal mengambil data merek produk';
+        }
     },
 
-    create: async (data: ProductBrandFormData): Promise<ProductBrand> => {
-        await delay(1000);
-        const newBrand: ProductBrand = {
-            id_product_brand: `BRD${String(dummyData.length + 1).padStart(3, '0')}`,
-            nm_product_brand: data.nm_product_brand
-        };
-        dummyData.push(newBrand);
-        return newBrand;
+    getById: async (id: string): Promise<ProductBrandResponse> => {
+        try {
+            const response = await api.get(`/productbrand/${id}`);
+            return {
+                status: 'success',
+                data: response.data.data
+            };
+        } catch (error: any) {
+            throw error.response?.data?.message || 'Gagal mengambil detail merek produk';
+        }
     },
 
-    update: async (id: string, data: Partial<ProductBrandFormData>): Promise<ProductBrand> => {
-        await delay(1000);
-        const index = dummyData.findIndex(item => item.id_product_brand === id);
-        if (index === -1) throw new Error('Brand tidak ditemukan');
+    create: async (data: ProductBrandFormData): Promise<ProductBrandResponse> => {
+        try {
+            const response = await api.post('/productbrand', data);
+            return {
+                status: 'success',
+                data: response.data.data
+            };
+        } catch (error: any) {
+            let errorMsg = 'Gagal menambah merek produk';
+            if (error.response?.data?.message) {
+                if (typeof error.response.data.message === 'object') {
+                    errorMsg = Object.values(error.response.data.message).join('\n');
+                } else {
+                    errorMsg = error.response.data.message;
+                }
+            }
+            throw errorMsg;
+        }
+    },
 
-        dummyData[index] = { ...dummyData[index], ...data };
-        return dummyData[index];
+    update: async (id: string, data: ProductBrandFormData): Promise<ProductBrandResponse> => {
+        try {
+            const response = await api.put(`/productbrand/${id}`, data);
+            return {
+                status: 'success',
+                data: response.data.data
+            };
+        } catch (error: any) {
+            let errorMsg = 'Gagal mengubah merek produk';
+            if (error.response?.data?.message) {
+                if (typeof error.response.data.message === 'object') {
+                    errorMsg = Object.values(error.response.data.message).join('\n');
+                } else {
+                    errorMsg = error.response.data.message;
+                }
+            }
+            throw errorMsg;
+        }
     },
 
     delete: async (id: string): Promise<void> => {
-        await delay(1000);
-        const index = dummyData.findIndex(item => item.id_product_brand === id);
-        if (index === -1) throw new Error('Brand tidak ditemukan');
-
-        dummyData = dummyData.filter(item => item.id_product_brand !== id);
+        try {
+            await api.delete(`/productbrand/${id}`);
+        } catch (error: any) {
+            throw error.response?.data?.message || 'Gagal menghapus merek produk';
+        }
     }
 };

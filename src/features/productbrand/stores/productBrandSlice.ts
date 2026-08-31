@@ -6,21 +6,24 @@ interface ProductBrandState {
     data: ProductBrand[];
     isLoading: boolean;
     error: string | null;
+    successMessage: string | null;
 }
 
 const initialState: ProductBrandState = {
     data: [],
     isLoading: false,
-    error: null
+    error: null,
+    successMessage: null
 };
 
 export const fetchBrands = createAsyncThunk(
     'productBrand/fetchAll',
     async (_, { rejectWithValue }) => {
         try {
-            return await productBrandApi.getAll();
+            const response = await productBrandApi.getAll();
+            return response.data;
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Gagal memuat merek produk');
+            return rejectWithValue(error || 'Gagal memuat merek produk');
         }
     }
 );
@@ -29,20 +32,22 @@ export const createBrand = createAsyncThunk(
     'productBrand/create',
     async (data: ProductBrandFormData, { rejectWithValue }) => {
         try {
-            return await productBrandApi.create(data);
+            const response = await productBrandApi.create(data);
+            return response.data;
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Gagal menambahkan merek produk');
+            return rejectWithValue(error || 'Gagal menambahkan merek produk');
         }
     }
 );
 
 export const updateBrand = createAsyncThunk(
     'productBrand/update',
-    async ({ id, data }: { id: string; data: Partial<ProductBrandFormData> }, { rejectWithValue }) => {
+    async ({ id, data }: { id: string; data: ProductBrandFormData }, { rejectWithValue }) => {
         try {
-            return await productBrandApi.update(id, data);
+            const response = await productBrandApi.update(id, data);
+            return response.data;
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Gagal memperbarui merek produk');
+            return rejectWithValue(error || 'Gagal memperbarui merek produk');
         }
     }
 );
@@ -54,7 +59,7 @@ export const deleteBrand = createAsyncThunk(
             await productBrandApi.delete(id);
             return id;
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Gagal menghapus merek produk');
+            return rejectWithValue(error || 'Gagal menghapus merek produk');
         }
     }
 );
@@ -65,6 +70,9 @@ const productBrandSlice = createSlice({
     reducers: {
         clearError: (state) => {
             state.error = null;
+        },
+        clearSuccessMessage: (state) => {
+            state.successMessage = null;
         }
     },
     extraReducers: (builder) => {
@@ -75,7 +83,7 @@ const productBrandSlice = createSlice({
         });
         builder.addCase(fetchBrands.fulfilled, (state, action) => {
             state.isLoading = false;
-            state.data = action.payload;
+            state.data = action.payload || [];
         });
         builder.addCase(fetchBrands.rejected, (state, action) => {
             state.isLoading = false;
@@ -90,6 +98,7 @@ const productBrandSlice = createSlice({
         builder.addCase(createBrand.fulfilled, (state, action) => {
             state.isLoading = false;
             state.data.push(action.payload);
+            state.successMessage = 'Merek produk berhasil ditambahkan';
         });
         builder.addCase(createBrand.rejected, (state, action) => {
             state.isLoading = false;
@@ -107,6 +116,7 @@ const productBrandSlice = createSlice({
             if (index !== -1) {
                 state.data[index] = action.payload;
             }
+            state.successMessage = 'Merek produk berhasil diperbarui';
         });
         builder.addCase(updateBrand.rejected, (state, action) => {
             state.isLoading = false;
@@ -121,6 +131,7 @@ const productBrandSlice = createSlice({
         builder.addCase(deleteBrand.fulfilled, (state, action) => {
             state.isLoading = false;
             state.data = state.data.filter(item => item.id_product_brand !== action.payload);
+            state.successMessage = 'Merek produk berhasil dihapus';
         });
         builder.addCase(deleteBrand.rejected, (state, action) => {
             state.isLoading = false;
@@ -129,5 +140,5 @@ const productBrandSlice = createSlice({
     }
 });
 
-export const { clearError } = productBrandSlice.actions;
+export const { clearError, clearSuccessMessage } = productBrandSlice.actions;
 export default productBrandSlice.reducer;

@@ -105,7 +105,7 @@ export function ProductUnitListScreen() {
                 </View>
             </Animated.View>
 
-            <Animated.View entering={FadeInDown} className="flex-1">
+            <View className="flex-1">
                 <FlatList
                     data={(isLoading || isInitializing) ? [] : (units || []).slice(0, visibleCount)}
                     keyExtractor={(item) => String(item?.id_product_satuan)}
@@ -178,7 +178,7 @@ export function ProductUnitListScreen() {
                         );
                     }}
                 />
-            </Animated.View>
+            </View>
 
             {(!isLoading && !isInitializing) && !error && (
                 <ButtonAdd onPress={() => navigation.navigate('ProductUnitForm')} />

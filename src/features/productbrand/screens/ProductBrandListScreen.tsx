@@ -1,5 +1,5 @@
 import React, { useState, useEffect , useCallback } from 'react';
-import { View, Text, FlatList, RefreshControl, TextInput, Alert } from 'react-native';
+import { View, Text, FlatList, RefreshControl, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -17,6 +17,12 @@ export function ProductBrandListScreen() {
     const { brands, isLoading, error, successMessage, searchQuery, setSearchQuery, refreshData, dismissSuccess, dismissError } = useProductBrands();
 
     const [isInitializing, setIsInitializing] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
+
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, brands?.length]);
 
     useFocusEffect(
         useCallback(() => {
@@ -57,8 +63,19 @@ export function ProductBrandListScreen() {
 
     const handleRefresh = () => {
         setIsRefreshing(true);
+        setVisibleCount(10);
         refreshData();
     };
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < brands.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, brands.length, isLoadMore]);
 
     useEffect(() => {
         if (successMessage) {
@@ -89,38 +106,51 @@ export function ProductBrandListScreen() {
             </Animated.View>
 
             <View className="flex-1">
-                <Animated.FlatList
-                    entering={FadeInDown}
-                    data={(isLoading || isInitializing) ? [] : brands}
-                    keyExtractor={(item) => item.id_product_brand}
+                <FlatList
+                    data={(isLoading || isInitializing) ? [] : (brands || []).slice(0, visibleCount)}
+                    keyExtractor={(item) => String(item?.id_product_brand)}
                     renderItem={({ item, index }) => (
                         <ProductBrandCard
                             brand={item}
                             index={index}
-                            isSelected={selectedBrandIds.includes(item.id_product_brand)}
+                            isSelected={selectedBrandIds.includes(String(item.id_product_brand))}
                             onPress={() => {
+                                const idStr = String(item.id_product_brand);
                                 if (selectedBrandIds.length > 0) {
-                                    if (selectedBrandIds.includes(item.id_product_brand)) {
-                                        setSelectedBrandIds(prev => prev.filter(id => id !== item.id_product_brand));
+                                    if (selectedBrandIds.includes(idStr)) {
+                                        setSelectedBrandIds(prev => prev.filter(id => id !== idStr));
                                     } else {
-                                        setSelectedBrandIds(prev => [...prev, item.id_product_brand]);
+                                        setSelectedBrandIds(prev => [...prev, idStr]);
                                     }
                                 } else {
-                                    navigation.navigate('ProductBrandEdit', { id: item.id_product_brand });
+                                    navigation.navigate('ProductBrandEdit', { id: idStr });
                                 }
                             }}
                             onLongPress={() => {
-                                if (!selectedBrandIds.includes(item.id_product_brand)) {
-                                    setSelectedBrandIds(prev => [...prev, item.id_product_brand]);
+                                const idStr = String(item.id_product_brand);
+                                if (!selectedBrandIds.includes(idStr)) {
+                                    setSelectedBrandIds(prev => [...prev, idStr]);
                                 }
                             }}
                         />
                     )}
                     contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
                     showsVerticalScrollIndicator={false}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
                     refreshControl={
                         <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
                     }
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
                     ListEmptyComponent={() => {
                         if (error) {
                             return (

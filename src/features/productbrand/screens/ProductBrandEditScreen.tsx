@@ -29,7 +29,7 @@ export function ProductBrandEditScreen() {
     });
 
     useEffect(() => {
-        const brand = brands.find(b => b.id_product_brand === brandId);
+        const brand = brands.find(b => String(b.id_product_brand) === String(brandId));
         if (brand) {
             setFormData({
                 nm_product_brand: brand.nm_product_brand
@@ -85,7 +85,7 @@ export function ProductBrandEditScreen() {
 
     const handleCancel = () => {
         setIsEditing(false);
-        const brand = brands.find(b => b.id_product_brand === brandId);
+        const brand = brands.find(b => String(b.id_product_brand) === String(brandId));
         if (brand) {
             setFormData({
                 nm_product_brand: brand.nm_product_brand
@@ -147,7 +147,7 @@ export function ProductBrandEditScreen() {
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Kode Merek</Text>
                                 <TextInput
                                     className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 text-gray-500"
-                                    value={brands.find(b => b.id_product_brand === brandId)?.id_product_brand || ''}
+                                    value={String(brands.find(b => String(b.id_product_brand) === String(brandId))?.id_product_brand || '')}
                                     editable={false}
                                 />
                             </View>

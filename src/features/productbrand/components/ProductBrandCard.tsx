@@ -15,7 +15,7 @@ interface ProductBrandCardProps {
 
 export function ProductBrandCard({ brand, isSelected = false, onPress, onLongPress, index }: ProductBrandCardProps) {
     return (
-        <Animated.View entering={FadeInUp.delay(index * 100)}>
+        <Animated.View entering={FadeInUp.delay(index < 10 ? index * 100 : 0)}>
             <TouchableOpacity
                 onPress={onPress}
                 onLongPress={onLongPress}

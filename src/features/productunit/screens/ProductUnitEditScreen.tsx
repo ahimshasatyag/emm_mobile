@@ -41,7 +41,7 @@ export function ProductUnitEditScreen() {
     };
 
     useEffect(() => {
-        const unit = allUnits.find(u => u.id_product_satuan === unitId);
+        const unit = allUnits.find(u => String(u.id_product_satuan) === String(unitId));
         if (unit) {
             setFormData({ nm_product_satuan: unit.nm_product_satuan });
             setIsInitializing(false);
@@ -93,7 +93,7 @@ export function ProductUnitEditScreen() {
     };
 
     const handleCancel = () => {
-        const unit = allUnits.find(u => u.id_product_satuan === unitId);
+        const unit = allUnits.find(u => String(u.id_product_satuan) === String(unitId));
         if (unit) {
             setFormData({ nm_product_satuan: unit.nm_product_satuan });
             setIsEditing(false);
