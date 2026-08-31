@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { ProductUnit, ProductUnitFormData } from '../types/productunit.types';
 import { productUnitApi } from '../api/productUnitApi';
 
@@ -91,13 +91,13 @@ const productUnitSlice = createSlice({
             })
             .addCase(fetchUnits.fulfilled, (state, action) => {
                 state.isLoading = false;
-                state.units = action.payload;
+                state.units = action.payload || [];
             })
             .addCase(fetchUnits.rejected, (state, action) => {
                 state.isLoading = false;
                 state.error = action.payload as string;
             })
-            
+
             // Create Unit
             .addCase(createUnit.pending, (state) => {
                 state.isLoading = true;
@@ -111,7 +111,7 @@ const productUnitSlice = createSlice({
                 state.isLoading = false;
                 state.error = action.payload as string;
             })
-            
+
             // Update Unit
             .addCase(updateUnit.pending, (state) => {
                 state.isLoading = true;
@@ -119,7 +119,7 @@ const productUnitSlice = createSlice({
             })
             .addCase(updateUnit.fulfilled, (state, action) => {
                 state.isLoading = false;
-                const index = state.units.findIndex(u => u.id_product_satuan === action.payload.unit.id_product_satuan);
+                const index = state.units.findIndex(u => String(u.id_product_satuan) === String(action.payload.unit.id_product_satuan));
                 if (index !== -1) {
                     state.units[index] = action.payload.unit;
                 }
@@ -128,7 +128,7 @@ const productUnitSlice = createSlice({
                 state.isLoading = false;
                 state.error = action.payload as string;
             })
-            
+
             // Delete Unit
             .addCase(deleteUnit.pending, (state) => {
                 state.isLoading = true;
@@ -136,7 +136,7 @@ const productUnitSlice = createSlice({
             })
             .addCase(deleteUnit.fulfilled, (state, action) => {
                 state.isLoading = false;
-                state.units = state.units.filter(u => u.id_product_satuan !== action.payload.id);
+                state.units = state.units.filter(u => String(u.id_product_satuan) !== String(action.payload.id));
             })
             .addCase(deleteUnit.rejected, (state, action) => {
                 state.isLoading = false;

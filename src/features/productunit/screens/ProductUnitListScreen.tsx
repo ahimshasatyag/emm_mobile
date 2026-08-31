@@ -1,7 +1,7 @@
-import React, { useState, useEffect , useCallback } from 'react';
-import { View, Text, FlatList, RefreshControl, TextInput, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, FlatList, RefreshControl, TextInput, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { Plus, Search, CheckCircle2, XCircle } from 'lucide-react-native';
+import { Search } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useProductUnits } from '../hooks/useProductUnits';
 import { ProductUnitCard } from '../components/ProductUnitCard';
@@ -14,9 +14,15 @@ import { EmptyState } from '../../../components/shared/EmptyState';
 
 export function ProductUnitListScreen() {
     const navigation = useNavigation<any>();
-    const { units, isLoading, error, successMessage, searchQuery, setSearchQuery, loadUnits, dismissSuccess, dismissError } = useProductUnits();
+    const { units, isLoading, error, searchQuery, setSearchQuery, loadUnits, dismissError } = useProductUnits();
 
     const [isInitializing, setIsInitializing] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
+
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, units]);
 
     useFocusEffect(
         useCallback(() => {
@@ -57,21 +63,29 @@ export function ProductUnitListScreen() {
 
     const handleRefresh = () => {
         setIsRefreshing(true);
+        setVisibleCount(10);
         loadUnits();
     };
 
     useEffect(() => {
-        if (successMessage) {
-            Alert.alert('Sukses', successMessage, [{ text: 'OK', onPress: dismissSuccess }]);
-        }
         if (error) {
-            Alert.alert('Error', error, [{ text: 'OK', onPress: dismissError }]);
+            // Alert.alert('Error', error, [{ text: 'OK', onPress: dismissError }]);
         }
-    }, [successMessage, error, dismissSuccess, dismissError]);
+    }, [error, dismissError]);
 
     useEffect(() => {
         loadUnits();
     }, [loadUnits]);
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < units.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, units.length, isLoadMore]);
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -91,39 +105,52 @@ export function ProductUnitListScreen() {
                 </View>
             </Animated.View>
 
-            <View className="flex-1">
-                <Animated.FlatList
-                    entering={FadeInDown}
-                    data={(isLoading || isInitializing) ? [] : units}
-                    keyExtractor={(item) => item.id_product_satuan}
+            <Animated.View entering={FadeInDown} className="flex-1">
+                <FlatList
+                    data={(isLoading || isInitializing) ? [] : (units || []).slice(0, visibleCount)}
+                    keyExtractor={(item) => String(item?.id_product_satuan)}
                     renderItem={({ item, index }) => (
                         <ProductUnitCard
                             unit={item}
                             index={index}
-                            isSelected={selectedUnitIds.includes(item.id_product_satuan)}
+                            isSelected={selectedUnitIds.includes(String(item.id_product_satuan))}
                             onPress={() => {
+                                const idStr = String(item.id_product_satuan);
                                 if (selectedUnitIds.length > 0) {
-                                    if (selectedUnitIds.includes(item.id_product_satuan)) {
-                                        setSelectedUnitIds(prev => prev.filter(id => id !== item.id_product_satuan));
+                                    if (selectedUnitIds.includes(idStr)) {
+                                        setSelectedUnitIds(prev => prev.filter(id => id !== idStr));
                                     } else {
-                                        setSelectedUnitIds(prev => [...prev, item.id_product_satuan]);
+                                        setSelectedUnitIds(prev => [...prev, idStr]);
                                     }
                                 } else {
-                                    navigation.navigate('ProductUnitEdit', { id: item.id_product_satuan });
+                                    navigation.navigate('ProductUnitEdit', { id: idStr });
                                 }
                             }}
                             onLongPress={() => {
-                                if (!selectedUnitIds.includes(item.id_product_satuan)) {
-                                    setSelectedUnitIds(prev => [...prev, item.id_product_satuan]);
+                                const idStr = String(item.id_product_satuan);
+                                if (!selectedUnitIds.includes(idStr)) {
+                                    setSelectedUnitIds(prev => [...prev, idStr]);
                                 }
                             }}
                         />
                     )}
                     contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
                     showsVerticalScrollIndicator={false}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
                     refreshControl={
                         <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
                     }
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
                     ListEmptyComponent={() => {
                         if (error) {
                             return (
@@ -151,7 +178,7 @@ export function ProductUnitListScreen() {
                         );
                     }}
                 />
-            </View>
+            </Animated.View>
 
             {(!isLoading && !isInitializing) && !error && (
                 <ButtonAdd onPress={() => navigation.navigate('ProductUnitForm')} />

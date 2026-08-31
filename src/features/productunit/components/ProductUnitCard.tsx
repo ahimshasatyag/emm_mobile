@@ -15,7 +15,7 @@ interface ProductUnitCardProps {
 
 export function ProductUnitCard({ unit, isSelected = false, onPress, onLongPress, index }: ProductUnitCardProps) {
     return (
-        <Animated.View entering={FadeInUp.delay(index * 100)}>
+        <Animated.View entering={FadeInUp.delay(index < 10 ? index * 100 : 0)}>
             <TouchableOpacity
                 onPress={onPress}
                 onLongPress={onLongPress}

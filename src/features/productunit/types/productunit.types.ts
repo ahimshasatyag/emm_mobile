@@ -1,5 +1,5 @@
 export interface ProductUnit {
-    id_product_satuan: string;
+    id_product_satuan: string | number;
     nm_product_satuan: string;
     date_create?: string;
     date_update?: string | null;
