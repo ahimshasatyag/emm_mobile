@@ -13,8 +13,6 @@ export function ProductPriceReqCard({ request }: Props) {
         switch (status) {
             case 'CONFIRM':
                 return { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'CONFIRM' };
-            case 'SUCCESS':
-                return { bg: 'bg-green-100', text: 'text-green-700', label: 'SUCCESS' };
             case 'CANCEL':
                 return { bg: 'bg-red-100', text: 'text-red-700', label: 'CANCEL' };
             default:
@@ -50,7 +48,7 @@ export function ProductPriceReqCard({ request }: Props) {
             <View className="flex-row items-center mt-2 border-t border-gray-50 pt-3">
                 <View className="flex-row items-center">
                     <User color="#9CA3AF" size={14} />
-                    <Text className="text-gray-600 text-xs ml-1.5 font-medium">{request.nm_users}</Text>
+                    <Text className="text-gray-600 text-xs ml-1.5 font-medium">{request.username}</Text>
                 </View>
             </View>
         </View>

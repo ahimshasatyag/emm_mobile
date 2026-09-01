@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, ScrollView, RefreshControl, TouchableOpacity, TextInput } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, FlatList, RefreshControl, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Search, Plus } from 'lucide-react-native';
 import Animated, { FadeIn, FadeOut, FadeInDown, Layout } from 'react-native-reanimated';
@@ -56,9 +56,26 @@ export function ProductPriceReqListScreen() {
     };
 
     const filteredRequests = requests.filter(r => 
-        r.nm_product.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.code_product.toLowerCase().includes(searchQuery.toLowerCase())
+        (r.nm_product || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (r.code_product || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
+
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery]);
+
+    const handleLoadMore = () => {
+        if (visibleCount < filteredRequests.length) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 500);
+        }
+    };
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -81,34 +98,38 @@ export function ProductPriceReqListScreen() {
                 </View>
             </View>
 
-            <ScrollView
-                className="flex-1"
-                contentContainerStyle={{ padding: 24, paddingTop: 8, paddingBottom: 100, flexGrow: 1 }}
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-                refreshControl={
-                    <RefreshControl
-                        refreshing={isLoading && !isInitializing}
-                        onRefresh={handleRefresh}
-                        colors={[theme.colors.primary]}
-                    />
-                }
-            >
-                {isInitializing ? (
+            {isInitializing ? (
+                <View style={{ padding: 24, paddingTop: 8 }}>
                     <Animated.View exiting={FadeOut.duration(300)}>
                         <ProductPriceReqListSkeleton />
                     </Animated.View>
-                ) : filteredRequests.length === 0 ? (
+                </View>
+            ) : filteredRequests.length === 0 ? (
+                <View style={{ padding: 24 }}>
                     <EmptyState 
                         title="Data Kosong"
                         message="Tidak ada data pengajuan harga yang ditemukan."
                         fullScreen={false}
                     />
-                ) : (
-                    filteredRequests.map((request, index) => (
+                </View>
+            ) : (
+                <FlatList
+                    data={filteredRequests.slice(0, visibleCount)}
+                    keyExtractor={(item) => item.id}
+                    className="flex-1"
+                    contentContainerStyle={{ padding: 24, paddingTop: 8, paddingBottom: 100 }}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={isLoading && !isInitializing}
+                            onRefresh={handleRefresh}
+                            colors={[theme.colors.primary]}
+                        />
+                    }
+                    renderItem={({ item: request, index }) => (
                         <Animated.View 
-                            key={request.id} 
-                            entering={FadeInDown.delay(index * 100).springify()}
+                            entering={FadeInDown.delay((index % 10) * 100).springify()}
                             layout={Layout.springify()}
                         >
                             <TouchableOpacity 
@@ -118,9 +139,21 @@ export function ProductPriceReqListScreen() {
                                 <ProductPriceReqCard request={request} />
                             </TouchableOpacity>
                         </Animated.View>
-                    ))
-                )}
-            </ScrollView>
+                    )}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
+                />
+            )}
 
             <ButtonAdd onPress={() => navigation.navigate('ProductPriceReqFormScreen')} />
         </View>

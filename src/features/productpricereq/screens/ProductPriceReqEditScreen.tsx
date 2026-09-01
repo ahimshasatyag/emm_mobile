@@ -106,6 +106,9 @@ export function ProductPriceReqEditScreen() {
         const payload: any = { id_product: selectedProductId };
         if (isConfirm && priceAcc) {
             payload.product_price_acc = Number(priceAcc);
+            payload.f_acc = 1;
+        } else {
+            payload.f_acc = 0;
         }
 
         try {
@@ -278,7 +281,7 @@ export function ProductPriceReqEditScreen() {
                             className="flex-row mt-2 gap-3"
                         >
                             {!isEditing ? (
-                                (!isSuccess && !isCancel) && (
+                                (!isSuccess && !isCancel && !isConfirm) && (
                                     <Button
                                         onPress={() => setIsEditing(true)}
                                         className="flex-1 h-14 rounded-xl flex-row items-center justify-center"
