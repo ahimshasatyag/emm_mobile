@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
-    View, Text, ScrollView, TouchableOpacity, TextInput, RefreshControl, ActivityIndicator
+    View, Text, ScrollView, TouchableOpacity, TextInput, RefreshControl, ActivityIndicator, FlatList
 } from 'react-native';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { Search, ChevronDown, X, Tag } from 'lucide-react-native';
@@ -25,6 +25,9 @@ export function ProductPriceMktListScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [showDropdown, setShowDropdown] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<ProductPriceMktProduct | null>(null);
+
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
     React.useEffect(() => {
         if (route.params?.timestamp) {
@@ -69,10 +72,26 @@ export function ProductPriceMktListScreen() {
         }
     };
 
-    const filteredProducts = products.filter(p =>
-        p.nm_product.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.code_product.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredProducts = useMemo(() => {
+        return products.filter(p =>
+            p.nm_product.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            p.code_product.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [products, searchQuery]);
+
+    React.useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, products]);
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < filteredProducts.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, filteredProducts.length, isLoadMore]);
 
     const handleSelectProduct = async (product: ProductPriceMktProduct) => {
         setSelectedProduct(product);
@@ -152,29 +171,45 @@ export function ProductPriceMktListScreen() {
                                 />
                             </View>
                             {/* Options */}
-                            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 210 }}>
+                            <View style={{ maxHeight: 210 }}>
                                 {isInitializing ? (
                                     <ActivityIndicator size="small" color={theme.colors.primary} style={{ margin: 16 }} />
                                 ) : filteredProducts.length === 0 ? (
                                     <Text className="text-center text-gray-400 text-sm py-4">Produk tidak ditemukan</Text>
                                 ) : (
-                                    filteredProducts.map((product, index) => (
-                                        <TouchableOpacity
-                                            key={product.id_product}
-                                            onPress={() => handleSelectProduct(product)}
-                                            activeOpacity={0.7}
-                                            className={`px-4 py-3 ${index < filteredProducts.length - 1 ? 'border-b border-gray-50' : ''}`}
-                                        >
-                                            <Text className="text-sm font-semibold text-gray-800" numberOfLines={1}>
-                                                {product.code_product}
-                                            </Text>
-                                            <Text className="text-xs text-gray-500 mt-0.5" numberOfLines={1}>
-                                                {product.nm_product}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))
+                                    <FlatList
+                                        data={filteredProducts.slice(0, visibleCount)}
+                                        keyExtractor={(item) => item.id_product}
+                                        renderItem={({ item, index }) => (
+                                            <TouchableOpacity
+                                                onPress={() => handleSelectProduct(item)}
+                                                activeOpacity={0.7}
+                                                className={`px-4 py-3 ${index < Math.min(filteredProducts.length, visibleCount) - 1 ? 'border-b border-gray-50' : ''}`}
+                                            >
+                                                <Text className="text-sm font-semibold text-gray-800" numberOfLines={1}>
+                                                    {item.code_product}
+                                                </Text>
+                                                <Text className="text-xs text-gray-500 mt-0.5" numberOfLines={1}>
+                                                    {item.nm_product}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        )}
+                                        showsVerticalScrollIndicator={false}
+                                        onEndReached={handleLoadMore}
+                                        onEndReachedThreshold={0.5}
+                                        ListFooterComponent={() => {
+                                            if (isLoadMore) {
+                                                return (
+                                                    <View className="py-2 items-center justify-center">
+                                                        <ActivityIndicator size="small" color={theme.colors.primary} />
+                                                    </View>
+                                                );
+                                            }
+                                            return null;
+                                        }}
+                                    />
                                 )}
-                            </ScrollView>
+                            </View>
                         </Animated.View>
                     )}
                 </View>

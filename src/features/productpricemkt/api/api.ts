@@ -1,63 +1,57 @@
 import { ProductPriceMktProduct, ProductPriceMktDetail, ProductPriceMktOption } from '../types/productpricemkt.types';
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Dummy list produk aktif (dari m_product_price JOIN m_product)
-const dummyProducts: ProductPriceMktProduct[] = [
-    { id_product: 'PRD-001', code_product: 'P001', nm_product: 'Mesin Jahit Juki DDL-8700' },
-    { id_product: 'PRD-002', code_product: 'P002', nm_product: 'Mesin Obras Pegasus M700' },
-    { id_product: 'PRD-003', code_product: 'P003', nm_product: 'Mesin Potong KM EK-9' },
-    { id_product: 'PRD-004', code_product: 'P004', nm_product: 'Mesin Bordir Tajima TMCE-SC' },
-    { id_product: 'PRD-005', code_product: 'P005', nm_product: 'Mesin Jahit Singer Heavy Duty' },
-];
-
-const dummyOptions: Record<string, ProductPriceMktOption[]> = {
-    'PRD-001': [
-        { nm_product_opt: 'Dudukan Jarum Ekstra', amount: '15', kurs: '16400', estimasi: '246000' },
-        { nm_product_opt: 'Meja Kerja Stainless', amount: '50', kurs: '16400', estimasi: '820000' },
-    ],
-    'PRD-002': [
-        { nm_product_opt: 'Pisau Potong Obras', amount: '8', kurs: '16400', estimasi: '131200' },
-    ],
-    'PRD-003': [],
-    'PRD-004': [
-        { nm_product_opt: 'Jarum Bordir Set', amount: '10', kurs: '16400', estimasi: '164000' },
-        { nm_product_opt: 'Benang Warna 50pcs', amount: '25', kurs: '16400', estimasi: '410000' },
-        { nm_product_opt: 'Frame Bordir Medium', amount: '20', kurs: '16400', estimasi: '328000' },
-    ],
-    'PRD-005': [],
-};
+import api from '../../../services/api/api';
 
 export const productPriceMktApi = {
     getProducts: async (): Promise<ProductPriceMktProduct[]> => {
-        await delay(600);
-        return [...dummyProducts];
+        const response = await api.get(`/productpricemkt`);
+
+        return response.data.data.map((item: any) => ({
+            id_product: item.id_product,
+            code_product: item.product?.code_product || '',
+            nm_product: item.product?.nm_product || '',
+        }));
     },
 
     getDetail: async (id_product: string): Promise<{ detail: ProductPriceMktDetail; options: ProductPriceMktOption[] } | null> => {
-        await delay(500);
-        const found = dummyProducts.find(p => p.id_product === id_product);
-        if (!found) return null;
+        try {
+            const response = await api.get(`/productpricemkt/${id_product}`);
+            const data = response.data.data;
 
-        const kurs = 16400;
-        const priceAgent = Math.floor(300 + Math.random() * 200);
-        const daysAgo = Math.floor(Math.random() * 180);
-        const dateUpdate = new Date(Date.now() - daysAgo * 86400000).toISOString();
-        const isRecent = daysAgo <= 90;
+            if (!data) return null;
 
-        const detail: ProductPriceMktDetail = {
-            id_product: found.id_product,
-            code_product: found.code_product,
-            nm_product: found.nm_product,
-            product_price: String(priceAgent + 30),
-            product_price_agent: String(priceAgent),
-            date_update: dateUpdate,
-            kurs_bank: String(kurs),
-            estimasi: String(Math.round(priceAgent * kurs / 1000000) * 1000000),
-            link_brosur: null,
-            is_recent: isRecent,
-        };
+            // Hitung selisih hari untuk menentukan is_recent (misalnya < 90 hari)
+            let isRecent = false;
+            if (data.date_create) {
+                const dateObj = new Date(data.date_create);
+                const diffTime = Math.abs(new Date().getTime() - dateObj.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                isRecent = diffDays <= 90;
+            }
 
-        return { detail, options: dummyOptions[id_product] || [] };
+            const detail: ProductPriceMktDetail = {
+                id_product: data.id_product,
+                code_product: data.code_product,
+                nm_product: data.nm_product,
+                product_price: data.product_price ? String(data.product_price) : '0',
+                product_price_agent: data.product_price_agent ? String(data.product_price_agent) : '0',
+                date_update: data.date_create,
+                kurs_bank: data.kurs_bank ? String(data.kurs_bank) : '0',
+                estimasi: data.estimasi ? String(data.estimasi) : '0',
+                link_brosur: data.link_brosur || null,
+                is_recent: isRecent,
+            };
+
+            const options: ProductPriceMktOption[] = (data.data_options || []).map((opt: any) => ({
+                nm_product_opt: opt.nm_product_opt,
+                amount: opt.amount ? String(opt.amount) : '0',
+                kurs: opt.kurs ? String(opt.kurs) : '0',
+                estimasi: opt.estimasi ? String(opt.estimasi) : '0',
+            }));
+
+            return { detail, options };
+        } catch (error) {
+            console.error("Error fetching detail:", error);
+            return null;
+        }
     }
 };
