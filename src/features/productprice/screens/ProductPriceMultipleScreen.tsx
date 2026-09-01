@@ -33,7 +33,7 @@ export function ProductPriceMultipleScreen() {
             .filter(p => selectedIds.includes(p.id_product))
             .map(item => ({
                 ...item,
-                delivery_term: item.delivery_term || 'FRANCO JKT',
+                delivery_term: item.delivery_term || '',
                 kurs: item.kurs || ''
             }));
         setItems(initData);
