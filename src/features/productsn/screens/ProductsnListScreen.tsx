@@ -90,7 +90,7 @@ export function ProductsnListScreen() {
                                     key={item.id_product_sn}
                                     item={item}
                                     index={index}
-                                    onPress={() => navigation.navigate('ProductsnEdit', { id: item.id_product_sn })}
+                                    onPress={() => navigation.navigate('InventoryEdit', { id: item.id_product_sn })}
                                 />
                             ))
                         ) : (
@@ -109,7 +109,7 @@ export function ProductsnListScreen() {
             </ScrollView>
 
             {!isInitializing && (
-                <ButtonAdd onPress={() => navigation.navigate('ProductsnForm')} />
+                <ButtonAdd onPress={() => navigation.navigate('InventoryForm')} />
             )}
         </View>
     );

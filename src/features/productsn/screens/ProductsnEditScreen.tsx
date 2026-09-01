@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, RefreshControl, Alert } from 'react-native';
+import { View, Text, ScrollView, TextInput, KeyboardAvoidingView, Platform, RefreshControl, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Save, Edit3, X, Trash2 } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeOut, FadeIn, LinearTransition } from 'react-native-reanimated';
 import { Dropdown } from 'react-native-element-dropdown';
 import { theme } from '../../../theme/theme';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useProductsn } from '../hooks/useProductsn';
 import { ProductsnEditSkeleton } from '../skeleton/ProductsnEditSkeleton';
-import { Button } from '../../../components/ui/button';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
@@ -22,7 +20,6 @@ export function ProductsnEditScreen() {
     const [isSaving, setIsSaving] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isInitializing, setIsInitializing] = useState(true);
-    const [isEditing, setIsEditing] = useState(false);
 
     const [focusedField, setFocusedField] = useState<string | null>(null);
 
@@ -51,11 +48,6 @@ export function ProductsnEditScreen() {
             setNqty(String(asset.nqty));
         }
         setIsInitializing(false);
-    };
-
-    const handleCancel = () => {
-        setIsEditing(false);
-        loadData();
     };
 
     useEffect(() => {
@@ -105,7 +97,6 @@ export function ProductsnEditScreen() {
                 type: 'success',
                 message: 'Data Product SN berhasil diupdate'
             });
-            setIsEditing(false);
         } catch (error: any) {
             setToastState({
                 visible: true,
@@ -136,7 +127,7 @@ export function ProductsnEditScreen() {
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-gray-50">
             <HeaderNavigator
-                title={isInitializing || isRefreshing ? "MEMUAT DATA..." : (isEditing ? "EDIT PRODUCT SN" : "DETAIL PRODUCT SN")}
+                title={isInitializing || isRefreshing ? "MEMUAT DATA..." : "DETAIL PRODUCT SN"}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
             />
@@ -182,7 +173,7 @@ export function ProductsnEditScreen() {
                 ) : (
                     <Animated.View entering={FadeIn.duration(600)}>
                         <Animated.View
-                            key={`form-container-${isEditing}`}
+                            key={`form-container-edit`}
                             entering={FadeInUp.delay(50)}
                             layout={LinearTransition.springify()}
                             className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6"
@@ -190,7 +181,7 @@ export function ProductsnEditScreen() {
                             {/* PRODUCT DROPDOWN */}
                             <View className="mb-5">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Product <Text className="text-red-500">*</Text></Text>
-                                <View className={`border rounded-xl bg-gray-50 ${!isEditing ? 'opacity-70 bg-gray-100' : ''}`} style={{ borderColor: focusedField === 'id_product' ? theme.colors.primary : '#E5E7EB' }}>
+                                <View className={`border rounded-xl bg-gray-50`} style={{ borderColor: focusedField === 'id_product' ? theme.colors.primary : '#E5E7EB' }}>
                                     <Dropdown
                                         style={{ height: 56, paddingHorizontal: 16 }}
                                         data={supportData.map(p => ({ label: p.nm_product, value: p.id_product }))}
@@ -202,7 +193,6 @@ export function ProductsnEditScreen() {
                                         onFocus={() => setFocusedField('id_product')}
                                         onBlur={() => setFocusedField(null)}
                                         placeholderStyle={{ color: '#9CA3AF' }}
-                                        disable={!isEditing}
                                         search
                                         searchPlaceholder="Search product..."
                                     />
@@ -213,85 +203,37 @@ export function ProductsnEditScreen() {
                             <View className="mb-5">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Serial Number (SN) <Text className="text-red-500">*</Text></Text>
                                 <TextInput
-                                    className={`bg-gray-50 border rounded-xl px-4 h-14 text-gray-900 font-medium ${!isEditing ? 'opacity-70 bg-gray-100' : ''}`}
+                                    className={`bg-gray-50 border rounded-xl px-4 h-14 text-gray-900 font-medium`}
                                     style={{ borderColor: focusedField === 'sn' ? theme.colors.primary : '#E5E7EB' }}
                                     value={sn}
                                     onChangeText={setSn}
                                     onFocus={() => setFocusedField('sn')}
                                     onBlur={() => setFocusedField(null)}
                                     placeholder="Masukkan SN"
-                                    editable={isEditing}
                                 />
                             </View>
 
-                            {/* QTY INPUT */}
+                            {/* STATUS DROPDOWN (mapped to QTY) */}
                             <View className="mb-5">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Quantity (QTY) <Text className="text-red-500">*</Text></Text>
-                                <TextInput
-                                    className={`bg-gray-50 border rounded-xl px-4 h-14 text-gray-900 font-medium ${!isEditing ? 'opacity-70 bg-gray-100' : ''}`}
-                                    style={{ borderColor: focusedField === 'nqty' ? theme.colors.primary : '#E5E7EB' }}
-                                    value={nqty}
-                                    onChangeText={setNqty}
-                                    onFocus={() => setFocusedField('nqty')}
-                                    onBlur={() => setFocusedField(null)}
-                                    placeholder="Masukkan Quantity"
-                                    keyboardType="numeric"
-                                    editable={isEditing}
-                                />
+                                <Text className="text-sm font-bold text-gray-700 mb-2">Status <Text className="text-red-500">*</Text></Text>
+                                <View className={`border rounded-xl bg-gray-50`} style={{ borderColor: focusedField === 'nqty' ? theme.colors.primary : '#E5E7EB' }}>
+                                    <Dropdown
+                                        style={{ height: 56, paddingHorizontal: 16 }}
+                                        data={[
+                                            { label: 'SALE', value: '0' },
+                                            { label: 'READY', value: '1' }
+                                        ]}
+                                        labelField="label"
+                                        valueField="value"
+                                        placeholder="Pilih Status"
+                                        value={String(Number(nqty) === 0 ? 0 : 1)}
+                                        onChange={item => setNqty(item.value)}
+                                        onFocus={() => setFocusedField('nqty')}
+                                        onBlur={() => setFocusedField(null)}
+                                        placeholderStyle={{ color: '#9CA3AF' }}
+                                    />
+                                </View>
                             </View>
-                        </Animated.View>
-
-                        <Animated.View
-                            key={`actions-${isEditing}`}
-                            entering={FadeInUp.delay(100)}
-                            layout={LinearTransition.springify()}
-                            className="flex-row space-x-3"
-                        >
-                            {!isEditing ? (
-                                <>
-                                    <Button
-                                        variant="outline"
-                                        onPress={() => setIsModalDeleteVisible(true)}
-                                        className="h-14 w-14 rounded-2xl flex items-center justify-center border-red-200 bg-red-50"
-                                    >
-                                        <Trash2 color="#EF4444" size={24} />
-                                    </Button>
-                                    <Button
-                                        onPress={() => setIsEditing(true)}
-                                        className="flex-1 h-14 rounded-2xl flex-row items-center justify-center bg-indigo-600"
-                                        style={{ elevation: 2, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
-                                    >
-                                        <Edit3 color="white" size={20} className="mr-2" />
-                                        <Text className="text-white font-bold text-lg">Edit</Text>
-                                    </Button>
-                                </>
-                            ) : (
-                                <>
-                                    <Button
-                                        variant="outline"
-                                        onPress={handleCancel}
-                                        className="flex-1 h-14 rounded-xl flex-row items-center justify-center"
-                                    >
-                                        <X color={theme.colors.primary} size={20} className="mr-2" />
-                                        <Text className="font-bold text-lg" style={{ color: theme.colors.primary }}>Batal</Text>
-                                    </Button>
-
-                                    <Button
-                                        onPress={handleSave}
-                                        disabled={isSaving}
-                                        className="flex-1 h-14 rounded-xl flex-row items-center justify-center bg-indigo-600"
-                                    >
-                                        {isSaving ? (
-                                            <ActivityIndicator color="white" />
-                                        ) : (
-                                            <>
-                                                <Save color="white" size={20} className="mr-2" />
-                                                <Text className="text-white font-bold text-lg">Simpan</Text>
-                                            </>
-                                        )}
-                                    </Button>
-                                </>
-                            )}
                         </Animated.View>
                     </Animated.View>
                 )}
