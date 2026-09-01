@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
-    View, Text, ScrollView, TouchableOpacity, TextInput, RefreshControl, ActivityIndicator
+    View, Text, ScrollView, TouchableOpacity, TextInput, RefreshControl, ActivityIndicator, FlatList
 } from 'react-native';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
-import { Search, ChevronDown, X, Tag } from 'lucide-react-native';
+import { Search, ChevronDown, X, Tag, ShoppingCart, Check } from 'lucide-react-native';
 import Animated, { FadeIn, FadeOut, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { theme } from '../../../theme/theme';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
@@ -18,13 +18,18 @@ export function ProductPriceAgentListScreen() {
     const route = useRoute<any>();
     const {
         products, selectedDetail, isLoading, isDetailLoading,
-        loadProducts, loadDetail, resetDetail
+        loadProducts, loadDetail, resetDetail, tambahKeranjang
     } = useProductPriceAgent();
 
     const [isInitializing, setIsInitializing] = useState(true);
+    const [isAddingToCart, setIsAddingToCart] = useState(false);
+    const [isSuccessCart, setIsSuccessCart] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [showDropdown, setShowDropdown] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<ProductPriceAgentProduct | null>(null);
+
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
     React.useEffect(() => {
         if (route.params?.timestamp) {
@@ -69,15 +74,32 @@ export function ProductPriceAgentListScreen() {
         }
     };
 
-    const filteredProducts = products.filter(p =>
-        p.nm_product.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.code_product.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredProducts = useMemo(() => {
+        return products.filter(p =>
+            p.nm_product.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            p.code_product.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [products, searchQuery]);
+
+    React.useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, products]);
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < filteredProducts.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, filteredProducts.length, isLoadMore]);
 
     const handleSelectProduct = async (product: ProductPriceAgentProduct) => {
         setSelectedProduct(product);
         setShowDropdown(false);
         setSearchQuery('');
+        setIsSuccessCart(false);
         await loadDetail(product.id_product);
     };
 
@@ -85,6 +107,23 @@ export function ProductPriceAgentListScreen() {
         setSelectedProduct(null);
         resetDetail();
         setSearchQuery('');
+        setIsSuccessCart(false);
+    };
+
+    const handleAddToCart = async () => {
+        if (!selectedDetail) return;
+        setIsAddingToCart(true);
+        try {
+            await tambahKeranjang(selectedDetail.id_product, 1);
+            setIsSuccessCart(true);
+            setTimeout(() => {
+                setIsSuccessCart(false);
+            }, 2500);
+        } catch (e) {
+            // console.log("Gagal menambahkan ke keranjang", e);
+        } finally {
+            setIsAddingToCart(false);
+        }
     };
 
     return (
@@ -148,29 +187,45 @@ export function ProductPriceAgentListScreen() {
                                     autoFocus
                                 />
                             </View>
-                            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 210 }}>
+                            <View style={{ maxHeight: 210 }}>
                                 {isInitializing ? (
                                     <ActivityIndicator size="small" color={theme.colors.primary} style={{ margin: 16 }} />
                                 ) : filteredProducts.length === 0 ? (
                                     <Text className="text-center text-gray-400 text-sm py-4">Produk tidak ditemukan</Text>
                                 ) : (
-                                    filteredProducts.map((product, index) => (
-                                        <TouchableOpacity
-                                            key={product.id_product}
-                                            onPress={() => handleSelectProduct(product)}
-                                            activeOpacity={0.7}
-                                            className={`px-4 py-3 ${index < filteredProducts.length - 1 ? 'border-b border-gray-50' : ''}`}
-                                        >
-                                            <Text className="text-sm font-semibold text-gray-800" numberOfLines={1}>
-                                                {product.code_product}
-                                            </Text>
-                                            <Text className="text-xs text-gray-500 mt-0.5" numberOfLines={1}>
-                                                {product.nm_product}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))
+                                    <FlatList
+                                        data={filteredProducts.slice(0, visibleCount)}
+                                        keyExtractor={(item) => item.id_product}
+                                        renderItem={({ item, index }) => (
+                                            <TouchableOpacity
+                                                onPress={() => handleSelectProduct(item)}
+                                                activeOpacity={0.7}
+                                                className={`px-4 py-3 ${index < Math.min(filteredProducts.length, visibleCount) - 1 ? 'border-b border-gray-50' : ''}`}
+                                            >
+                                                <Text className="text-sm font-semibold text-gray-800" numberOfLines={1}>
+                                                    {item.code_product}
+                                                </Text>
+                                                <Text className="text-xs text-gray-500 mt-0.5" numberOfLines={1}>
+                                                    {item.nm_product}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        )}
+                                        showsVerticalScrollIndicator={false}
+                                        onEndReached={handleLoadMore}
+                                        onEndReachedThreshold={0.5}
+                                        ListFooterComponent={() => {
+                                            if (isLoadMore) {
+                                                return (
+                                                    <View className="py-2 items-center justify-center">
+                                                        <ActivityIndicator size="small" color={theme.colors.primary} />
+                                                    </View>
+                                                );
+                                            }
+                                            return null;
+                                        }}
+                                    />
                                 )}
-                            </ScrollView>
+                            </View>
                         </Animated.View>
                     )}
                 </View>
@@ -216,6 +271,49 @@ export function ProductPriceAgentListScreen() {
                         >
                             <ProductPriceAgentCard detail={selectedDetail} />
                         </TouchableOpacity>
+
+                        {/* Tombol Tambah Keranjang */}
+                        {(() => {
+                            const lastUpdateDate = new Date(selectedDetail.date_update);
+                            const diffTime = Math.abs(new Date().getTime() - lastUpdateDate.getTime());
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            const isNew = diffDays <= 90;
+                            const hasPrice = Number(selectedDetail.product_price_agent) !== 0;
+
+                            if (isNew && hasPrice) {
+                                return (
+                                    <TouchableOpacity
+                                        activeOpacity={0.8}
+                                        onPress={handleAddToCart}
+                                        disabled={isAddingToCart || isSuccessCart}
+                                        className="flex-row items-center justify-center py-3.5 rounded-xl mt-2"
+                                        style={{
+                                            backgroundColor: isSuccessCart ? theme.colors.statusColors?.Present || '#10b981' : theme.colors.primary,
+                                            shadowColor: '#000',
+                                            shadowOffset: { width: 0, height: 2 },
+                                            shadowOpacity: 0.1,
+                                            shadowRadius: 4,
+                                            elevation: 3,
+                                        }}
+                                    >
+                                        {isAddingToCart ? (
+                                            <ActivityIndicator color="#fff" size="small" />
+                                        ) : isSuccessCart ? (
+                                            <>
+                                                <Check color="#fff" size={20} />
+                                                <Text className="text-white font-bold ml-2">Berhasil Ditambahkan</Text>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <ShoppingCart color="#fff" size={20} />
+                                                <Text className="text-white font-bold ml-2">Tambah ke Keranjang</Text>
+                                            </>
+                                        )}
+                                    </TouchableOpacity>
+                                );
+                            }
+                            return null;
+                        })()}
                     </Animated.View>
                 ) : (
                     <EmptyState

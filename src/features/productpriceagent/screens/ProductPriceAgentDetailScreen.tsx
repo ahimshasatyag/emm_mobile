@@ -93,7 +93,18 @@ export function ProductPriceAgentDetailScreen() {
                             </View>
                             <View className="px-4 py-4 flex-row items-center">
                                 <Text className="w-32 text-sm text-gray-500 font-medium">Estimation IDR</Text>
-                                <Text className="flex-1 text-base font-bold text-green-600">{formatRp(selectedDetail.estimasi)}</Text>
+                                {(() => {
+                                    const wkt = new Date(selectedDetail.date_update);
+                                    const diffTime = Math.abs(new Date().getTime() - wkt.getTime());
+                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                    const isGreen = diffDays <= 90;
+
+                                    return (
+                                        <Text className={`flex-1 text-base font-bold ${isGreen ? 'text-emerald-600' : 'text-red-600'}`}>
+                                            {formatRp(selectedDetail.estimasi)}
+                                        </Text>
+                                    );
+                                })()}
                             </View>
                         </View>
 

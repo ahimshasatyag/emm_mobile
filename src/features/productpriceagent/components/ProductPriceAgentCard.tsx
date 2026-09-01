@@ -90,11 +90,17 @@ export function ProductPriceAgentCard({ detail }: ProductPriceAgentCardProps) {
                     
                     <View className="flex-row">
                         {/* Est IDR */}
-                        <View className="flex-row items-center p-2.5 rounded-lg border flex-1 shadow-sm" style={{ backgroundColor: '#ecfdf5', borderColor: '#a7f3d0' }}>
-                            <Calculator size={13} color="#059669" />
+                        <View 
+                            className="flex-row items-center p-2.5 rounded-lg border flex-1 shadow-sm" 
+                            style={{ 
+                                backgroundColor: isNew ? '#ecfdf5' : '#fef2f2', 
+                                borderColor: isNew ? '#a7f3d0' : '#fecaca' 
+                            }}
+                        >
+                            <Calculator size={13} color={isNew ? '#059669' : '#dc2626'} />
                             <View className="flex-1 ml-1.5">
-                                <Text className="text-[10px] text-emerald-600 mb-0.5">Estimation IDR</Text>
-                                <Text className="text-xs font-bold text-emerald-700" numberOfLines={1} adjustsFontSizeToFit>
+                                <Text className={`text-[10px] mb-0.5 ${isNew ? 'text-emerald-600' : 'text-red-600'}`}>Estimation IDR</Text>
+                                <Text className={`text-xs font-bold ${isNew ? 'text-emerald-700' : 'text-red-700'}`} numberOfLines={1} adjustsFontSizeToFit>
                                     {formatRp(detail.estimasi)}
                                 </Text>
                             </View>
