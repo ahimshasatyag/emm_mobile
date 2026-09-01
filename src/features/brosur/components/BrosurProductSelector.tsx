@@ -14,8 +14,8 @@ interface BrosurProductSelectorProps {
 export function BrosurProductSelector({ visible, products, onClose, onSelect }: BrosurProductSelectorProps) {
     const [search, setSearch] = useState('');
 
-    const filteredProducts = products.filter(p => 
-        p.nm_product.toLowerCase().includes(search.toLowerCase()) || 
+    const filteredProducts = products.filter(p =>
+        p.nm_product.toLowerCase().includes(search.toLowerCase()) ||
         p.code_product.toLowerCase().includes(search.toLowerCase())
     );
 
@@ -27,7 +27,7 @@ export function BrosurProductSelector({ visible, products, onClose, onSelect }: 
             onRequestClose={onClose}
         >
             <View className="flex-1 justify-end bg-black/50">
-                <KeyboardAvoidingView 
+                <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                     className="bg-white rounded-t-3xl h-[80%]"
                 >

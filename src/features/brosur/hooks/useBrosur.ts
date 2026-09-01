@@ -1,10 +1,10 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
+import { Linking } from 'react-native';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { fetchBrosurProducts, clearBrosurData } from '../stores/brosurSlice';
 import { brosurApi } from '../api/api';
 import { BrosurProduct } from '../types/brosur.types';
-import { useState } from 'react';
 
 export interface SelectedRow {
     id: string;
@@ -65,7 +65,9 @@ export const useBrosur = () => {
 
         try {
             const result = await brosurApi.generateBrosur(uniqueIds, withCover);
-            if (result.success) {
+            if (result.success && result.url) {
+                // Membuka URL di browser untuk memicu download PDF
+                await Linking.openURL(result.url);
                 return { success: true, message: 'Brosur berhasil di-generate!', url: result.url };
             }
             return { success: false, message: 'Gagal men-generate brosur.' };
