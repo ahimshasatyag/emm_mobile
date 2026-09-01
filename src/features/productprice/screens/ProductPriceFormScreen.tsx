@@ -24,12 +24,6 @@ type TableItem = {
     deliveryTerm: string;
 };
 
-const PRODUCT_OPTIONS = [
-    { label: 'PRD-001 - Produk A', value: 'PRD-001', priceNow: '50000', delivery: 'FRANCO JKT' },
-    { label: 'PRD-002 - Produk B', value: 'PRD-002', priceNow: '150000', delivery: 'FOB CHINA' },
-    { label: 'PRD-003 - Produk C', value: 'PRD-003', priceNow: '75000', delivery: 'FRANCO JKT' },
-];
-
 const DELIVERY_OPTIONS = [
     { label: 'FRANCO JKT', value: 'FRANCO JKT' },
     { label: 'FOB CHINA', value: 'FOB CHINA' },
@@ -37,7 +31,7 @@ const DELIVERY_OPTIONS = [
 
 export function ProductPriceFormScreen() {
     const navigation = useNavigation<any>();
-    const { addPrice, validateForm } = useProductPrice();
+    const { addPrice, validateForm, supportData, loadSupportData } = useProductPrice();
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -55,20 +49,38 @@ export function ProductPriceFormScreen() {
             priceNow: '',
             price: '',
             agentPrice: '',
-            kurs: '15000',
+            kurs: '',
             estimationIdr: '',
-            deliveryTerm: 'FRANCO JKT'
+            deliveryTerm: ''
         }
     ]);
 
+    const productOptions = supportData?.data_product?.map(p => ({
+        label: `${p.code_product} - ${p.nm_product}`,
+        value: p.id_product,
+        priceNow: '',
+        delivery: ''
+    })) || [];
+
     React.useEffect(() => {
-        const timer = setTimeout(() => setIsLoading(false), 1500);
-        return () => clearTimeout(timer);
+        const fetchSupport = async () => {
+            setIsLoading(true);
+            try {
+                await loadSupportData();
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchSupport();
     }, []);
 
-    const onRefresh = () => {
+    const onRefresh = async () => {
         setIsLoading(true);
-        setTimeout(() => setIsLoading(false), 1500);
+        try {
+            await loadSupportData();
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleAddItem = () => {
@@ -80,9 +92,9 @@ export function ProductPriceFormScreen() {
                 priceNow: '',
                 price: '',
                 agentPrice: '',
-                kurs: '15000',
+                kurs: '',
                 estimationIdr: '',
-                deliveryTerm: 'FRANCO JKT'
+                deliveryTerm: ''
             }
         ]);
     };
@@ -230,7 +242,7 @@ export function ProductPriceFormScreen() {
                                                 <View className="border border-gray-200 rounded-lg bg-gray-50">
                                                     <Dropdown
                                                         style={{ height: 40, paddingHorizontal: 12 }}
-                                                        data={PRODUCT_OPTIONS}
+                                                        data={productOptions}
                                                         labelField="label"
                                                         valueField="value"
                                                         placeholder="Pilih Barang"

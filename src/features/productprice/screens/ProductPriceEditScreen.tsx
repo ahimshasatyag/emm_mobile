@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, StyleSheet, RefreshControl, TouchableOpacity } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Save, Edit2, RefreshCw, X } from 'lucide-react-native';
-import Animated, { FadeInUp, FadeOut, LinearTransition, FadeIn } from 'react-native-reanimated';
+import { Save, Edit2, RefreshCw, X, ArrowLeft, Pencil } from 'lucide-react-native';
+import Animated, { FadeInUp, FadeOut, LinearTransition, FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Dropdown } from 'react-native-element-dropdown';
 import { theme } from '../../../theme/theme';
 import { formatRp, formatUsd, formatInputNumber, parseInputNumber } from '../../../utils/helpers/money';
@@ -33,24 +33,7 @@ export function ProductPriceEditScreen() {
     const [price, setPrice] = useState('');
     const [agentPrice, setAgentPrice] = useState('');
     const [deliveryTerm, setDeliveryTerm] = useState('FRANCO JKT');
-
-    // Dummy state for options table since it's not in the main data type yet
-    const [options, setOptions] = useState([
-        { id: '1', name: 'Option 1', amount: '10' },
-        { id: '2', name: 'Option 2', amount: '20' },
-    ]);
-
-    const [historyPrice] = useState([
-        { id: '1', waktu: '26-06-2026 10:00:00', price: '15.00', created_by: 'Admin' },
-        { id: '2', waktu: '25-06-2026 09:30:00', price: '14.50', created_by: 'User1' },
-    ]);
-
-    const handleOptionChange = (index: number, val: string) => {
-        const newOptions = [...options];
-        newOptions[index].amount = val;
-        setOptions(newOptions);
-    };
-
+    const [options, setOptions] = useState<any[]>([]);
     const currentPrice = prices.find(p => p.id_product === assetId);
 
     useEffect(() => {
@@ -68,8 +51,17 @@ export function ProductPriceEditScreen() {
             setPrice(currentPrice.product_price);
             setAgentPrice(currentPrice.product_price_agent);
             setDeliveryTerm(currentPrice.delivery_term || 'FRANCO JKT');
+            if (currentPrice.options) {
+                setOptions(currentPrice.options);
+            }
         }
     }, [currentPrice]);
+
+    const handleOptionChange = (index: number, value: string) => {
+        const newOptions = [...options];
+        newOptions[index].amount = value;
+        setOptions(newOptions);
+    };
 
     useEffect(() => {
         if (route.params?.showSuccessToast) {
@@ -97,7 +89,13 @@ export function ProductPriceEditScreen() {
     }, [price, currentPrice?.kurs]);
 
     const handleSave = () => {
-        const errorMsg = validateForm({ price, agentPrice, deliveryTerm });
+        const errorMsg = validateForm({
+            id_product: assetId,
+            price,
+            agentPrice,
+            deliveryTerm,
+            kurs_bank: currentPrice?.kurs || '15000'
+        });
         if (errorMsg) {
             setToastState({
                 visible: true,
@@ -118,7 +116,8 @@ export function ProductPriceEditScreen() {
                 id_product: assetId,
                 product_price: price,
                 product_price_agent: agentPrice,
-                delivery_term: deliveryTerm
+                delivery_term: deliveryTerm,
+                kurs_bank: currentPrice?.kurs || ''
             } as any);
             setToastState({
                 visible: true,
@@ -154,7 +153,7 @@ export function ProductPriceEditScreen() {
         if (currentPrice) {
             setPrice(currentPrice.product_price);
             setAgentPrice(currentPrice.product_price_agent);
-            setDeliveryTerm(currentPrice.delivery_term || 'FRANCO JKT');
+            setDeliveryTerm(currentPrice.delivery_term || '');
         }
         setIsEditing(false);
     };
@@ -235,7 +234,7 @@ export function ProductPriceEditScreen() {
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Kode Produk</Text>
                                 <TextInput
                                     className="bg-gray-100 border border-gray-200 rounded-xl px-4 h-14 text-gray-500 font-medium opacity-70"
-                                    value={currentPrice.code_product}
+                                    value={currentPrice?.code_product || ''}
                                     editable={false}
                                 />
                             </View>
@@ -244,7 +243,7 @@ export function ProductPriceEditScreen() {
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Nama Produk</Text>
                                 <TextInput
                                     className="bg-gray-100 border border-gray-200 rounded-xl px-4 h-14 text-gray-500 font-medium opacity-70"
-                                    value={currentPrice.nm_product}
+                                    value={currentPrice?.nm_product || ''}
                                     editable={false}
                                 />
                             </View>
@@ -253,7 +252,7 @@ export function ProductPriceEditScreen() {
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Brand</Text>
                                 <TextInput
                                     className="bg-gray-100 border border-gray-200 rounded-xl px-4 h-14 text-gray-500 font-medium opacity-70"
-                                    value={currentPrice.nm_product_brand}
+                                    value={currentPrice?.nm_product_brand || ''}
                                     editable={false}
                                 />
                             </View>
@@ -263,8 +262,8 @@ export function ProductPriceEditScreen() {
                                     <Text className="text-sm font-bold text-gray-700 mb-2">Price (USD) <Text className="text-red-500">*</Text></Text>
                                     <TextInput
                                         className={`bg-gray-50 border border-gray-200 rounded-xl px-4 h-14 text-gray-900 font-medium ${!isEditing ? 'opacity-70 bg-gray-100' : ''}`}
-                                        value={isEditing ? (price ? formatInputNumber(price) : '') : (price ? formatUsd(price) : price)}
-                                        onChangeText={(val) => setPrice(parseInputNumber(val))}
+                                        value={isEditing ? (price ? formatInputNumber(String(price)) : '') : (price ? formatUsd(price) : price)}
+                                        onChangeText={(val) => setPrice(parseInputNumber(String(val)))}
                                         editable={isEditing}
                                         keyboardType="numeric"
                                     />
@@ -273,8 +272,8 @@ export function ProductPriceEditScreen() {
                                     <Text className="text-sm font-bold text-gray-700 mb-2">Agent Price (USD) <Text className="text-red-500">*</Text></Text>
                                     <TextInput
                                         className={`bg-gray-50 border border-gray-200 rounded-xl px-4 h-14 text-gray-900 font-medium ${!isEditing ? 'opacity-70 bg-gray-100' : ''}`}
-                                        value={isEditing ? (agentPrice ? formatInputNumber(agentPrice) : '') : (agentPrice ? formatUsd(agentPrice) : agentPrice)}
-                                        onChangeText={(val) => setAgentPrice(parseInputNumber(val))}
+                                        value={isEditing ? (agentPrice ? formatInputNumber(String(agentPrice)) : '') : (agentPrice ? formatUsd(agentPrice) : agentPrice)}
+                                        onChangeText={(val) => setAgentPrice(parseInputNumber(String(val)))}
                                         editable={isEditing}
                                         keyboardType="numeric"
                                     />
@@ -283,10 +282,10 @@ export function ProductPriceEditScreen() {
 
                             <View className="flex-row space-x-4 mb-5 gap-4">
                                 <View className="flex-1">
-                                    <Text className="text-sm font-bold text-gray-700 mb-2">Kurs</Text>
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Kurs <Text className="font-normal text-gray-400">(Kurs: {formatRp(currentPrice?.kurs || '0')})</Text></Text>
                                     <TextInput
                                         className="bg-gray-100 border border-gray-200 rounded-xl px-4 h-14 text-gray-500 font-medium opacity-70"
-                                        value={currentPrice.kurs ? formatRp(currentPrice.kurs) : ''}
+                                        value={currentPrice?.kurs ? formatRp(currentPrice.kurs) : ''}
                                         editable={false}
                                     />
                                 </View>
@@ -323,10 +322,10 @@ export function ProductPriceEditScreen() {
                                     <Text className="flex-1 font-bold text-gray-700 text-xs px-2">Nama Option</Text>
                                     <Text className="w-32 font-bold text-gray-700 text-xs text-right pr-2">Harga USD</Text>
                                 </View>
-                                {options.map((opt, index) => (
-                                    <View key={opt.id} className="flex-row border-b border-gray-100 p-3 px-6 items-center">
+                                {options && options.map((opt, index) => (
+                                    <View key={opt.id_product_price_opt || index} className="flex-row border-b border-gray-100 p-3 px-6 items-center">
                                         <Text className="w-10 text-center text-gray-600 text-xs font-bold">{index + 1}</Text>
-                                        <Text className="flex-1 text-gray-800 text-xs px-2">{opt.name}</Text>
+                                        <Text className="flex-1 text-gray-800 text-xs px-2">{opt.nm_product_opt}</Text>
                                         <View className="w-32 pl-2">
                                             <TextInput
                                                 className={`bg-gray-50 border border-gray-200 rounded-lg px-2 h-10 text-gray-900 text-xs text-right ${!isEditing ? 'opacity-70 bg-gray-100' : ''}`}
@@ -338,12 +337,14 @@ export function ProductPriceEditScreen() {
                                         </View>
                                     </View>
                                 ))}
-                                {options.length === 0 && (
+                                {(!options || options.length === 0) && (
                                     <View className="p-4 items-center">
                                         <Text className="text-gray-400 text-xs">Tidak ada option.</Text>
                                     </View>
                                 )}
                             </View>
+
+
                         </Animated.View>
 
                         <Animated.View
@@ -405,7 +406,7 @@ export function ProductPriceEditScreen() {
                                 key="history-table"
                                 entering={FadeInUp.delay(125)}
                                 layout={LinearTransition.springify()}
-                                className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mt-6"
+                                className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mt-6 mb-8"
                             >
                                 <Text className="text-sm font-bold text-gray-700 mb-4">History Price</Text>
                                 <View className="border-y border-gray-200 bg-white -mx-6">
@@ -414,14 +415,15 @@ export function ProductPriceEditScreen() {
                                         <Text className="w-24 font-bold text-gray-700 text-xs text-right px-2">Price</Text>
                                         <Text className="flex-1 font-bold text-gray-700 text-xs px-2 text-right">Created by</Text>
                                     </View>
-                                    {historyPrice.map((history) => (
-                                        <View key={history.id} className="flex-row border-b border-gray-100 p-3 px-6 items-center">
-                                            <Text className="flex-1 text-gray-800 text-xs px-2">{history.waktu}</Text>
-                                            <Text className="w-24 text-gray-800 text-xs text-right px-2 font-medium">{history.price ? formatUsd(history.price) : history.price}</Text>
-                                            <Text className="flex-1 text-gray-600 text-xs px-2 text-right">{history.created_by}</Text>
-                                        </View>
-                                    ))}
-                                    {historyPrice.length === 0 && (
+                                    {currentPrice?.history && currentPrice.history.length > 0 ? (
+                                        currentPrice.history.map((history: any, index: number) => (
+                                            <View key={index} className="flex-row border-b border-gray-100 p-3 px-6 items-center">
+                                                <Text className="flex-1 text-gray-800 text-xs px-2">{history.waktu}</Text>
+                                                <Text className="w-24 text-gray-800 text-xs text-right px-2 font-medium">{history.product_price ? formatUsd(history.product_price) : history.product_price}</Text>
+                                                <Text className="flex-1 text-gray-600 text-xs px-2 text-right">{history.username}</Text>
+                                            </View>
+                                        ))
+                                    ) : (
                                         <View className="p-4 items-center">
                                             <Text className="text-gray-400 text-xs">Belum ada history data.</Text>
                                         </View>
@@ -429,6 +431,7 @@ export function ProductPriceEditScreen() {
                                 </View>
                             </Animated.View>
                         )}
+
                     </Animated.View>
                 )}
             </ScrollView>

@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, RefreshControl, StyleSheet } from 'react-native';
+import { View, Text, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, RefreshControl, StyleSheet, ActivityIndicator } from 'react-native';
 import { Save, ArrowLeft, RefreshCcw, DollarSign, Building, Truck } from 'lucide-react-native';
 import Animated, { FadeOut, LinearTransition, FadeInUp } from 'react-native-reanimated';
 import { Dropdown } from 'react-native-element-dropdown';
 import { theme } from '../../../theme/theme';
 import { formatRp, formatInputNumber, parseInputNumber } from '../../../utils/helpers/money';
-import { dummyProductPrices } from '../data/dummy';
 import { ProductPrice } from '../types/productprice.types';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { ProductPriceMultipleSkeleton } from '../skeleton/ProductPriceMultipleSkeleton';
 import { useProductPrice } from '../hooks/useProductPrice';
@@ -16,27 +15,28 @@ import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export function ProductPriceMultipleScreen() {
     const navigation = useNavigation<any>();
-    const { validateForm } = useProductPrice();
+    const route = useRoute<any>();
+    const selectedIds = route.params?.ids || [];
+
+    const { validateForm, prices, editPrice } = useProductPrice();
 
     const [items, setItems] = useState<ProductPrice[]>([]);
     const [isInitializing, setIsInitializing] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [toastConfig, setToastConfig] = useState({ visible: false, message: '', type: 'success' as ToastType });
 
     const loadData = async () => {
-        // Simulate network request
-        return new Promise<void>((resolve) => {
-            setTimeout(() => {
-                const initData = dummyProductPrices.map(item => ({
-                    ...item,
-                    delivery_term: item.delivery_term || 'FRANCO JKT'
-                }));
-                setItems(initData);
-                resolve();
-            }, 1000);
-        });
+        const initData = prices
+            .filter(p => selectedIds.includes(p.id_product))
+            .map(item => ({
+                ...item,
+                delivery_term: item.delivery_term || 'FRANCO JKT',
+                kurs: item.kurs || ''
+            }));
+        setItems(initData);
     };
 
     useEffect(() => {
@@ -46,7 +46,7 @@ export function ProductPriceMultipleScreen() {
             setIsInitializing(false);
         };
         init();
-    }, []);
+    }, [selectedIds, prices]);
 
     const onRefresh = async () => {
         setIsRefreshing(true);
@@ -74,7 +74,13 @@ export function ProductPriceMultipleScreen() {
     };
 
     const handleSave = () => {
-        const errorMsg = validateForm(items);
+        const errorMsg = validateForm(items.map(item => ({
+            idProduct: item.id_product,
+            price: item.product_price,
+            agentPrice: item.product_price_agent,
+            kurs: item.kurs,
+            deliveryTerm: item.delivery_term
+        })));
         if (errorMsg) {
             setToastConfig({ visible: true, message: errorMsg, type: 'error' });
             return;
@@ -83,17 +89,32 @@ export function ProductPriceMultipleScreen() {
         setIsModalVisible(true);
     };
 
-    const confirmSave = () => {
+    const confirmSave = async () => {
         setIsModalVisible(false);
-
-        navigation.navigate('Drawer', {
-            screen: 'ProductPriceList',
-            params: {
-                showToast: true,
-                toastMessage: 'Data berhasil disimpan!',
-                toastType: 'success'
+        setIsSaving(true);
+        try {
+            for (const item of items) {
+                await editPrice(item.id_product, {
+                    id_product: item.id_product,
+                    product_price: item.product_price,
+                    product_price_agent: item.product_price_agent,
+                    delivery_term: item.delivery_term || 'FRANCO JKT',
+                    kurs_bank: item.kurs || ''
+                });
             }
-        });
+            navigation.navigate('Drawer', {
+                screen: 'ProductPriceList',
+                params: {
+                    showToast: true,
+                    toastMessage: 'Data multiple update berhasil disimpan!',
+                    toastType: 'success'
+                }
+            });
+        } catch (error: any) {
+            setToastConfig({ visible: true, message: error.message || 'Gagal menyimpan perubahan multiple', type: 'error' });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const deliveryTermData = [
@@ -165,8 +186,8 @@ export function ProductPriceMultipleScreen() {
                                                 <View className="border-r border-gray-200" style={{ width: COL_WIDTH.priceUpdate, paddingHorizontal: 8 }}>
                                                     <TextInput
                                                         className="bg-gray-50 border border-gray-200 rounded-lg px-3 h-10 text-gray-900 text-xs"
-                                                        value={formatInputNumber(item.product_price || '')}
-                                                        onChangeText={(val) => handleChange(index, 'product_price', parseInputNumber(val))}
+                                                        value={formatInputNumber(String(item.product_price || ''))}
+                                                        onChangeText={(val) => handleChange(index, 'product_price', parseInputNumber(String(val)))}
                                                         keyboardType="numeric"
                                                         placeholder="0"
                                                     />
@@ -174,8 +195,8 @@ export function ProductPriceMultipleScreen() {
                                                 <View className="border-r border-gray-200" style={{ width: COL_WIDTH.priceAgent, paddingHorizontal: 8 }}>
                                                     <TextInput
                                                         className="bg-gray-50 border border-gray-200 rounded-lg px-3 h-10 text-gray-900 text-xs"
-                                                        value={formatInputNumber(item.product_price_agent || '')}
-                                                        onChangeText={(val) => handleChange(index, 'product_price_agent', parseInputNumber(val))}
+                                                        value={formatInputNumber(String(item.product_price_agent || ''))}
+                                                        onChangeText={(val) => handleChange(index, 'product_price_agent', parseInputNumber(String(val)))}
                                                         keyboardType="numeric"
                                                         placeholder="0"
                                                     />
@@ -222,9 +243,16 @@ export function ProductPriceMultipleScreen() {
                             style={{ backgroundColor: theme.colors.primary, elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
                             onPress={handleSave}
                             activeOpacity={0.8}
+                            disabled={isSaving}
                         >
-                            <Save color="white" size={20} className="mr-2" />
-                            <Text className="text-white font-bold text-[16px]">Simpan Perubahan</Text>
+                            {isSaving ? (
+                                <ActivityIndicator color="white" />
+                            ) : (
+                                <>
+                                    <Save color="white" size={20} className="mr-2" />
+                                    <Text className="text-white font-bold text-[16px]">Simpan Perubahan</Text>
+                                </>
+                            )}
                         </TouchableOpacity>
                     </Animated.View>
                 )}

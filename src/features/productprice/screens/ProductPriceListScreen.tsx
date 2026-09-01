@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, RefreshControl, TextInput, TouchableOpacity } from 'react-native';
+import { View, RefreshControl, TextInput, TouchableOpacity, ActivityIndicator, FlatList } from 'react-native';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { Plus, Search, FileUp, RefreshCcw, Edit } from 'lucide-react-native';
-import Animated, { FadeInDown, FadeInUp, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, LinearTransition, FadeInUp } from 'react-native-reanimated';
 import { useProductPrice } from '../hooks/useProductPrice';
 import { ProductPriceCard } from '../components/ProductPriceCard';
 import { ProductPriceListSkeleton } from '../skeleton/ProductPriceListSkeleton';
@@ -83,7 +83,25 @@ export function ProductPriceListScreen() {
         );
     });
 
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
+    
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, prices]);
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < filteredPrices.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, filteredPrices.length, isLoadMore]);
+
     const handleRefresh = async () => {
+        setVisibleCount(10);
         await loadPrices();
     };
 
@@ -133,9 +151,8 @@ export function ProductPriceListScreen() {
             </Animated.View>
 
             <View className="flex-1">
-                <Animated.FlatList
-                    entering={FadeInDown}
-                    data={(isLoading || isInitializing) ? [] : filteredPrices}
+                <FlatList
+                    data={(isLoading || isInitializing) ? [] : filteredPrices.slice(0, visibleCount)}
                     keyExtractor={(item) => item.id_product}
                     renderItem={({ item, index }) => (
                         <ProductPriceCard
@@ -165,6 +182,18 @@ export function ProductPriceListScreen() {
                     refreshControl={
                         <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
                     }
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
                     ListEmptyComponent={() => {
                         if (error) {
                             return (

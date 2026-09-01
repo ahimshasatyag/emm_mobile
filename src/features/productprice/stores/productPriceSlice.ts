@@ -4,6 +4,7 @@ import { productPriceApi } from '../api/api';
 
 const initialState: ProductPriceState = {
     prices: [],
+    supportData: null,
     isLoading: false,
     error: null,
 };
@@ -15,7 +16,19 @@ export const fetchProductPrices = createAsyncThunk(
             const data = await productPriceApi.getAll();
             return data;
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Failed to fetch product prices');
+            return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch product prices');
+        }
+    }
+);
+
+export const fetchSupportData = createAsyncThunk(
+    'productPrice/fetchSupportData',
+    async (_, { rejectWithValue }) => {
+        try {
+            const data = await productPriceApi.getSupportData();
+            return data;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch support data');
         }
     }
 );
@@ -27,7 +40,7 @@ export const createProductPrice = createAsyncThunk(
             const result = await productPriceApi.create(data);
             return result;
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Failed to create product price');
+            return rejectWithValue(error.response?.data?.message || error.message || 'Failed to create product price');
         }
     }
 );
@@ -39,7 +52,19 @@ export const updateProductPrice = createAsyncThunk(
             const result = await productPriceApi.update(id, data);
             return result;
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Failed to update product price');
+            return rejectWithValue(error.response?.data?.message || error.message || 'Failed to update product price');
+        }
+    }
+);
+
+export const deleteProductPrice = createAsyncThunk(
+    'productPrice/delete',
+    async (id: string, { rejectWithValue }) => {
+        try {
+            await productPriceApi.delete(id);
+            return id;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || error.message || 'Failed to delete product price');
         }
     }
 );
@@ -68,6 +93,20 @@ const productPriceSlice = createSlice({
                 state.error = action.payload as string;
             })
             
+            // Fetch Support Data
+            .addCase(fetchSupportData.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(fetchSupportData.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.supportData = action.payload;
+            })
+            .addCase(fetchSupportData.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+            })
+
             // Create
             .addCase(createProductPrice.pending, (state) => {
                 state.isLoading = true;
@@ -75,6 +114,7 @@ const productPriceSlice = createSlice({
             })
             .addCase(createProductPrice.fulfilled, (state, action) => {
                 state.isLoading = false;
+                // Sometimes create endpoint doesn't return full relation, but let's push it anyway. It will be refreshed.
                 state.prices.unshift(action.payload);
             })
             .addCase(createProductPrice.rejected, (state, action) => {
@@ -91,10 +131,27 @@ const productPriceSlice = createSlice({
                 state.isLoading = false;
                 const index = state.prices.findIndex(p => p.id_product === action.payload.id_product);
                 if (index !== -1) {
-                    state.prices[index] = action.payload;
+                    state.prices[index] = {
+                        ...state.prices[index],
+                        ...action.payload
+                    };
                 }
             })
             .addCase(updateProductPrice.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+            })
+            
+            // Delete
+            .addCase(deleteProductPrice.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(deleteProductPrice.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.prices = state.prices.filter(p => p.id_product !== action.payload);
+            })
+            .addCase(deleteProductPrice.rejected, (state, action) => {
                 state.isLoading = false;
                 state.error = action.payload as string;
             });

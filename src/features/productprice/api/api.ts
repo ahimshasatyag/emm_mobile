@@ -1,63 +1,59 @@
-import { ProductPrice, ProductPriceFormData } from '../types/productprice.types';
-import { dummyProductPrices } from '../data/dummy';
-
-// Simulasi delay jaringan
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-let currentPrices = [...dummyProductPrices];
+import { ProductPrice, ProductPriceFormData, ProductPriceSupportData } from '../types/productprice.types';
+import { api } from '../../../services/api/api';
 
 export const productPriceApi = {
     getAll: async (): Promise<ProductPrice[]> => {
-        await delay(800);
-        return [...currentPrices];
+        const response = await api.get('/productprice');
+
+        const result = response.data.data;
+
+        return result.map((item: any) => ({
+            ...item,
+            code_product: item.product?.code_product || item.code_product || '-',
+            nm_product: item.product?.nm_product || item.nm_product || 'Produk Tidak Ditemukan',
+            nm_product_brand: item.product?.brand?.nm_product_brand || item.nm_product_brand || '-',
+            waktu: item.date_update || item.date_create,
+            kurs: item.kurs_bank,
+            est_idr: (parseFloat(item.product_price || 0) * parseFloat(item.kurs_bank || 0)).toString(),
+            history: item.history || [],
+            options: item.options || [],
+        }));
     },
 
-    getById: async (id: string): Promise<ProductPrice | null> => {
-        await delay(500);
-        const price = currentPrices.find(p => p.id_product === id);
-        return price ? { ...price } : null;
+    getSupportData: async (): Promise<ProductPriceSupportData> => {
+        const response = await api.get('/productprice/support-data');
+        return response.data.data;
+    },
+
+    getById: async (id: string): Promise<ProductPrice> => {
+        const response = await api.get(`/productprice/${id}`);
+        const item = response.data.data;
+        return {
+            ...item,
+            code_product: item.product?.code_product || item.code_product || '-',
+            nm_product: item.product?.nm_product || item.nm_product || 'Produk Tidak Ditemukan',
+            nm_product_brand: item.product?.brand?.nm_product_brand || item.nm_product_brand || '-',
+            waktu: item.date_update || item.date_create,
+            kurs: item.kurs_bank,
+            est_idr: (parseFloat(item.product_price || 0) * parseFloat(item.kurs_bank || 0)).toString(),
+            history: item.history || [],
+            options: item.options || [],
+        };
     },
 
     create: async (data: ProductPriceFormData): Promise<ProductPrice> => {
-        await delay(800);
-        // Simulasi pembuatan product price
-        // Di sistem nyata, data produk (nama, brand) ditarik dari id_product
-        const newPrice: ProductPrice = {
-            id_product: data.id_product,
-            code_product: `P${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
-            nm_product: 'Produk Baru ' + data.id_product,
-            nm_product_brand: 'Brand Baru',
-            product_price: data.product_price,
-            product_price_agent: data.product_price_agent,
-            waktu: new Date().toISOString(),
-            aksi: 'NEW',
-            flag_active: 't',
-            kurs: '15000',
-            est_idr: data.product_price
-        };
-        currentPrices.unshift(newPrice);
-        return newPrice;
+        const response = await api.post('/productprice', data);
+        const item = response.data.data;
+
+        return item;
     },
 
     update: async (id: string, data: ProductPriceFormData): Promise<ProductPrice> => {
-        await delay(800);
-        const index = currentPrices.findIndex(p => p.id_product === id);
-        if (index === -1) throw new Error('Harga produk tidak ditemukan');
-        
-        const updatedPrice = {
-            ...currentPrices[index],
-            product_price: data.product_price,
-            product_price_agent: data.product_price_agent,
-            waktu: new Date().toISOString(),
-            aksi: 'UPDATE'
-        };
-        
-        currentPrices[index] = updatedPrice;
-        return updatedPrice;
+        const response = await api.put(`/productprice/${id}`, data);
+        return response.data.data;
     },
 
     delete: async (id: string): Promise<void> => {
-        await delay(500);
-        currentPrices = currentPrices.filter(p => p.id_product !== id);
+        await api.delete(`/productprice/${id}`);
     }
 };
