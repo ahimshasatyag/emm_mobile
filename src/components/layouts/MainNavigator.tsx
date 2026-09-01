@@ -13,6 +13,7 @@ import { ProductsnEditScreen } from '../../features/productsn/screens/ProductsnE
 import { ProductPriceAgentDetailScreen } from '../../features/productpriceagent/screens/ProductPriceAgentDetailScreen';
 import { ProductPriceReqFormScreen } from '../../features/productpricereq/screens/ProductPriceReqFormScreen';
 import { ProductPriceReqEditScreen } from '../../features/productpricereq/screens/ProductPriceReqEditScreen';
+import { ProductPriceLogListScreen } from '../../features/productpricelog/screens/ProductPriceLogListScreen';
 import { CsrFormScreen } from '../../features/csr/screens/CsrFormScreen';
 import { CsrEditScreen } from '../../features/csr/screens/CsrEditScreen';
 import { PurchaseRequisitionListScreen } from '../../features/purchaserequisitions/screens/PurchaseRequisitionListScreen';
@@ -302,6 +303,12 @@ export function MainNavigator() {
             <Stack.Screen
                 name="ProductPriceReqEditScreen"
                 component={ProductPriceReqEditScreen}
+                options={{ headerShown: false }}
+            />
+            {/* Product Price Log */}
+            <Stack.Screen
+                name="ProductPriceLogListScreen"
+                component={ProductPriceLogListScreen}
                 options={{ headerShown: false }}
             />
             {/* CSR */}

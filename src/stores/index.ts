@@ -27,6 +27,7 @@ import productPriceMktReducer from '../features/productpricemkt/stores/productPr
 import productPriceAgentReducer from '../features/productpriceagent/stores/productPriceAgentSlice';
 import brosurReducer from '../features/brosur/stores/brosurSlice';
 import productPriceReqReducer from '../features/productpricereq/stores/productPriceReqSlice';
+import productPriceLogReducer from '../features/productpricelog/stores/productPriceLogSlice';
 import csrReducer from '../features/csr/stores/csrSlice';
 import cstReducer from '../features/cst/stores/cstSlice';
 import lktReducer from '../features/lkt/stores/lktSlice';
@@ -87,6 +88,7 @@ export const store = configureStore({
     productPriceAgent: productPriceAgentReducer,
     brosur: brosurReducer,
     productPriceReq: productPriceReqReducer,
+    productPriceLog: productPriceLogReducer,
     csr: csrReducer,
     cst: cstReducer,
     lkt: lktReducer,

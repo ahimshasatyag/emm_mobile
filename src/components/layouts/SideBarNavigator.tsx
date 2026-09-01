@@ -238,6 +238,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'ProductPriceMktList') return 'Product Price Marketing';
         if (route === 'ProductPriceAgentList') return 'Product Price Agent';
         if (route === 'ProductPriceReqListScreen') return 'Product Price Request';
+        if (route === 'ProductPriceLogListScreen') return 'Log Search';
         if (route === 'Brosur') return 'Brosur';
         if (route === 'CsrListScreen') return 'Customer Request (CSR)';
         if (route === 'CstListScreen') return 'Suport Ticket (CST)';
@@ -365,6 +366,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('Brosur', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Product Price Request') {
                                     props.navigation.navigate('ProductPriceReqListScreen', { timestamp: Date.now() });
+                                } else if (subMenuName === 'Log Search') {
+                                    props.navigation.navigate('ProductPriceLogListScreen', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Customer Request (CSR)') {
                                     props.navigation.navigate('CsrListScreen', { timestamp: Date.now() });
                                 } else if (subMenuName === 'Suport Ticket (CST)') {
