@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, RefreshControl, StyleSheet, ActivityIndicator } from 'react-native';
-import { Save, ArrowLeft, RefreshCcw, DollarSign, Building, Truck } from 'lucide-react-native';
+import { Save } from 'lucide-react-native';
 import Animated, { FadeOut, LinearTransition, FadeInUp } from 'react-native-reanimated';
 import { Dropdown } from 'react-native-element-dropdown';
 import { theme } from '../../../theme/theme';
@@ -98,7 +98,7 @@ export function ProductPriceMultipleScreen() {
                     id_product: item.id_product,
                     product_price: item.product_price,
                     product_price_agent: item.product_price_agent,
-                    delivery_term: item.delivery_term || 'FRANCO JKT',
+                    delivery_term: item.delivery_term || '',
                     kurs_bank: item.kurs || ''
                 });
             }
