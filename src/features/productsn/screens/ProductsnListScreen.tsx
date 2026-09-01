@@ -1,18 +1,18 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, RefreshControl, ScrollView, TextInput } from 'react-native';
+import { View, Text, RefreshControl, ScrollView, TextInput } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { Plus, Search, Filter } from 'lucide-react-native';
+import { Search } from 'lucide-react-native';
 import Animated, { FadeIn, FadeOut, FadeInUp, LinearTransition } from 'react-native-reanimated';
 import { theme } from '../../../theme/theme';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
-import { useInventory } from '../hooks/useInventory';
-import { InventoryCard } from '../components/InventoryCard';
-import { InventoryListSkeleton } from '../skeleton/InventoryListSkeleton';
+import { useProductsn } from '../hooks/useProductsn';
+import { ProductsnCard } from '../components/ProductsnCard';
+import { ProductsnListSkeleton } from '../skeleton/ProductsnListSkeleton';
 import { ButtonAdd } from '../../../components/ui/buttonAdd';
 
-export function InventoryListScreen() {
+export function ProductsnListScreen() {
     const navigation = useNavigation<any>();
-    const { assets, isLoading, fetchInitialData } = useInventory();
+    const { productSns, isLoading, fetchInitialData, fetchProductSns } = useProductsn();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -31,7 +31,7 @@ export function InventoryListScreen() {
     useFocusEffect(
         useCallback(() => {
             if (!isInitializing) {
-                fetchInitialData();
+                fetchProductSns();
             }
         }, [isInitializing])
     );
@@ -42,15 +42,18 @@ export function InventoryListScreen() {
         setIsRefreshing(false);
     };
 
-    const filteredAssets = assets.filter(item =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.serial?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.status?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredProductSns = productSns.filter(item => {
+        const productName = item.product?.nm_product?.toLowerCase() || '';
+        const productCode = item.product?.code_product?.toLowerCase() || '';
+        const sn = item.sn?.toLowerCase() || '';
+        const search = searchQuery.toLowerCase();
+
+        return productName.includes(search) || productCode.includes(search) || sn.includes(search);
+    });
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator title="SERIAL NUMBER" />
+            <HeaderNavigator title="PRODUCT SN" />
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
                 <View className="flex-row items-center justify-between">
@@ -58,7 +61,7 @@ export function InventoryListScreen() {
                         <Search color="#9CA3AF" size={20} />
                         <TextInput
                             className="flex-1 ml-2 text-gray-900 h-full"
-                            placeholder="Search serial number..."
+                            placeholder="Search by SN or Product..."
                             placeholderTextColor="#9CA3AF"
                             value={searchQuery}
                             onChangeText={setSearchQuery}
@@ -75,19 +78,19 @@ export function InventoryListScreen() {
                     <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
                 }
             >
-                {(isInitializing || isRefreshing) ? (
+                {(isInitializing || (isLoading && productSns.length === 0)) ? (
                     <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
-                        <InventoryListSkeleton />
+                        <ProductsnListSkeleton />
                     </Animated.View>
                 ) : (
                     <Animated.View layout={LinearTransition.springify()}>
-                        {filteredAssets.length > 0 ? (
-                            filteredAssets.map((item, index) => (
-                                <InventoryCard
-                                    key={item.id}
+                        {filteredProductSns.length > 0 ? (
+                            filteredProductSns.map((item, index) => (
+                                <ProductsnCard
+                                    key={item.id_product_sn}
                                     item={item}
                                     index={index}
-                                    onPress={() => navigation.navigate('InventoryEdit', { id: item.id })}
+                                    onPress={() => navigation.navigate('ProductsnEdit', { id: item.id_product_sn })}
                                 />
                             ))
                         ) : (
@@ -95,9 +98,9 @@ export function InventoryListScreen() {
                                 <View className="w-24 h-24 bg-gray-100 rounded-full items-center justify-center mb-4">
                                     <Search color="#9CA3AF" size={40} />
                                 </View>
-                                <Text className="text-lg font-bold text-gray-800 mb-2">Serial Number Tidak Ditemukan</Text>
+                                <Text className="text-lg font-bold text-gray-800 mb-2">Data Tidak Ditemukan</Text>
                                 <Text className="text-sm text-gray-500 text-center px-10">
-                                    {searchQuery ? `Tidak ada Serial Number yang cocok dengan "${searchQuery}"` : "Belum ada data inventaris Serial Number."}
+                                    {searchQuery ? `Tidak ada Product SN yang cocok dengan "${searchQuery}"` : "Belum ada data Product SN."}
                                 </Text>
                             </Animated.View>
                         )}
@@ -105,8 +108,8 @@ export function InventoryListScreen() {
                 )}
             </ScrollView>
 
-            {!isInitializing && !isLoading && (
-                <ButtonAdd onPress={() => navigation.navigate('InventoryForm')} />
+            {!isInitializing && (
+                <ButtonAdd onPress={() => navigation.navigate('ProductsnForm')} />
             )}
         </View>
     );

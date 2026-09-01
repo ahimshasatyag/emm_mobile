@@ -1,24 +1,24 @@
-import { InventoryAsset, InventoryCategory, InventorySerialNumber, InventoryType } from '../types/inventory.types';
+import { ProductsnAsset, ProductsnCategory, ProductsnSerialNumber, ProductsnType } from '../types/productsn.types';
 
-export const DUMMY_INVENTORY_TYPES: InventoryType[] = [
+export const DUMMY_PRODUCTSN_TYPES: ProductsnType[] = [
     { id: 'T001', name: 'Elektronik' },
     { id: 'T002', name: 'Kendaraan' },
     { id: 'T003', name: 'Furnitur' },
 ];
 
-export const DUMMY_INVENTORY_CATEGORIES: InventoryCategory[] = [
+export const DUMMY_PRODUCTSN_CATEGORIES: ProductsnCategory[] = [
     { id: 'C001', name: 'Laptop' },
     { id: 'C002', name: 'Mobil' },
     { id: 'C003', name: 'Motor' },
     { id: 'C004', name: 'Meja' },
 ];
 
-export const DUMMY_INVENTORY_ASSETS: InventoryAsset[] = [
+export const DUMMY_PRODUCTSN_ASSETS: ProductsnAsset[] = [
     {
         id: 'INV001',
         name: 'Laptop ASUS ROG',
-        inventory_type_id: 'T001',
-        inventory_category_id: 'C001',
+        productsn_type_id: 'T001',
+        productsn_category_id: 'C001',
         procured_date: '2023-01-15',
         purchased_date: '2023-01-10',
         deskripsi: 'Laptop gaming untuk tim desain',
@@ -29,8 +29,8 @@ export const DUMMY_INVENTORY_ASSETS: InventoryAsset[] = [
     {
         id: 'INV002',
         name: 'Toyota Avanza 2022',
-        inventory_type_id: 'T002',
-        inventory_category_id: 'C002',
+        productsn_type_id: 'T002',
+        productsn_category_id: 'C002',
         procured_date: '2022-05-20', // BPKB
         purchased_date: '2022-06-01', // STNK
         deskripsi: 'Kendaraan operasional kantor',
@@ -40,7 +40,7 @@ export const DUMMY_INVENTORY_ASSETS: InventoryAsset[] = [
     },
 ];
 
-export const DUMMY_INVENTORY_SERIALS: InventorySerialNumber[] = [
+export const DUMMY_PRODUCTSN_SERIALS: ProductsnSerialNumber[] = [
     {
         id: 'SN1',
         asset_id: 'INV001',

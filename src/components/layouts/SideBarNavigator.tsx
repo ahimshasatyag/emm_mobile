@@ -479,7 +479,7 @@ export function SideBarNavigator() {
                 }}
             />
             <Drawer.Screen name="ProductUnitList" component={require('../../features/productunit/screens/ProductUnitListScreen').ProductUnitListScreen} />
-            <Drawer.Screen name="InventoryList" component={require('../../features/inventory/screens/InventoryListScreen').InventoryListScreen} />
+            <Drawer.Screen name="InventoryList" component={require('../../features/productsn/screens/ProductsnListScreen').ProductsnListScreen} />
             <Drawer.Screen name="ProductPriceList" component={require('../../features/productprice/screens/ProductPriceListScreen').ProductPriceListScreen} />
             <Drawer.Screen
                 name="ProductPriceMktList"

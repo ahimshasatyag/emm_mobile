@@ -1,37 +1,24 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { ChevronRight, Package, QrCode } from 'lucide-react-native';
+import { ChevronRight, Package, Hash } from 'lucide-react-native';
 import Animated, { FadeInUp, LinearTransition } from 'react-native-reanimated';
 import { theme } from '../../../theme/theme';
-import { InventoryAsset } from '../types/inventory.types';
+import { ProductSn } from '../types/productsn.types';
 
-interface InventoryCardProps {
-    item: InventoryAsset;
+interface ProductsnCardProps {
+    item: ProductSn;
     index: number;
     onPress: () => void;
 }
 
-export function InventoryCard({ item, index, onPress }: InventoryCardProps) {
-    const getStatusStyle = (status: string) => {
-        switch (status) {
-            case 'active': return { bg: 'bg-green-100', text: 'text-green-700', label: 'Active' };
-            case 'normal': return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Normal' };
-            case 'not_assigned': return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Not Assigned' };
-            case 'sold': return { bg: 'bg-red-100', text: 'text-red-700', label: 'Sold' };
-            case 'rusak': return { bg: 'bg-amber-100', text: 'text-amber-800', label: 'Rusak' };
-            default: return { bg: 'bg-gray-100', text: 'text-gray-700', label: status };
-        }
-    };
-
-    const statusStyle = getStatusStyle(item.status);
-
+export function ProductsnCard({ item, index, onPress }: ProductsnCardProps) {
     return (
-        <Animated.View 
-            entering={FadeInUp.delay(index * 100).springify()} 
+        <Animated.View
+            entering={FadeInUp.delay(index * 50).springify()}
             layout={LinearTransition.springify()}
             className="mb-4"
         >
-            <TouchableOpacity 
+            <TouchableOpacity
                 onPress={onPress}
                 activeOpacity={0.7}
                 className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex-row items-center"
@@ -50,17 +37,23 @@ export function InventoryCard({ item, index, onPress }: InventoryCardProps) {
                 <View className="flex-1">
                     <View className="flex-row justify-between items-start mb-1">
                         <Text className="text-base font-bold text-gray-800 flex-1 mr-2" numberOfLines={1}>
-                            {item.name}
+                            {item.product?.code_product}
                         </Text>
-                        <View className={`px-2 py-0.5 rounded-md ${statusStyle.bg}`}>
-                            <Text className={`text-xs font-bold ${statusStyle.text}`}>{statusStyle.label}</Text>
+                        <View className={`px-2 py-0.5 rounded-md ${Number(item.nqty) === 0 ? 'bg-red-100' : 'bg-green-100'}`}>
+                            <Text className={`text-xs font-bold ${Number(item.nqty) === 0 ? 'text-red-700' : 'text-green-700'}`}>
+                                {Number(item.nqty) === 0 ? 'SALE' : 'READY'}
+                            </Text>
                         </View>
                     </View>
-                    
-                    {item.serial ? (
-                        <View className="flex-row items-center mt-2 bg-gray-50 p-1.5 rounded-lg border border-gray-100">
-                            <QrCode size={12} color="#6B7280" className="mr-1" />
-                            <Text className="text-xs font-bold text-gray-600">{item.serial}</Text>
+
+                    <Text className="text-xs text-gray-500 font-medium mb-2">
+                        {item.product?.nm_product}
+                    </Text>
+
+                    {item.sn ? (
+                        <View className="flex-row items-center bg-gray-50 p-1.5 rounded-lg border border-gray-100 self-start">
+                            <Hash size={12} color="#6B7280" className="mr-1" />
+                            <Text className="text-xs font-bold text-gray-700">{item.sn}</Text>
                         </View>
                     ) : null}
                 </View>

@@ -7,9 +7,9 @@ import { ProductBrandFormScreen } from '../../features/productbrand/screens/Prod
 import { ProductBrandEditScreen } from '../../features/productbrand/screens/ProductBrandEditScreen';
 import { ProductUnitFormScreen } from '../../features/productunit/screens/ProductUnitFormScreen';
 import { ProductUnitEditScreen } from '../../features/productunit/screens/ProductUnitEditScreen';
-import { InventoryListScreen } from '../../features/inventory/screens/InventoryListScreen';
-import { InventoryFormScreen } from '../../features/inventory/screens/InventoryFormScreen';
-import { InventoryEditScreen } from '../../features/inventory/screens/InventoryEditScreen';
+import { ProductsnListScreen } from '../../features/productsn/screens/ProductsnListScreen';
+import { ProductsnFormScreen } from '../../features/productsn/screens/ProductsnFormScreen';
+import { ProductsnEditScreen } from '../../features/productsn/screens/ProductsnEditScreen';
 import { ProductPriceAgentDetailScreen } from '../../features/productpriceagent/screens/ProductPriceAgentDetailScreen';
 import { ProductPriceReqFormScreen } from '../../features/productpricereq/screens/ProductPriceReqFormScreen';
 import { ProductPriceReqEditScreen } from '../../features/productpricereq/screens/ProductPriceReqEditScreen';
@@ -68,9 +68,6 @@ import { MataUangScreen } from '../../features/matauang/screens/MataUangScreen';
 import { AssestsListScreen } from '../../features/assests/screens/AssestsListScreen';
 import { AssestFormScreen } from '../../features/assests/screens/AssestFormScreen';
 import { AssestsEditScreen } from '../../features/assests/screens/AssestsEditScreen';
-import { InventoryScheduleListScreen } from '../../features/inventoryschedule/screens/InventoryScheduleListScreen';
-import { InventoryScheduleFormScreen } from '../../features/inventoryschedule/screens/InventoryScheduleFormScreen';
-import { InventoryScheduleEditScreen } from '../../features/inventoryschedule/screens/InventoryScheduleEditScreen';
 import { TandaTerimaCustListScreen } from '../../features/tandaterimacust/screens/TandaTerimaCustListScreen';
 import { TandaTerimaCustFormScreen } from '../../features/tandaterimacust/screens/TandaTerimaCustFormScreen';
 import { TandaTerimaCustEditScreen } from '../../features/tandaterimacust/screens/TandaTerimaCustEditScreen';
@@ -88,9 +85,9 @@ export function MainNavigator() {
             <Stack.Screen name="UserForm" component={UserFormScreen} />
             <Stack.Screen name="UserEdit" component={UserEditScreen} />
 
-            <Stack.Screen name="InventoryList" component={InventoryListScreen} />
-            <Stack.Screen name="InventoryForm" component={InventoryFormScreen} />
-            <Stack.Screen name="InventoryEdit" component={InventoryEditScreen} />
+            <Stack.Screen name="InventoryList" component={ProductsnListScreen} />
+            <Stack.Screen name="InventoryForm" component={ProductsnFormScreen} />
+            <Stack.Screen name="InventoryEdit" component={ProductsnEditScreen} />
             <Stack.Screen name="CekSerialNumber" component={CekSerialNumberScreen} />
             <Stack.Screen name="UsersLevelForm" component={require('../../features/userslevel/screens/UsersLevelFormScreen').UsersLevelFormScreen} />
             <Stack.Screen name="UsersLevelEdit" component={require('../../features/userslevel/screens/UsersLevelEditScreen').UsersLevelEditScreen} />
@@ -126,11 +123,11 @@ export function MainNavigator() {
             <Stack.Screen name="DoEditSplitScreen" component={DoEditSplitScreen} />
             <Stack.Screen name="CustomerInvoiceListScreen" component={CustomerInvoiceListScreen} />
             <Stack.Screen name="CustomerInvoiceEditScreen" component={CustomerInvoiceEditScreen} />
-            
+
             <Stack.Screen name="PaymentList" component={PaymentListScreen} />
             <Stack.Screen name="PaymentEdit" component={PaymentEditScreen} />
             <Stack.Screen name="PaymentForm" component={PaymentFormScreen} />
-            
+
             {/* Kas Bank In */}
             <Stack.Screen name="KasBankInList" component={KasBankInListScreen} />
             <Stack.Screen name="KasBankInForm" component={KasBankInFormScreen} />

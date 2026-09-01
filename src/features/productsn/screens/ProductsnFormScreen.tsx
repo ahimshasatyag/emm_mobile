@@ -1,35 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Save } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { Dropdown } from 'react-native-element-dropdown';
 import { theme } from '../../../theme/theme';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
-import { useInventory } from '../hooks/useInventory';
+import { useProductsn } from '../hooks/useProductsn';
 import { Button } from '../../../components/ui/button';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
-import { InventoryFormSkeleton } from '../skeleton/InventoryFormSkeleton';
-import { useProducts } from '../../products/hooks/useProducts';
+import { ProductsnFormSkeleton } from '../skeleton/ProductsnFormSkeleton';
 
-export function InventoryFormScreen() {
-    const navigation = useNavigation();
-    const { types, categories, createAsset, fetchInitialData, isLoading, validateForm } = useInventory();
-    const { products } = useProducts();
+export function ProductsnFormScreen() {
+    const navigation = useNavigation<any>();
+    const { supportData, createProductSn, fetchInitialData, isLoading, validateForm } = useProductsn();
 
     const [isSaving, setIsSaving] = useState(false);
-    const [name, setName] = useState('');
-    const [typeId] = useState('');
-    const [categoryId] = useState('');
-    const [procuredDate] = useState(new Date().toISOString().split('T')[0]);
-    const [purchasedDate] = useState(new Date().toISOString().split('T')[0]);
-    const [deskripsi] = useState('');
-    const [serial, setSerial] = useState('');
-    const [status, setStatus] = useState<InventoryStatus>('active');
+    const [idProduct, setIdProduct] = useState<string | number>('');
+    const [sn, setSn] = useState('');
+    const [nqty, setNqty] = useState('1');
     const [focusedField, setFocusedField] = useState<string | null>(null);
-    const [serialNumbers] = useState([{ name_sn: '', serial_number: '' }]);
-    const [fPrint] = useState('');
+
     const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
     const [toastState, setToastState] = useState({
         visible: false,
@@ -38,13 +30,13 @@ export function InventoryFormScreen() {
     });
 
     useEffect(() => {
-        if (types.length === 0 || categories.length === 0) {
+        if (supportData.length === 0) {
             fetchInitialData();
         }
     }, []);
 
     const handleSave = () => {
-        const validationError = validateForm({ name });
+        const validationError = validateForm({ id_product: idProduct, sn, nqty: parseInt(nqty) || 0 });
         if (validationError) {
             setToastState({
                 visible: true,
@@ -60,21 +52,14 @@ export function InventoryFormScreen() {
         setIsModalConfirmVisible(false);
         setIsSaving(true);
         try {
-            const result = await createAsset({
-                name,
-                inventory_type_id: typeId,
-                inventory_category_id: categoryId,
-                procured_date: procuredDate,
-                purchased_date: purchasedDate,
-                deskripsi,
-                serial,
-                status,
-                f_print: fPrint,
-                serialNumbers: serialNumbers.filter(sn => sn.name_sn && sn.serial_number)
+            const result = await createProductSn({
+                id_product: idProduct,
+                sn,
+                nqty: parseInt(nqty) || 0
             });
 
-            navigation.replace('InventoryEdit', {
-                id: result.id,
+            navigation.replace('ProductsnEdit', {
+                id: result.id_product_sn,
                 showSuccessToast: true
             });
         } catch (error: any) {
@@ -91,7 +76,7 @@ export function InventoryFormScreen() {
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-gray-50">
             <HeaderNavigator
-                title={isLoading ? "MEMUAT DATA..." : "TAMBAH SERIAL NUMBER"}
+                title={isLoading ? "MEMUAT DATA..." : "TAMBAH PRODUCT SN"}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
             />
@@ -107,7 +92,7 @@ export function InventoryFormScreen() {
             <ModalConfirm
                 visible={isModalConfirmVisible}
                 title="Konfirmasi Simpan"
-                message="Apakah Anda yakin ingin menyimpan aset ini?"
+                message="Apakah Anda yakin ingin menyimpan Product SN ini?"
                 confirmText="Ya, Simpan"
                 cancelText="Batal"
                 onCancel={() => setIsModalConfirmVisible(false)}
@@ -122,26 +107,28 @@ export function InventoryFormScreen() {
                     <RefreshControl refreshing={isLoading} onRefresh={fetchInitialData} colors={[theme.colors.primary]} />
                 }
             >
-                {isLoading ? (
+                {isLoading && supportData.length === 0 ? (
                     <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
-                        <InventoryFormSkeleton />
+                        <ProductsnFormSkeleton />
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
                         <Animated.View entering={FadeInUp.delay(50)} layout={LinearTransition.springify()}>
                             <View className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6">
+                                
+                                {/* PRODUCT DROPDOWN */}
                                 <View className="mb-5">
-                                    <Text className="text-sm font-bold text-gray-700 mb-2">Product Name <Text className="text-red-500">*</Text></Text>
-                                    <View className="border rounded-xl bg-gray-50" style={{ borderColor: focusedField === 'name' ? theme.colors.primary : '#E5E7EB' }}>
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Product <Text className="text-red-500">*</Text></Text>
+                                    <View className="border rounded-xl bg-gray-50" style={{ borderColor: focusedField === 'id_product' ? theme.colors.primary : '#E5E7EB' }}>
                                         <Dropdown
                                             style={{ height: 56, paddingHorizontal: 16 }}
-                                            data={products.map(p => ({ label: p.nm_product, value: p.nm_product }))}
+                                            data={supportData.map(p => ({ label: p.nm_product, value: p.id_product }))}
                                             labelField="label"
                                             valueField="value"
-                                            placeholder="Select Product"
-                                            value={name}
-                                            onChange={item => setName(item.value)}
-                                            onFocus={() => setFocusedField('name')}
+                                            placeholder="Pilih Product"
+                                            value={idProduct}
+                                            onChange={item => setIdProduct(item.value)}
+                                            onFocus={() => setFocusedField('id_product')}
                                             onBlur={() => setFocusedField(null)}
                                             placeholderStyle={{ color: '#9CA3AF' }}
                                             search
@@ -150,41 +137,35 @@ export function InventoryFormScreen() {
                                     </View>
                                 </View>
 
+                                {/* SN INPUT */}
                                 <View className="mb-5">
-                                    <Text className="text-sm font-bold text-gray-700 mb-2">Serial Number</Text>
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Serial Number (SN) <Text className="text-red-500">*</Text></Text>
                                     <TextInput
                                         className="bg-gray-50 border rounded-xl px-4 h-14 text-gray-900 font-medium"
-                                        style={{ borderColor: focusedField === 'serial' ? theme.colors.primary : '#E5E7EB' }}
-                                        value={serial}
-                                        onChangeText={setSerial}
-                                        onFocus={() => setFocusedField('serial')}
+                                        style={{ borderColor: focusedField === 'sn' ? theme.colors.primary : '#E5E7EB' }}
+                                        value={sn}
+                                        onChangeText={setSn}
+                                        onFocus={() => setFocusedField('sn')}
                                         onBlur={() => setFocusedField(null)}
-                                        placeholder="Induk Serial Number"
+                                        placeholder="Masukkan SN"
                                     />
                                 </View>
+
+                                {/* QTY INPUT */}
                                 <View className="mb-5">
-                                    <Text className="text-sm font-bold text-gray-700 mb-2">Status <Text className="text-red-500">*</Text></Text>
-                                    <View className="border rounded-xl bg-gray-50" style={{ borderColor: focusedField === 'status' ? theme.colors.primary : '#E5E7EB' }}>
-                                        <Dropdown
-                                            style={{ height: 56, paddingHorizontal: 16 }}
-                                            data={[
-                                                { label: 'Active', value: 'active' },
-                                                { label: 'Normal', value: 'normal' },
-                                                { label: 'Not Assigned', value: 'not_assigned' },
-                                                { label: 'Sold', value: 'sold' },
-                                                { label: 'Rusak', value: 'rusak' }
-                                            ]}
-                                            labelField="label"
-                                            valueField="value"
-                                            placeholder="Select Status"
-                                            value={status}
-                                            onChange={item => setStatus(item.value as InventoryStatus)}
-                                            onFocus={() => setFocusedField('status')}
-                                            onBlur={() => setFocusedField(null)}
-                                            placeholderStyle={{ color: '#9CA3AF' }}
-                                        />
-                                    </View>
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Quantity (QTY) <Text className="text-red-500">*</Text></Text>
+                                    <TextInput
+                                        className="bg-gray-50 border rounded-xl px-4 h-14 text-gray-900 font-medium"
+                                        style={{ borderColor: focusedField === 'nqty' ? theme.colors.primary : '#E5E7EB' }}
+                                        value={nqty}
+                                        onChangeText={setNqty}
+                                        onFocus={() => setFocusedField('nqty')}
+                                        onBlur={() => setFocusedField(null)}
+                                        placeholder="Masukkan Quantity"
+                                        keyboardType="numeric"
+                                    />
                                 </View>
+
                             </View>
 
                             <Button
@@ -209,3 +190,4 @@ export function InventoryFormScreen() {
         </KeyboardAvoidingView>
     );
 }
+

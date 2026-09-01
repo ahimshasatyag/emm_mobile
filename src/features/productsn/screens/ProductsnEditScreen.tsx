@@ -1,26 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, RefreshControl, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Save, Edit3, X } from 'lucide-react-native';
+import { Save, Edit3, X, Trash2 } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeOut, FadeIn, LinearTransition } from 'react-native-reanimated';
 import { Dropdown } from 'react-native-element-dropdown';
 import { theme } from '../../../theme/theme';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
-import { useInventory } from '../hooks/useInventory';
-import { InventoryStatus } from '../types/inventory.types';
-import { InventoryEditSkeleton } from '../skeleton/InventoryEditSkeleton';
+import { useProductsn } from '../hooks/useProductsn';
+import { ProductsnEditSkeleton } from '../skeleton/ProductsnEditSkeleton';
 import { Button } from '../../../components/ui/button';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
-import { useProducts } from '../../products/hooks/useProducts';
 
-export function InventoryEditScreen() {
-    const navigation = useNavigation();
+export function ProductsnEditScreen() {
+    const navigation = useNavigation<any>();
     const route = useRoute<any>();
     const assetId = route.params?.id;
 
-    const { assets, types, categories, editAsset, fetchInitialData, getAssetSerials, validateForm } = useInventory();
-    const { products } = useProducts();
+    const { productSns, supportData, editProductSn, removeProductSn, fetchInitialData, validateForm } = useProductsn();
 
     const [isSaving, setIsSaving] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -30,48 +27,28 @@ export function InventoryEditScreen() {
     const [focusedField, setFocusedField] = useState<string | null>(null);
 
     const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
+    const [isModalDeleteVisible, setIsModalDeleteVisible] = useState(false);
     const [toastState, setToastState] = useState({
         visible: false,
         type: 'success' as ToastType,
         message: ''
     });
 
-    const [name, setName] = useState('');
-    const [typeId, setTypeId] = useState('');
-    const [categoryId, setCategoryId] = useState('');
-    const [procuredDate, setProcuredDate] = useState('');
-    const [purchasedDate, setPurchasedDate] = useState('');
-    const [deskripsi, setDeskripsi] = useState('');
-    const [serial, setSerial] = useState('');
-    const [status, setStatus] = useState<InventoryStatus>('active');
-
-    const [serialNumbers, setSerialNumbers] = useState([{ name_sn: '', serial_number: '' }]);
-    const [fPrint, setFPrint] = useState('');
+    const [idProduct, setIdProduct] = useState<string | number>('');
+    const [sn, setSn] = useState('');
+    const [nqty, setNqty] = useState('1');
 
     const loadData = async () => {
         setIsInitializing(true);
-        if (types.length === 0 || categories.length === 0) {
+        if (supportData.length === 0) {
             await fetchInitialData();
         }
 
-        const asset = assets.find(a => a.id === assetId);
+        const asset = productSns.find(a => String(a.id_product_sn) === String(assetId));
         if (asset) {
-            setName(asset.name);
-            setTypeId(asset.inventory_type_id);
-            setCategoryId(asset.inventory_category_id);
-            setProcuredDate(asset.procured_date);
-            setPurchasedDate(asset.purchased_date);
-            setDeskripsi(asset.deskripsi);
-            setSerial(asset.serial);
-            setStatus(asset.status);
-            setFPrint(asset.f_print);
-
-            const serials = await getAssetSerials(assetId);
-            if (serials && serials.length > 0) {
-                setSerialNumbers(serials.map(s => ({ name_sn: s.name_sn, serial_number: s.serial_number })));
-            } else {
-                setSerialNumbers([]);
-            }
+            setIdProduct(asset.id_product);
+            setSn(asset.sn || '');
+            setNqty(String(asset.nqty));
         }
         setIsInitializing(false);
     };
@@ -88,7 +65,7 @@ export function InventoryEditScreen() {
             setToastState({
                 visible: true,
                 type: 'success',
-                message: 'Data inventaris berhasil ditambahkan'
+                message: 'Data Product SN berhasil ditambahkan'
             });
             navigation.setParams({ showSuccessToast: undefined });
         }
@@ -101,7 +78,7 @@ export function InventoryEditScreen() {
     };
 
     const handleSave = () => {
-        const validationError = validateForm({ name });
+        const validationError = validateForm({ id_product: idProduct, sn, nqty: parseInt(nqty) || 0 });
         if (validationError) {
             setToastState({
                 visible: true,
@@ -118,22 +95,15 @@ export function InventoryEditScreen() {
 
         setIsSaving(true);
         try {
-            await editAsset(assetId, {
-                name,
-                inventory_type_id: typeId,
-                inventory_category_id: categoryId,
-                procured_date: procuredDate,
-                purchased_date: purchasedDate,
-                deskripsi,
-                serial,
-                status,
-                f_print: fPrint,
-                serialNumbers: serialNumbers.filter(sn => sn.name_sn && sn.serial_number)
+            await editProductSn(assetId, {
+                id_product: idProduct,
+                sn,
+                nqty: parseInt(nqty) || 0
             });
             setToastState({
                 visible: true,
                 type: 'success',
-                message: 'Data inventaris berhasil diupdate'
+                message: 'Data Product SN berhasil diupdate'
             });
             setIsEditing(false);
         } catch (error: any) {
@@ -147,10 +117,26 @@ export function InventoryEditScreen() {
         }
     };
 
+    const confirmDelete = async () => {
+        setIsModalDeleteVisible(false);
+        setIsSaving(true);
+        try {
+            await removeProductSn(assetId);
+            navigation.goBack();
+        } catch (error: any) {
+            setToastState({
+                visible: true,
+                type: 'error',
+                message: error.message || 'Gagal menghapus data'
+            });
+            setIsSaving(false);
+        }
+    };
+
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-gray-50">
             <HeaderNavigator
-                title={isInitializing || isRefreshing ? "MEMUAT DATA..." : (isEditing ? "EDIT SERIAL NUMBER" : "DETAIL SERIAL NUMBER")}
+                title={isInitializing || isRefreshing ? "MEMUAT DATA..." : (isEditing ? "EDIT PRODUCT SN" : "DETAIL PRODUCT SN")}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
             />
@@ -166,11 +152,21 @@ export function InventoryEditScreen() {
             <ModalConfirm
                 visible={isModalConfirmVisible}
                 title="Konfirmasi Edit"
-                message="Apakah Anda yakin ingin menyimpan perubahan pada aset ini?"
+                message="Apakah Anda yakin ingin menyimpan perubahan pada Product SN ini?"
                 confirmText="Ya, Simpan"
                 cancelText="Batal"
                 onCancel={() => setIsModalConfirmVisible(false)}
                 onConfirm={confirmSave}
+            />
+
+            <ModalConfirm
+                visible={isModalDeleteVisible}
+                title="Konfirmasi Hapus"
+                message="Apakah Anda yakin ingin menghapus Product SN ini? Data yang dihapus tidak dapat dikembalikan."
+                confirmText="Hapus"
+                cancelText="Batal"
+                onCancel={() => setIsModalDeleteVisible(false)}
+                onConfirm={confirmDelete}
             />
 
             <ScrollView
@@ -181,7 +177,7 @@ export function InventoryEditScreen() {
             >
                 {(isInitializing) ? (
                     <Animated.View exiting={FadeOut.duration(300)}>
-                        <InventoryEditSkeleton />
+                        <ProductsnEditSkeleton />
                     </Animated.View>
                 ) : (
                     <Animated.View entering={FadeIn.duration(600)}>
@@ -191,18 +187,19 @@ export function InventoryEditScreen() {
                             layout={LinearTransition.springify()}
                             className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6"
                         >
+                            {/* PRODUCT DROPDOWN */}
                             <View className="mb-5">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Product Name <Text className="text-red-500">*</Text></Text>
-                                <View className={`border rounded-xl bg-gray-50 ${!isEditing ? 'opacity-70 bg-gray-100' : ''}`} style={{ borderColor: focusedField === 'name' ? theme.colors.primary : '#E5E7EB' }}>
+                                <Text className="text-sm font-bold text-gray-700 mb-2">Product <Text className="text-red-500">*</Text></Text>
+                                <View className={`border rounded-xl bg-gray-50 ${!isEditing ? 'opacity-70 bg-gray-100' : ''}`} style={{ borderColor: focusedField === 'id_product' ? theme.colors.primary : '#E5E7EB' }}>
                                     <Dropdown
                                         style={{ height: 56, paddingHorizontal: 16 }}
-                                        data={products.map(p => ({ label: p.nm_product, value: p.nm_product }))}
+                                        data={supportData.map(p => ({ label: p.nm_product, value: p.id_product }))}
                                         labelField="label"
                                         valueField="value"
-                                        placeholder="Select Product"
-                                        value={name}
-                                        onChange={item => setName(item.value)}
-                                        onFocus={() => setFocusedField('name')}
+                                        placeholder="Pilih Product"
+                                        value={idProduct}
+                                        onChange={item => setIdProduct(item.value)}
+                                        onFocus={() => setFocusedField('id_product')}
                                         onBlur={() => setFocusedField(null)}
                                         placeholderStyle={{ color: '#9CA3AF' }}
                                         disable={!isEditing}
@@ -212,46 +209,37 @@ export function InventoryEditScreen() {
                                 </View>
                             </View>
 
+                            {/* SN INPUT */}
                             <View className="mb-5">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Serial Number</Text>
+                                <Text className="text-sm font-bold text-gray-700 mb-2">Serial Number (SN) <Text className="text-red-500">*</Text></Text>
                                 <TextInput
                                     className={`bg-gray-50 border rounded-xl px-4 h-14 text-gray-900 font-medium ${!isEditing ? 'opacity-70 bg-gray-100' : ''}`}
-                                    style={{ borderColor: focusedField === 'serial' ? theme.colors.primary : '#E5E7EB' }}
-                                    value={serial}
-                                    onChangeText={setSerial}
-                                    onFocus={() => setFocusedField('serial')}
+                                    style={{ borderColor: focusedField === 'sn' ? theme.colors.primary : '#E5E7EB' }}
+                                    value={sn}
+                                    onChangeText={setSn}
+                                    onFocus={() => setFocusedField('sn')}
                                     onBlur={() => setFocusedField(null)}
-                                    placeholder="Induk Serial Number"
+                                    placeholder="Masukkan SN"
                                     editable={isEditing}
                                 />
                             </View>
+
+                            {/* QTY INPUT */}
                             <View className="mb-5">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Status <Text className="text-red-500">*</Text></Text>
-                                <View className={`border rounded-xl bg-gray-50 ${!isEditing ? 'opacity-70 bg-gray-100' : ''}`} style={{ borderColor: focusedField === 'status' ? theme.colors.primary : '#E5E7EB' }}>
-                                    <Dropdown
-                                        style={{ height: 56, paddingHorizontal: 16 }}
-                                        data={[
-                                            { label: 'Active', value: 'active' },
-                                            { label: 'Normal', value: 'normal' },
-                                            { label: 'Not Assigned', value: 'not_assigned' },
-                                            { label: 'Sold', value: 'sold' },
-                                            { label: 'Rusak', value: 'rusak' }
-                                        ]}
-                                        labelField="label"
-                                        valueField="value"
-                                        placeholder="Select Status"
-                                        value={status}
-                                        onChange={item => setStatus(item.value as InventoryStatus)}
-                                        onFocus={() => setFocusedField('status')}
-                                        onBlur={() => setFocusedField(null)}
-                                        placeholderStyle={{ color: '#9CA3AF' }}
-                                        disable={!isEditing}
-                                    />
-                                </View>
+                                <Text className="text-sm font-bold text-gray-700 mb-2">Quantity (QTY) <Text className="text-red-500">*</Text></Text>
+                                <TextInput
+                                    className={`bg-gray-50 border rounded-xl px-4 h-14 text-gray-900 font-medium ${!isEditing ? 'opacity-70 bg-gray-100' : ''}`}
+                                    style={{ borderColor: focusedField === 'nqty' ? theme.colors.primary : '#E5E7EB' }}
+                                    value={nqty}
+                                    onChangeText={setNqty}
+                                    onFocus={() => setFocusedField('nqty')}
+                                    onBlur={() => setFocusedField(null)}
+                                    placeholder="Masukkan Quantity"
+                                    keyboardType="numeric"
+                                    editable={isEditing}
+                                />
                             </View>
                         </Animated.View>
-
-
 
                         <Animated.View
                             key={`actions-${isEditing}`}
@@ -260,14 +248,23 @@ export function InventoryEditScreen() {
                             className="flex-row space-x-3"
                         >
                             {!isEditing ? (
-                                <Button
-                                    onPress={() => setIsEditing(true)}
-                                    className="flex-1 h-14 rounded-2xl flex-row items-center justify-center bg-indigo-600"
-                                    style={{ elevation: 2, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
-                                >
-                                    <Edit3 color="white" size={20} className="mr-2" />
-                                    <Text className="text-white font-bold text-lg">Edit</Text>
-                                </Button>
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        onPress={() => setIsModalDeleteVisible(true)}
+                                        className="h-14 w-14 rounded-2xl flex items-center justify-center border-red-200 bg-red-50"
+                                    >
+                                        <Trash2 color="#EF4444" size={24} />
+                                    </Button>
+                                    <Button
+                                        onPress={() => setIsEditing(true)}
+                                        className="flex-1 h-14 rounded-2xl flex-row items-center justify-center bg-indigo-600"
+                                        style={{ elevation: 2, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
+                                    >
+                                        <Edit3 color="white" size={20} className="mr-2" />
+                                        <Text className="text-white font-bold text-lg">Edit</Text>
+                                    </Button>
+                                </>
                             ) : (
                                 <>
                                     <Button

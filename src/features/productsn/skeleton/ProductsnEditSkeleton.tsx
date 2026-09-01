@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 
-export function InventoryEditSkeleton() {
+export function ProductsnEditSkeleton() {
     const opacity = useSharedValue(0.5);
 
     useEffect(() => {

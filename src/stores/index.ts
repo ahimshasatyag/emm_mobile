@@ -21,7 +21,7 @@ import productCategoryReducer from '../features/productcategory/stores/productCa
 import { productSubCategoryReducer } from '../features/productsubcategory/stores/productSubCategorySlice';
 import productBrandReducer from '../features/productbrand/stores/productBrandSlice';
 import productUnitReducer from '../features/productunit/stores/productUnitSlice';
-import inventoryReducer from '../features/inventory/stores/inventorySlice';
+import productsnReducer from '../features/productsn/stores/productsnSlice';
 import productPriceReducer from '../features/productprice/stores/productPriceSlice';
 import productPriceMktReducer from '../features/productpricemkt/stores/productPriceMktSlice';
 import productPriceAgentReducer from '../features/productpriceagent/stores/productPriceAgentSlice';
@@ -81,7 +81,7 @@ export const store = configureStore({
     productSubCategory: productSubCategoryReducer,
     productBrand: productBrandReducer,
     productUnit: productUnitReducer,
-    inventory: inventoryReducer,
+    productsn: productsnReducer,
     productPrice: productPriceReducer,
     productPriceMkt: productPriceMktReducer,
     productPriceAgent: productPriceAgentReducer,

@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
-export function InventoryListSkeleton() {
+export function ProductsnListSkeleton() {
     return (
         <Animated.View entering={FadeIn} exiting={FadeOut} className="px-3 pt-6 pb-20">
             {[1, 2, 3, 4, 5, 6].map((i) => (
