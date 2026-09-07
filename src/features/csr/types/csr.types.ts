@@ -15,7 +15,8 @@ export interface CsrEmployee {
 }
 
 export interface Csr {
-    id: string; // Internal id for mapping if needed
+    id?: string; // Internal id for mapping if needed
+    id_afs_csr?: number;
     csr_code: string;
     csr_date: string;
     id_customers: string;
@@ -25,15 +26,18 @@ export interface Csr {
     id_product: string;
     code_product: string;
     nm_product: string;
-    sn_number: string;
-    sts_pasang: string;
+    sn_number?: string;
+    barcode?: string;
+    sts_pasang?: string | number;
     do_code: string;
     mesin_lama: string;
     lokasi: string;
     lap_kerusakan: string;
-    status: string; // DRAFT, OUTSTANDING, CANCEL
+    status?: string; 
+    csr_status?: string;
     csr_by?: string;
     image?: string | null;
+    cst_list?: any[];
 }
 
 export interface CsrPayload {

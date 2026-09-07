@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, ScrollView, RefreshControl, TouchableOpacity, TextInput, Text } from 'react-native';
+import { View, FlatList, RefreshControl, TouchableOpacity, TextInput, Text, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Search, Plus, Calendar, CheckSquare, Square } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeOut, Layout } from 'react-native-reanimated';
@@ -34,6 +34,9 @@ export function CsrListScreen() {
         isAll: false
     });
 
+    const [page, setPage] = useState(1);
+    const PAGE_SIZE = 10;
+
     const handleApplyFilter = () => {
         setActiveFilter({
             startDate,
@@ -41,6 +44,7 @@ export function CsrListScreen() {
             statusFilter,
             isAll
         });
+        setPage(1);
     };
 
     useFocusEffect(
@@ -70,6 +74,7 @@ export function CsrListScreen() {
 
     const handleRefresh = async () => {
         setIsInitializing(true);
+        setPage(1);
         try {
             await Promise.all([
                 loadRequests(),
@@ -80,10 +85,14 @@ export function CsrListScreen() {
         }
     };
 
+    React.useEffect(() => {
+        setPage(1);
+    }, [searchQuery]);
+
     const filteredRequests = requests.filter(r => {
-        const matchesSearch = r.nm_customers.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                              r.csr_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                              r.nm_product.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = (r.nm_customers?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+                              (r.csr_code?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+                              (r.nm_product?.toLowerCase() || '').includes(searchQuery.toLowerCase());
         
         if (activeFilter.isAll) return matchesSearch;
 
@@ -95,6 +104,14 @@ export function CsrListScreen() {
 
         return matchesSearch && matchesStatus && matchesDate;
     });
+
+    const displayedRequests = filteredRequests.slice(0, page * PAGE_SIZE);
+
+    const handleLoadMore = () => {
+        if (!isInitializing && displayedRequests.length < filteredRequests.length) {
+            setPage(prev => prev + 1);
+        }
+    };
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -217,11 +234,15 @@ export function CsrListScreen() {
                 </View>
             </View>
 
-            <ScrollView
+            <FlatList
                 className="flex-1"
+                data={isInitializing ? [] : displayedRequests}
+                keyExtractor={(item) => item.id}
                 contentContainerStyle={{ padding: 24, paddingTop: 8, paddingBottom: 100, flexGrow: 1 }}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
+                onEndReached={handleLoadMore}
+                onEndReachedThreshold={0.5}
                 refreshControl={
                     <RefreshControl
                         refreshing={isLoading && !isInitializing}
@@ -229,34 +250,40 @@ export function CsrListScreen() {
                         colors={[theme.colors.primary]}
                     />
                 }
-            >
-                {isInitializing ? (
-                    <Animated.View exiting={FadeOut.duration(300)}>
-                        <CsrListSkeleton />
-                    </Animated.View>
-                ) : filteredRequests.length === 0 ? (
-                    <EmptyState 
-                        title="Data Kosong"
-                        message="Tidak ada data CSR yang ditemukan."
-                        fullScreen={false}
-                    />
-                ) : (
-                    filteredRequests.map((request, index) => (
-                        <Animated.View 
-                            key={request.id} 
-                            entering={FadeInDown.delay(index * 100).springify()}
-                            layout={Layout.springify()}
-                        >
-                            <TouchableOpacity 
-                                activeOpacity={0.8}
-                                onPress={() => navigation.navigate('CsrEditScreen', { id: request.id })}
-                            >
-                                <CsrCard request={request} />
-                            </TouchableOpacity>
+                ListEmptyComponent={() => (
+                    isInitializing ? (
+                        <Animated.View exiting={FadeOut.duration(300)}>
+                            <CsrListSkeleton />
                         </Animated.View>
-                    ))
+                    ) : (
+                        <EmptyState 
+                            title="Data Kosong"
+                            message="Tidak ada data CSR yang ditemukan."
+                            fullScreen={false}
+                        />
+                    )
                 )}
-            </ScrollView>
+                renderItem={({ item: request, index }) => (
+                    <Animated.View 
+                        entering={FadeInDown.delay((index % PAGE_SIZE) * 100).springify()}
+                        layout={Layout.springify()}
+                    >
+                        <TouchableOpacity 
+                            activeOpacity={0.8}
+                            onPress={() => navigation.navigate('CsrEditScreen', { id: request.id })}
+                        >
+                            <CsrCard request={request} />
+                        </TouchableOpacity>
+                    </Animated.View>
+                )}
+                ListFooterComponent={() => (
+                    (!isInitializing && displayedRequests.length < filteredRequests.length) ? (
+                        <View className="py-4 items-center">
+                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                        </View>
+                    ) : null
+                )}
+            />
 
             <ButtonAdd onPress={() => navigation.navigate('CsrFormScreen')} />
         </View>

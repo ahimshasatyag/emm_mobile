@@ -16,9 +16,10 @@ interface HeaderNavigatorProps {
     disableAnimation?: boolean;
     noBottomRadius?: boolean;
     noShadow?: boolean;
+    rightComponent?: React.ReactNode;
 }
 
-export function HeaderNavigator({ isLoading = false, title = 'Eka Maju Mesinindo', showBackButton = false, onBackPress, disableAnimation = false, noBottomRadius = false, noShadow = false }: HeaderNavigatorProps) {
+export function HeaderNavigator({ isLoading = false, title = 'Eka Maju Mesinindo', showBackButton = false, onBackPress, disableAnimation = false, noBottomRadius = false, noShadow = false, rightComponent }: HeaderNavigatorProps) {
     const navigation = useNavigation<DrawerNavigationProp<any>>();
     const insets = useSafeAreaInsets();
 
@@ -99,7 +100,9 @@ export function HeaderNavigator({ isLoading = false, title = 'Eka Maju Mesinindo
                     </Text>
                 </View>
 
-                {showBackButton ? (
+                {rightComponent ? (
+                    rightComponent
+                ) : showBackButton ? (
                     <View className="w-12 h-12" />
                 ) : (
                     <TouchableOpacity activeOpacity={0.7} onPress={() => setIsNotificationVisible(true)}>

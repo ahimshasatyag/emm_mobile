@@ -1,45 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, RefreshControl, TextInput, ScrollView } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { Search, Plus, Calendar, Building, ChevronRight, FileText, Monitor } from 'lucide-react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, TextInput, ActivityIndicator } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Search, Calendar, Building, ChevronRight, FileText, Monitor, Plus } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
-import { formatRp } from '../../../utils/helpers/money';
 import { LktHeaderViewScreen } from './LktHeaderViewScreen';
-import { ButtonAdd } from '../../../components/ui/buttonAdd';
 import { RealisasiListSkeleton } from '../skeleton/RealisasiListSkeleton';
-
-// Dummy data mirroring the PHP query fields
-const DUMMY_DATA = [
-    {
-        id: '1',
-        lktCode: 'LKT-EMM/2025/07/03646',
-        cstCode: 'CST-EMM/2025/07/03624',
-        startDate: '18-07-2025',
-        customer: 'RSUD JOMBANG',
-        description: 'Pengecekan mesin X-Ray',
-        training: 0,
-        bongkar: 150000,
-        isDaring: false,
-        status: 'Draft',
-    },
-    {
-        id: '2',
-        lktCode: 'LKT-EMM/2025/07/03646',
-        cstCode: 'CST-EMM/2025/07/03624',
-        startDate: '20-07-2025',
-        customer: 'RSUD JOMBANG',
-        description: 'Instalasi part baru via video call',
-        training: 500000,
-        bongkar: 0,
-        isDaring: true,
-        status: 'CLOSE',
-    },
-];
+import { ButtonAdd } from '../../../components/ui/buttonAdd';
+import { formatRp } from '../../../utils/helpers/money';
+import { useLkt } from '../hooks/useLkt';
+import { LktDetail, Realisasi } from '../types/lkt.types';
 
 const getStatusColor = (status: string) => {
-    switch (status.toUpperCase()) {
-        case 'OUTSTANDING': return 'bg-cyan-100 text-cyan-800 border-cyan-200';
+    switch ((status || '').toUpperCase()) {
         case 'ON PROGRESS': return 'bg-amber-100 text-amber-800 border-amber-200';
         case 'CLOSE': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
         case 'DRAFT': return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -48,131 +20,181 @@ const getStatusColor = (status: string) => {
     }
 };
 
-export function RealisasiListView({ setActiveTab }: { setActiveTab: (tab: 'perbaikan' | 'realisasi') => void }) {
+const ITEMS_PER_PAGE = 10;
+
+interface RealisasiListViewProps {
+    setActiveTab: (tab: 'perbaikan' | 'realisasi') => void;
+    lktCode?: string;
+    lktDetail?: LktDetail | null;
+}
+
+export function RealisasiListView({ setActiveTab, lktCode, lktDetail }: RealisasiListViewProps) {
     const navigation = useNavigation<any>();
+    const { loadLktDetail } = useLkt();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [page, setPage] = useState(1);
 
-    const handleRefresh = () => {
+    const realisasiList: Realisasi[] = lktDetail?.realisasi_list || [];
+
+    const filteredData = [...realisasiList].filter(item =>
+        item.actual_description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        String(item.lkt_sub_code)?.includes(searchQuery)
+    ).sort((a, b) => b.lkt_sub_code - a.lkt_sub_code);
+
+    const paginatedData = filteredData.slice(0, page * ITEMS_PER_PAGE);
+
+    const handleRefresh = async () => {
         setIsRefreshing(true);
-        setTimeout(() => setIsRefreshing(false), 1000);
+        setPage(1);
+        if (lktCode) await loadLktDetail(lktCode);
+        setIsRefreshing(false);
     };
 
-    const renderCard = ({ item, index }: { item: typeof DUMMY_DATA[0], index: number }) => (
-        <Animated.View entering={FadeInDown.delay(index * 100).springify()}>
-            <TouchableOpacity
-                className="bg-white p-4 rounded-xl mb-3 border border-gray-200 shadow-sm"
-                onPress={() => {
-                    navigation.navigate('RealisasiEdit', { id: item.id })
-                }}
-            >
-                {/* Header: Codes & Status */}
-                <View className="flex-row justify-between items-start mb-3">
-                    <View className="flex-1 mr-2">
-                        <Text className="text-sm font-extrabold text-blue-600 mb-0.5">{item.lktCode}</Text>
-                        <Text className="text-xs font-medium text-gray-500">{item.cstCode}</Text>
-                    </View>
-                    <View className={`px-2 py-1 rounded-md border ${getStatusColor(item.status)}`}>
-                        <Text className="text-[10px] font-bold uppercase">{item.status}</Text>
-                    </View>
-                </View>
+    const handleLoadMore = () => {
+        if (paginatedData.length < filteredData.length) {
+            setPage(prev => prev + 1);
+        }
+    };
 
-                {/* Info Grid */}
-                <View className="flex-row items-center mb-2">
-                    <View className="flex-row items-center flex-1">
-                        <Building size={14} color="#6b7280" />
-                        <Text className="text-xs text-gray-700 ml-1.5 font-medium" numberOfLines={1}>{item.customer}</Text>
-                    </View>
-                    <View className="flex-row items-center ml-2">
-                        <Calendar size={14} color="#6b7280" />
-                        <Text className="text-xs text-gray-700 ml-1.5">{item.startDate}</Text>
-                    </View>
+    const renderFooter = () => {
+        if (paginatedData.length < filteredData.length) {
+            return (
+                <View className="py-4 items-center justify-center">
+                    <ActivityIndicator size="small" color="#0ea5e9" />
+                    <Text className="text-xs text-gray-400 mt-1">Memuat lebih banyak...</Text>
                 </View>
+            );
+        }
+        return null;
+    };
 
-                <View className="flex-row items-start mb-3">
-                    <FileText size={14} color="#6b7280" className="mt-0.5" />
-                    <Text className="text-xs text-gray-600 ml-1.5 flex-1" numberOfLines={2}>{item.description}</Text>
-                </View>
+    const renderCard = ({ item, index }: { item: Realisasi; index: number }) => {
+        const teknisiNames = item.teknisi_list?.map(t => t.nm_karyawan).join(', ') || '-';
+        const statusColor = item.f_cancel === 1 ? 'bg-rose-100 text-rose-800 border-rose-200' : getStatusColor(item.status);
+        const statusLabel = item.f_cancel === 1 ? 'CANCEL' : item.status;
 
-                {/* Footer Metrics (Training, Bongkar, Daring) */}
-                <View className="flex-row items-center justify-between border-t border-gray-100 pt-3">
-                    <View className="flex-row">
-                        <View className="mr-8">
-                            <Text className="text-[10px] text-gray-500 mb-0.5">Training</Text>
-                            <Text className="text-xs font-bold text-gray-800">{formatRp(item.training)}</Text>
+        return (
+            <Animated.View entering={FadeInDown.delay(index * 80).springify()}>
+                <TouchableOpacity
+                    className="bg-white p-4 rounded-xl mb-3 border border-gray-200 shadow-sm"
+                    onPress={() => navigation.navigate('RealisasiEdit', {
+                        lktCode,
+                        lktSubCode: item.lkt_sub_code,
+                    })}
+                    activeOpacity={0.7}
+                >
+                    {/* Header: Code & Status */}
+                    <View className="flex-row justify-between items-start mb-2">
+                        <View className="flex-1 mr-2">
+                            <Text className="text-sm font-extrabold text-blue-600">LKT-{lktCode ? lktCode.slice(-5) : '-'}</Text>
+                            <Text className="text-xs font-semibold text-gray-700 mt-0.5">CST-{lktDetail?.cst_code ? lktDetail.cst_code.slice(-5) : '-'}</Text>
+                            <Text className="text-xs text-gray-500 mt-0.5">{teknisiNames}</Text>
                         </View>
-                        <View>
-                            <Text className="text-[10px] text-gray-500 mb-0.5">Bongkar</Text>
-                            <Text className="text-xs font-bold text-gray-800">{formatRp(item.bongkar)}</Text>
+                        <View className={`px-2 py-1 rounded-md border ${statusColor}`}>
+                            <Text className="text-[10px] font-bold uppercase">{statusLabel}</Text>
                         </View>
                     </View>
 
-                    <View className="flex-row items-center">
-                        {item.isDaring ? (
-                            <View className="flex-row items-center bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
-                                <Monitor size={12} color="#059669" />
-                                <Text className="text-[10px] font-bold text-emerald-700 ml-1">Daring</Text>
-                            </View>
-                        ) : (
-                            <View className="flex-row items-center bg-gray-50 px-2 py-1 rounded border border-gray-200">
-                                <Text className="text-[10px] font-bold text-gray-500">Tidak Daring</Text>
-                            </View>
-                        )}
-                        <ChevronRight size={16} color="#9ca3af" className="ml-2" />
+                    <View className="flex-row items-center mb-2">
+                        <Calendar size={13} color="#6b7280" />
+                        <Text className="text-xs text-gray-700 ml-1.5">{item.actual_starting_date || '-'}</Text>
+                        <Text className="text-xs text-gray-400 mx-2">|</Text>
+                        <Text className="text-xs text-gray-700">{item.actual_day} hari</Text>
                     </View>
-                </View>
-            </TouchableOpacity>
-        </Animated.View>
-    );
+
+                    <View className="flex-row items-start mb-3">
+                        <FileText size={13} color="#6b7280" style={{ marginTop: 2 }} />
+                        <Text className="text-xs text-gray-600 ml-1.5 flex-1" numberOfLines={2}>
+                            {item.actual_description || '-'}
+                        </Text>
+                    </View>
+
+                    <View className="flex-row items-center justify-between border-t border-gray-100 pt-2">
+                        <View className="flex-row">
+                            <View className="mr-6">
+                                <Text className="text-[10px] text-gray-500">Training</Text>
+                                <Text className="text-xs font-bold text-gray-800">{formatRp(item.actual_training || 0)}</Text>
+                            </View>
+                            <View>
+                                <Text className="text-[10px] text-gray-500">Bongkar</Text>
+                                <Text className="text-xs font-bold text-gray-800">{formatRp(item.actual_bongkar || 0)}</Text>
+                            </View>
+                        </View>
+                        <View className="flex-row items-center">
+                            {item.flag_daring === 1 ? (
+                                <View className="flex-row items-center bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
+                                    <Monitor size={11} color="#059669" />
+                                    <Text className="text-[10px] font-bold text-emerald-700 ml-1">Daring</Text>
+                                </View>
+                            ) : (
+                                <View className="bg-gray-50 px-2 py-1 rounded border border-gray-200">
+                                    <Text className="text-[10px] font-bold text-gray-500">Tidak</Text>
+                                </View>
+                            )}
+                            <ChevronRight size={14} color="#9ca3af" style={{ marginLeft: 8 }} />
+                        </View>
+                    </View>
+                </TouchableOpacity>
+            </Animated.View>
+        );
+    };
 
     return (
         <View className="flex-1 bg-gray-50">
             <LktHeaderViewScreen
                 activeTab="realisasi"
                 setActiveTab={setActiveTab}
-                titleHeader={isRefreshing ? "MEMUAT DATA..." : "DETAIL LKT"}
+                titleHeader={isRefreshing ? 'MEMUAT DATA...' : 'DETAIL LKT'}
+                cstCode={lktDetail?.cst_code}
+                lktCode={lktDetail?.lkt_code}
                 onBackPress={() => navigation.navigate('Drawer', { screen: 'LktListScreen' })}
             >
-
-                    {/* Top Action Bar (Filter) */}
-                    <View className="flex-row items-center justify-between mb-4">
-                        {/* Search Bar */}
-                        <View className="flex-1 flex-row items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-                            <Search size={16} color="#9ca3af" />
-                            <TextInput
-                                className="flex-1 ml-2 text-sm text-gray-800 p-0"
-                                placeholder="Cari LKT / CST..."
-                                placeholderTextColor="#9ca3af"
-                                value={searchQuery}
-                                onChangeText={setSearchQuery}
-                            />
-                        </View>
-                    </View>
-
-                    {/* List */}
-                    <FlatList
-                        data={isRefreshing ? [] : DUMMY_DATA}
-                        keyExtractor={(item: any, index) => item.id ? item.id : index.toString()}
-                        renderItem={({ item, index }) => renderCard({ item, index })}
-                        showsVerticalScrollIndicator={false}
-                        contentContainerStyle={{ paddingBottom: 20 }}
-                        refreshControl={
-                            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={['#0ea5e9']} />
-                        }
-                        ListEmptyComponent={
-                            isRefreshing ? (
-                                <RealisasiListSkeleton />
-                            ) : (
-                                <View className="items-center justify-center py-10">
-                                    <Text className="text-gray-400 font-medium">Tidak ada data realisasi service.</Text>
-                                </View>
-                            )
-                        }
+                {/* Search */}
+                <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-4">
+                    <Search size={16} color="#9ca3af" />
+                    <TextInput
+                        className="flex-1 ml-2 text-sm text-gray-800 p-0"
+                        placeholder="Cari deskripsi / visit #..."
+                        placeholderTextColor="#9ca3af"
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
                     />
+                </View>
+
+                <FlatList
+                    data={isRefreshing ? [] : paginatedData}
+                    keyExtractor={(item) => String(item.lkt_sub_code)}
+                    renderItem={renderCard}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingBottom: 20 }}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.3}
+                    ListFooterComponent={renderFooter}
+                    refreshControl={
+                        <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={['#0ea5e9']} />
+                    }
+                    ListEmptyComponent={
+                        isRefreshing ? (
+                            <RealisasiListSkeleton />
+                        ) : (
+                            <View className="items-center justify-center py-10">
+                                <Text className="text-gray-400 font-medium">Belum ada data realisasi.</Text>
+                            </View>
+                        )
+                    }
+                />
             </LktHeaderViewScreen>
 
-            <ButtonAdd onPress={() => navigation.navigate('RealisasiForm')} />
+            {lktDetail?.flag_done !== 'Draft' && lktDetail?.flag_done !== 'DONE' && lktDetail?.f_cancel !== 1 && (
+                <ButtonAdd
+                    onPress={() => navigation.navigate('RealisasiForm', {
+                        lktCode,
+                        cstCode: lktDetail?.cst_code
+                    })}
+                />
+            )}
         </View>
     );
 }

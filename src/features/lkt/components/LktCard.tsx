@@ -2,10 +2,10 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { formatDate } from '../../../utils/helpers/date';
-import { LktDetail } from '../types/lkt.types';
+import { Lkt } from '../types/lkt.types';
 
 interface LktCardProps {
-    lkt: LktDetail;
+    lkt: Lkt;
 }
 
 export function LktCard({ lkt }: LktCardProps) {
@@ -16,7 +16,7 @@ export function LktCard({ lkt }: LktCardProps) {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
     };
 
-    const getStatusColor = (status: string) => {
+    const getStatusColor = (status: string | undefined) => {
         switch (status) {
             case 'DRAFT': return 'bg-yellow-100 text-yellow-800';
             case 'OUTSTANDING': return 'bg-blue-100 text-blue-800';
@@ -28,6 +28,8 @@ export function LktCard({ lkt }: LktCardProps) {
         }
     };
 
+    const statusText = lkt.flag_done || lkt.status || 'DRAFT';
+
     return (
         <TouchableOpacity
             className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-3"
@@ -38,11 +40,11 @@ export function LktCard({ lkt }: LktCardProps) {
                 <View className="flex-1 mr-3">
                     <Text className="text-sm font-bold text-gray-900">{lkt.lkt_code}</Text>
                     <Text className="text-xs text-gray-500 mt-0.5">{lkt.cst_code}</Text>
-                    <Text className="text-xs text-gray-500 mt-0.5">Start: {lkt.actual_starting_date ? formatDate(new Date(lkt.actual_starting_date)) : '-'}</Text>
+                    <Text className="text-xs text-gray-500 mt-0.5">Start: {lkt.starting_date ? formatDate(new Date(lkt.starting_date)) : '-'}</Text>
                 </View>
-                <View className={`px-2 py-1 rounded-md ${getStatusColor(lkt.status).split(' ')[0]}`}>
-                    <Text className={`text-[10px] font-bold ${getStatusColor(lkt.status).split(' ')[1]}`}>
-                        {lkt.status}
+                <View className={`px-2 py-1 rounded-md ${getStatusColor(statusText).split(' ')[0]}`}>
+                    <Text className={`text-[10px] font-bold ${getStatusColor(statusText).split(' ')[1]}`}>
+                        {statusText}
                     </Text>
                 </View>
             </View>
@@ -56,7 +58,7 @@ export function LktCard({ lkt }: LktCardProps) {
                 </View>
                 <View className="flex-1 items-end">
                     <Text className="text-xs text-gray-500 mb-0.5">Keterangan</Text>
-                    <Text className="text-xs font-semibold text-gray-800">{lkt.actual_description || '-'}</Text>
+                    <Text className="text-xs font-semibold text-gray-800">{lkt.lap_kerusakan || '-'}</Text>
                 </View>
             </View>
 
@@ -84,7 +86,7 @@ export function LktCard({ lkt }: LktCardProps) {
 
                 <View className="w-1/2 mb-2">
                     <Text className="text-[10px] text-gray-400">Training / Bongkar</Text>
-                    <Text className="text-xs font-medium text-gray-800">{lkt.actual_training} / {lkt.actual_bongkar}</Text>
+                    <Text className="text-xs font-medium text-gray-800">{formatCurrency(lkt.actual_training)} / {formatCurrency(lkt.actual_bongkar)}</Text>
                 </View>
                 <View className="w-1/2 mb-2 pl-2">
                     <Text className="text-[10px] text-gray-400">Type Transport</Text>
@@ -97,7 +99,7 @@ export function LktCard({ lkt }: LktCardProps) {
                 </View>
                 <View className="w-1/2 pl-2">
                     <Text className="text-[10px] text-gray-400">Daring</Text>
-                    <Text className="text-xs font-medium text-gray-800">{lkt.flag_daring === 1 ? 'Ya' : 'Tidak'}</Text>
+                    <Text className="text-xs font-medium text-gray-800">{lkt.daring === '-' || lkt.daring === null || lkt.flag_daring === null ? '-' : (lkt.flag_daring === 1 ? 'Ya' : 'Tidak')}</Text>
                 </View>
             </View>
         </TouchableOpacity>

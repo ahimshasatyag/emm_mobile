@@ -1,107 +1,120 @@
 import { Csr, CsrPayload } from '../types/csr.types';
-import { mockCsrs } from '../data/dummy';
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import api from '../../../services/api/api';
 
 export const csrApi = {
     getAll: async (): Promise<Csr[]> => {
-        await delay(500);
-        return [...mockCsrs];
+        const response = await api.get('/csr');
+        return response.data.data;
     },
 
     getById: async (id: string): Promise<Csr | null> => {
-        await delay(300);
-        const item = mockCsrs.find(c => c.id === id);
-        return item ? { ...item } : null;
+        const response = await api.get(`/csr/${id}`);
+        return response.data.data;
     },
 
-    create: async (payload: CsrPayload): Promise<Csr> => {
-        await delay(600);
-        const newId = Date.now().toString();
-        
-        // Simulating the backend code generation
-        const dateObj = new Date(payload.date_request);
-        const y = dateObj.getFullYear();
-        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const count = String(mockCsrs.length + 1).padStart(5, '0');
-        const csr_code = `CSR-EMM/${y}/${m}/${count}`;
+    create: async (payload: any): Promise<any> => {
+        const formData = new FormData();
+        for (const [key, value] of Object.entries(payload)) {
+            if (value !== undefined && value !== null) {
+                if ((key === 'link_foto' || key === 'image') && typeof value === 'string') {
+                    if (value.startsWith('file://') || value.startsWith('content://')) {
+                        const filename = value.split('/').pop() || 'image.jpg';
+                        const match = /\.(\w+)$/.exec(filename.toLowerCase());
+                        let type = match ? `image/${match[1]}` : `image/jpeg`;
+                        if (type === 'image/jpg') type = 'image/jpeg';
 
-        const newCsr: Csr = {
-            id: newId,
-            csr_code,
-            csr_date: payload.date_request,
-            id_customers: payload.customers,
-            nm_customers: 'Customer ' + payload.customers, // dummy
-            id_karyawan: payload.id_karyawan,
-            nm_karyawan: 'Karyawan ' + payload.id_karyawan, // dummy
-            id_product: payload.id_product,
-            code_product: 'PRD-' + payload.id_product, // dummy
-            nm_product: 'Product ' + payload.id_product, // dummy
-            sn_number: payload.sn_number,
-            sts_pasang: payload.sts_pasang,
-            do_code: payload.do_code,
-            mesin_lama: payload.mesin_lama,
-            lokasi: payload.lokasi,
-            lap_kerusakan: payload.lap_kerusakan,
-            status: 'DRAFT',
-            csr_by: 'Current User', // dummy user
-            image: payload.link_foto
-        };
-        mockCsrs.unshift(newCsr);
-        return newCsr;
-    },
-
-    update: async (id: string, payload: Partial<CsrPayload>): Promise<Csr> => {
-        await delay(600);
-        const idx = mockCsrs.findIndex(c => c.id === id);
-        if (idx === -1) throw new Error('CSR not found');
-
-        const updated = { ...mockCsrs[idx] };
-        if (payload.date_request) updated.csr_date = payload.date_request;
-        if (payload.customers) {
-            updated.id_customers = payload.customers;
-            updated.nm_customers = 'Customer ' + payload.customers;
+                        formData.append('link_foto', {
+                            uri: value,
+                            name: filename,
+                            type,
+                        } as any);
+                        continue;
+                    } else if (value.startsWith('data:') || value.startsWith('blob:')) {
+                        try {
+                            const res = await fetch(value);
+                            const blob = await res.blob();
+                            formData.append('link_foto', blob, 'image.jpeg');
+                        } catch (e) {
+                            console.error('Failed to fetch blob for image:', e);
+                        }
+                        continue;
+                    } else if (value.startsWith('http://') || value.startsWith('https://')) {
+                        continue;
+                    }
+                }
+                formData.append(key, value as string);
+            }
         }
-        if (payload.id_karyawan) {
-            updated.id_karyawan = payload.id_karyawan;
-            updated.nm_karyawan = 'Karyawan ' + payload.id_karyawan;
-        }
-        if (payload.id_product) {
-            updated.id_product = payload.id_product;
-            updated.nm_product = 'Product ' + payload.id_product;
-            updated.code_product = 'PRD-' + payload.id_product;
-        }
-        if (payload.sn_number) updated.sn_number = payload.sn_number;
-        if (payload.sts_pasang) updated.sts_pasang = payload.sts_pasang;
-        if (payload.do_code) updated.do_code = payload.do_code;
-        if (payload.mesin_lama) updated.mesin_lama = payload.mesin_lama;
-        if (payload.lokasi) updated.lokasi = payload.lokasi;
-        if (payload.lap_kerusakan) updated.lap_kerusakan = payload.lap_kerusakan;
-        if (payload.link_foto !== undefined) updated.image = payload.link_foto;
 
-        mockCsrs[idx] = updated;
-        return updated;
+        const response = await api.post('/csr', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
     },
 
-    confirm: async (id: string): Promise<Csr> => {
-        await delay(500);
-        const idx = mockCsrs.findIndex(c => c.id === id);
-        if (idx === -1) throw new Error('CSR not found');
-        mockCsrs[idx] = {
-            ...mockCsrs[idx],
-            status: 'OUTSTANDING'
-        };
-        return mockCsrs[idx];
+    update: async (id: string, payload: any): Promise<any> => {
+        const formData = new FormData();
+        for (const [key, value] of Object.entries(payload)) {
+            if (value !== undefined && value !== null) {
+                if ((key === 'link_foto' || key === 'image') && typeof value === 'string') {
+                    if (value.startsWith('file://') || value.startsWith('content://')) {
+                        const filename = value.split('/').pop() || 'image.jpg';
+                        const match = /\.(\w+)$/.exec(filename.toLowerCase());
+                        let type = match ? `image/${match[1]}` : `image/jpeg`;
+                        if (type === 'image/jpg') type = 'image/jpeg';
+
+                        formData.append('link_foto', {
+                            uri: value,
+                            name: filename,
+                            type,
+                        } as any);
+                        continue;
+                    } else if (value.startsWith('data:') || value.startsWith('blob:')) {
+                        try {
+                            const res = await fetch(value);
+                            const blob = await res.blob();
+                            formData.append('link_foto', blob, 'image.jpeg');
+                        } catch (e) {
+                            console.error('Failed to fetch blob for image:', e);
+                        }
+                        continue;
+                    } else if (value.startsWith('http://') || value.startsWith('https://')) {
+                        continue;
+                    }
+                }
+                formData.append(key, value as string);
+            }
+        }
+
+        const response = await api.post(`/csr/${id}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
     },
 
-    cancel: async (id: string, memo: string): Promise<Csr> => {
-        await delay(500);
-        const idx = mockCsrs.findIndex(c => c.id === id);
-        if (idx === -1) throw new Error('CSR not found');
-        mockCsrs[idx] = {
-            ...mockCsrs[idx],
-            status: 'CANCEL'
-        };
-        return mockCsrs[idx];
-    }
+    confirm: async (id: string, payload?: any): Promise<any> => {
+        const response = await api.post(`/csr/${id}/confirm`, payload);
+        return response.data;
+    },
+
+    cancel: async (id: string, payload: any): Promise<any> => {
+        const response = await api.post(`/csr/${id}/cancel`, payload);
+        return response.data;
+    },
+
+    getFormOptions: async (): Promise<any> => {
+        const response = await api.get('/csr/form-options');
+        return response.data.data;
+    },
+
+    getBarcodeData: async (barcode: string): Promise<any> => {
+        const response = await api.get(`/csr/barcode-data?barcode=${barcode}`);
+        return response.data;
+    },
 };
+
+export const getBarcodeData = csrApi.getBarcodeData;

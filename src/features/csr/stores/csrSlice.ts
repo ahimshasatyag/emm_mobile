@@ -5,6 +5,11 @@ import { csrApi } from '../api/csr.api';
 interface CsrState {
     requests: Csr[];
     currentRequest: Csr | null;
+    formOptions: {
+        products: any[];
+        customers: any[];
+        karyawan: any[];
+    };
     isLoading: boolean;
     error: string | null;
 }
@@ -12,6 +17,11 @@ interface CsrState {
 const initialState: CsrState = {
     requests: [],
     currentRequest: null,
+    formOptions: {
+        products: [],
+        customers: [],
+        karyawan: [],
+    },
     isLoading: false,
     error: null,
 };
@@ -20,7 +30,12 @@ export const fetchCsrs = createAsyncThunk(
     'csr/fetchAll',
     async (_, { rejectWithValue }) => {
         try {
-            return await csrApi.getAll();
+            const data = await csrApi.getAll();
+            return data.map((item: any) => ({
+                ...item,
+                id: item.id_afs_csr?.toString() || item.id,
+                status: item.csr_status || item.status,
+            }));
         } catch (error: any) {
             return rejectWithValue(error.message || 'Failed to fetch CSRs');
         }
@@ -31,7 +46,8 @@ export const fetchCsrById = createAsyncThunk(
     'csr/fetchById',
     async (id: string, { rejectWithValue }) => {
         try {
-            return await csrApi.getById(id);
+            const data = await csrApi.getById(id);
+            return data ? { ...data, id: data.id_afs_csr?.toString() || data.id, status: data.csr_status || data.status } : null;
         } catch (error: any) {
             return rejectWithValue(error.message || 'Failed to fetch CSR');
         }
@@ -62,9 +78,9 @@ export const updateCsr = createAsyncThunk(
 
 export const confirmCsr = createAsyncThunk(
     'csr/confirm',
-    async (id: string, { rejectWithValue }) => {
+    async ({ id, payload }: { id: string; payload?: any }, { rejectWithValue }) => {
         try {
-            return await csrApi.confirm(id);
+            return await csrApi.confirm(id, payload);
         } catch (error: any) {
             return rejectWithValue(error.message || 'Failed to confirm CSR');
         }
@@ -73,11 +89,22 @@ export const confirmCsr = createAsyncThunk(
 
 export const cancelCsr = createAsyncThunk(
     'csr/cancel',
-    async ({ id, memo }: { id: string; memo: string }, { rejectWithValue }) => {
+    async ({ id, memo, user_id, id_users_level, role }: any, { rejectWithValue }) => {
         try {
-            return await csrApi.cancel(id, memo);
+            return await csrApi.cancel(id, { memo, user_id, id_users_level, role });
         } catch (error: any) {
             return rejectWithValue(error.message || 'Failed to cancel CSR');
+        }
+    }
+);
+
+export const fetchFormOptions = createAsyncThunk(
+    'csr/fetchFormOptions',
+    async (_, { rejectWithValue }) => {
+        try {
+            return await csrApi.getFormOptions();
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Failed to fetch form options');
         }
     }
 );
@@ -160,13 +187,17 @@ const csrSlice = createSlice({
             })
             // cancel
             .addCase(cancelCsr.fulfilled, (state, action) => {
-                const index = state.requests.findIndex(r => r.id === action.payload.id);
+                const index = state.requests.findIndex(r => r.id === action.payload.id || r.id_afs_csr === action.payload.id_afs_csr);
                 if (index !== -1) {
                     state.requests[index] = action.payload;
                 }
-                if (state.currentRequest?.id === action.payload.id) {
+                if (state.currentRequest?.id === action.payload.id || state.currentRequest?.id_afs_csr === action.payload.id_afs_csr) {
                     state.currentRequest = action.payload;
                 }
+            })
+            // form options
+            .addCase(fetchFormOptions.fulfilled, (state, action) => {
+                state.formOptions = action.payload || { products: [], customers: [], karyawan: [] };
             });
     },
 });

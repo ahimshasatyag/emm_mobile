@@ -7,11 +7,13 @@ interface LktHeaderViewScreenProps {
     activeTab: 'perbaikan' | 'realisasi';
     setActiveTab: (tab: 'perbaikan' | 'realisasi') => void;
     titleHeader: string;
+    cstCode?: string;
+    lktCode?: string;
     onBackPress: () => void;
     children?: React.ReactNode;
 }
 
-export function LktHeaderViewScreen({ activeTab, setActiveTab, titleHeader, onBackPress, children }: LktHeaderViewScreenProps) {
+export function LktHeaderViewScreen({ activeTab, setActiveTab, titleHeader, cstCode, lktCode, onBackPress, children }: LktHeaderViewScreenProps) {
     return (
         <>
             <HeaderNavigator
@@ -25,10 +27,10 @@ export function LktHeaderViewScreen({ activeTab, setActiveTab, titleHeader, onBa
                 <View className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex-1 mb-4">
                     {/* Title Headers */}
                     <View className="mb-4">
-                        <Text className="text-xl font-extrabold text-slate-800">CST-EMM/2025/07/03624</Text>
+                        <Text className="text-xl font-extrabold text-slate-800">{cstCode || 'CST/---/--/----'}</Text>
                         <View className="flex-row items-center mt-1 ml-1">
                             <CornerDownRight color="#334155" size={20} strokeWidth={3} className="mr-2" style={{ marginTop: -6 }} />
-                            <Text className="text-base font-bold text-slate-800">LKT-EMM/2025/07/03646</Text>
+                            <Text className="text-base font-bold text-slate-800">{lktCode || 'LKT/---/--/----'}</Text>
                         </View>
                     </View>
 

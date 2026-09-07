@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, ScrollView, RefreshControl, TouchableOpacity, TextInput, Text } from 'react-native';
+import { View, FlatList, RefreshControl, TouchableOpacity, TextInput, Text, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Search, Plus, Calendar, CheckSquare, Square } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -14,7 +14,7 @@ import { EmptyState } from '../../../components/shared/EmptyState';
 
 export function CstListScreen() {
     const navigation = useNavigation<any>();
-    const { cstList, isLoading, filter, setFilter, loadCstList, applyFilter } = useCst();
+    const { cstList, isLoading, loadCstList, applyFilter } = useCst();
     
     const [isInitializing, setIsInitializing] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -42,7 +42,11 @@ export function CstListScreen() {
             isAll,
             searchQuery
         });
+        setPage(1); // Reset page on filter
     };
+
+    const [page, setPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
 
     useFocusEffect(
         useCallback(() => {
@@ -83,6 +87,24 @@ export function CstListScreen() {
 
     // Apply filters locally in component since mock API is simple
     const filteredList = applyFilter(activeFilter);
+    const paginatedList = filteredList.slice(0, page * ITEMS_PER_PAGE);
+
+    const handleLoadMore = () => {
+        if (paginatedList.length < filteredList.length) {
+            setPage(prev => prev + 1);
+        }
+    };
+
+    const renderFooter = () => {
+        if (paginatedList.length < filteredList.length) {
+            return (
+                <View className="py-4 items-center justify-center">
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                </View>
+            );
+        }
+        return <View className="h-20" />;
+    };
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -204,38 +226,42 @@ export function CstListScreen() {
                 </View>
             </View>
 
-            <ScrollView
-                className="flex-1"
-                contentContainerStyle={{ padding: 24, paddingTop: 8, paddingBottom: 100 }}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={false}
-                        onRefresh={handleRefresh}
-                        colors={[theme.colors.primary]}
-                        tintColor={theme.colors.primary}
-                    />
-                }
-            >
+            <View className="flex-1">
                 {isInitializing ? (
-                    <CstListSkeleton />
+                    <View className="px-6 pt-2">
+                        <CstListSkeleton />
+                    </View>
                 ) : filteredList.length > 0 ? (
-                    <View>
-                        {filteredList.map((item, index) => (
-                            <Animated.View
-                                key={item.id_afs_cst}
-                                entering={FadeInDown.delay(index * 100).springify()}
-                            >
+                    <FlatList
+                        data={paginatedList}
+                        keyExtractor={(item) => item.id_afs_cst.toString()}
+                        contentContainerStyle={{ padding: 24, paddingTop: 8, paddingBottom: 100 }}
+                        renderItem={({ item, index }) => (
+                            <Animated.View entering={FadeInDown.delay((index % ITEMS_PER_PAGE) * 100).springify()}>
                                 <CstCard cst={item} />
                             </Animated.View>
-                        ))}
-                    </View>
-                ) : (
-                    <EmptyState
-                        title="Tidak ada Data CST"
-                        description="Data CST yang Anda cari tidak ditemukan."
+                        )}
+                        onEndReached={handleLoadMore}
+                        onEndReachedThreshold={0.5}
+                        ListFooterComponent={renderFooter}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={false}
+                                onRefresh={handleRefresh}
+                                colors={[theme.colors.primary]}
+                                tintColor={theme.colors.primary}
+                            />
+                        }
                     />
+                ) : (
+                    <View className="flex-1 px-6 pt-8">
+                        <EmptyState
+                            title="Tidak ada Data CST"
+                            description="Data CST yang Anda cari tidak ditemukan."
+                        />
+                    </View>
                 )}
-            </ScrollView>
+            </View>
         </View>
     );
 }

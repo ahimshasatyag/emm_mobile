@@ -28,6 +28,10 @@ import { LktEditCloseScreen } from '../../features/lkt/screens/LktEditCloseScree
 import { LktFormScreen } from '../../features/lkt/screens/LktFormScreen';
 import { RealisasiFormScreen } from '../../features/lkt/screens/RealisasiFormScreen';
 import { RealisasiEditScreen } from '../../features/lkt/screens/RealisasiEditScreen';
+import LktPrintLabel from '../../features/lkt/screens/LktPrintLabel';
+import LktPrintDinas from '../../features/lkt/screens/LktPrintDinas';
+import LktPrintBast from '../../features/lkt/screens/LktPrintBast';
+import { LktViewBast } from '../../features/lkt/screens/LktViewBast';
 import { LogbookProductListScreen } from '../../features/logbookproduct/screens/LogbookProductListScreen';
 import { LogbookProductFormScreen } from '../../features/logbookproduct/screens/LogbookProductFormScreen';
 import { LogbookProductEditScreen } from '../../features/logbookproduct/screens/LogbookProductEditScreen';
@@ -362,6 +366,26 @@ export function MainNavigator() {
             <Stack.Screen
                 name="RealisasiEdit"
                 component={RealisasiEditScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="LktPrintLabel"
+                component={LktPrintLabel}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="LktPrintDinas"
+                component={LktPrintDinas}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="LktPrintBast"
+                component={LktPrintBast}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="LktViewBast"
+                component={LktViewBast}
                 options={{ headerShown: false }}
             />
             {/* Logbook Product */}

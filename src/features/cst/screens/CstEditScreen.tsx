@@ -10,6 +10,8 @@ import { theme } from '../../../theme/theme';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ModalCancel } from '../../../components/ui/ModalCancel';
+import { getAfsImageUrl } from '../../../utils/helpers/image';
+import { formatDate } from '../../../utils/helpers/date';
 
 export function CstEditScreen() {
     const navigation = useNavigation<any>();
@@ -37,7 +39,7 @@ export function CstEditScreen() {
         title: '',
         message: '',
         confirmText: '',
-        onConfirm: () => {}
+        onConfirm: () => { }
     });
 
     const [modalCancelConfig, setModalCancelConfig] = useState<{
@@ -51,7 +53,7 @@ export function CstEditScreen() {
         title: '',
         message: '',
         confirmText: '',
-        onConfirm: () => {}
+        onConfirm: () => { }
     });
 
     useEffect(() => {
@@ -158,7 +160,7 @@ export function CstEditScreen() {
             <HeaderNavigator
                 title={isLoading ? "MEMUAT DATA..." : "DETAIL CST"}
                 showBackButton={true}
-                onBackPress={() => navigation.goBack()}
+                onBackPress={() => navigation.navigate('Drawer', { screen: 'CstListScreen' })}
             />
 
             <ScrollView
@@ -230,10 +232,15 @@ export function CstEditScreen() {
                                     <Text className="w-4 text-xs text-gray-500">:</Text>
                                     <Text className="flex-1 text-xs text-gray-800">{currentCst.nm_karyawan}</Text>
                                 </View>
-                                <View className="flex-row">
+                                <View className="flex-row items-center">
                                     <Text className="w-1/3 text-xs text-gray-500 font-medium">CSR Code</Text>
                                     <Text className="w-4 text-xs text-gray-500">:</Text>
-                                    <Text className="flex-1 text-xs font-bold text-blue-600">{currentCst.csr_code}</Text>
+                                    <TouchableOpacity
+                                        className="flex-1"
+                                        onPress={() => navigation.navigate('CsrEditScreen', { id: currentCst.csr_code, from: 'Cst' })}
+                                    >
+                                        <Text className="text-xs font-bold text-blue-600 underline">{currentCst.csr_code}</Text>
+                                    </TouchableOpacity>
                                 </View>
                                 <View className="flex-row">
                                     <Text className="w-1/3 text-xs text-gray-500 font-medium">Date Request</Text>
@@ -270,9 +277,9 @@ export function CstEditScreen() {
                                 </View>
                                 <View>
                                     <Text className="text-xs text-gray-500 font-medium mb-1">Images :</Text>
-                                    <View className="h-32 w-full bg-gray-100 rounded-lg border border-gray-200 items-center justify-center">
+                                    <View className="h-32 w-full bg-gray-100 rounded-lg border border-gray-200 items-center justify-center overflow-hidden">
                                         {currentCst.image ? (
-                                            <Image source={{ uri: currentCst.image }} className="w-full h-full rounded-lg" resizeMode="cover" />
+                                            <Image source={{ uri: getAfsImageUrl(currentCst.image) }} className="w-full h-full" resizeMode="cover" />
                                         ) : (
                                             <View className="items-center">
                                                 <ImageIcon color="#9CA3AF" size={32} />
@@ -346,14 +353,16 @@ export function CstEditScreen() {
                         {/* LKT LIST & EXPENSE TABS */}
                         <View className="flex-row justify-between items-center mt-6 mb-2">
                             <Text className="text-lg font-bold text-gray-800">LKT & Expense</Text>
-                            <TouchableOpacity
-                                className="flex-row items-center px-4 py-2 rounded-lg"
-                                style={{ backgroundColor: theme.colors.primary }}
-                                onPress={() => navigation.navigate('LktFormScreen', { cstCode: currentCst.cst_code })}
-                            >
-                                <Plus color="#fff" size={16} />
-                                <Text className="text-white text-xs font-bold ml-1.5">Add New LKT</Text>
-                            </TouchableOpacity>
+                            {(!currentCst.lkt_list || currentCst.lkt_list.length === 0) && (
+                                <TouchableOpacity
+                                    className="flex-row items-center px-4 py-2 rounded-lg"
+                                    style={{ backgroundColor: theme.colors.primary }}
+                                    onPress={() => navigation.navigate('LktFormScreen', { cstCode: currentCst.cst_code, lapKerusakan: currentCst.lap_kerusakan })}
+                                >
+                                    <Plus color="#fff" size={16} />
+                                    <Text className="text-white text-xs font-bold ml-1.5">Add New LKT</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                         <View className="flex-row space-x-2">
                             <TouchableOpacity
@@ -393,7 +402,80 @@ export function CstEditScreen() {
                                             <Text className="text-sm text-gray-400 italic">Belum ada LKT.</Text>
                                         </View>
                                     ) : (
-                                        <Text className="text-sm text-gray-700">Menampilkan {currentCst.lkt_list.length} data LKT...</Text>
+                                        <ScrollView horizontal showsHorizontalScrollIndicator={true} className="mt-2">
+                                            <View className="min-w-[800px] bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                                {/* Table Header */}
+                                                <View className="flex-row bg-gray-100 border-b border-gray-200 py-3 px-4">
+                                                    <Text className="w-10 text-xs font-bold text-gray-700">No</Text>
+                                                    <Text className="w-24 text-xs font-bold text-gray-700">LKT</Text>
+                                                    <Text className="w-32 text-xs font-bold text-gray-700">Tgl LKT</Text>
+                                                    <Text className="flex-1 min-w-[150px] text-xs font-bold text-gray-700">Keterangan</Text>
+                                                    <Text className="w-32 text-xs font-bold text-gray-700">Service Amount</Text>
+                                                    <Text className="w-36 text-xs font-bold text-gray-700">Tot Biaya Sparepart</Text>
+                                                    <Text className="w-24 text-xs font-bold text-gray-700">Status</Text>
+                                                </View>
+
+                                                {/* Table Body */}
+                                                {currentCst.lkt_list.map((lkt: any, index: number) => (
+                                                    <TouchableOpacity
+                                                        key={lkt.id_afs_lkt}
+                                                        className="flex-row py-3 px-4 border-b border-gray-100 items-center bg-white"
+                                                        onPress={() => navigation.navigate('LktEditScreen', { id: lkt.lkt_code })}
+                                                    >
+                                                        <Text className="w-10 text-xs text-gray-800">{index + 1}</Text>
+                                                        <Text className="w-24 text-xs font-bold text-gray-800">{lkt.lkt_code?.slice(-5) || '-'}</Text>
+                                                        <Text className="w-32 text-xs text-gray-800">{formatDate(lkt.starting_date) || '-'}</Text>
+                                                        <Text className="flex-1 min-w-[150px] text-xs text-gray-800">{lkt.description || '-'}</Text>
+                                                        <Text className="w-32 text-xs text-gray-800">
+                                                            {new Intl.NumberFormat('id-ID').format(lkt.service_amount || 0)}
+                                                        </Text>
+                                                        <Text className="w-36 text-xs text-gray-800">0</Text>
+                                                        <View className="w-24">
+                                                            {(() => {
+                                                                const isCancel = lkt.f_cancel === 1 || lkt.f_cancel === '1';
+                                                                const rawStatus = (lkt.flag_done || lkt.status || 'DRAFT').toString().toUpperCase();
+                                                                const statusText = isCancel ? 'CANCEL' : rawStatus;
+                                                                
+                                                                if (isCancel) {
+                                                                    return (
+                                                                        <View className="px-2 py-1 rounded-full items-center bg-red-100">
+                                                                            <Text className="text-[10px] font-bold uppercase text-red-800">{statusText}</Text>
+                                                                        </View>
+                                                                    );
+                                                                }
+                                                                if (statusText === 'ON PROGRESS') {
+                                                                    return (
+                                                                        <View className="px-2 py-1 rounded-full items-center bg-orange-100">
+                                                                            <Text className="text-[10px] font-bold uppercase text-orange-800">{statusText}</Text>
+                                                                        </View>
+                                                                    );
+                                                                }
+                                                                if (statusText === 'DONE' || statusText === 'CLOSE') {
+                                                                    return (
+                                                                        <View className="px-2 py-1 rounded-full items-center bg-green-100">
+                                                                            <Text className="text-[10px] font-bold uppercase text-green-800">{statusText}</Text>
+                                                                        </View>
+                                                                    );
+                                                                }
+                                                                if (statusText === 'DRAFT') {
+                                                                    return (
+                                                                        <View className="px-2 py-1 rounded-full items-center bg-gray-500">
+                                                                            <Text className="text-[10px] font-bold uppercase text-white">{statusText}</Text>
+                                                                        </View>
+                                                                    );
+                                                                }
+                                                                
+                                                                return (
+                                                                    <View className="px-2 py-1 rounded-full items-center bg-gray-100">
+                                                                        <Text className="text-[10px] font-bold uppercase text-gray-800">{statusText}</Text>
+                                                                    </View>
+                                                                );
+                                                            })()}
+                                                        </View>
+                                                    </TouchableOpacity>
+                                                ))}
+                                            </View>
+                                        </ScrollView>
                                     )}
                                 </View>
                             ) : (

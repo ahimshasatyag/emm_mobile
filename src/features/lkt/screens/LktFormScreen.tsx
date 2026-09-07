@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, RefreshControl, Image } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../../stores';
 import Animated, { FadeInDown, FadeOut, Layout } from 'react-native-reanimated';
 import { Dropdown } from "react-native-element-dropdown";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import * as ImagePicker from 'expo-image-picker';
 import { Save, X, Calendar, UploadCloud, CornerDownRight } from 'lucide-react-native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { theme } from '../../../theme/theme';
@@ -17,38 +20,38 @@ import { formatInputNumber } from '../../../utils/helpers/money';
 export function LktFormScreen() {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
-    const cstCode = route.params?.cstCode || 'CST/---/--/----'; // Passed from CST
+    const cstCode = route.params?.cstCode || 'CST/---/--/----';
+
+    const user = useSelector((state: RootState) => state.auth.user);
+    const { validateLktForm, handleCreateLkt } = useLkt();
 
     const [isLoading, setIsLoading] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     const onRefresh = () => {
         setIsRefreshing(true);
-        setTimeout(() => {
-            setIsRefreshing(false);
-        }, 1000);
+        setTimeout(() => setIsRefreshing(false), 1000);
     };
 
-    const { validateLktForm } = useLkt();
-
     const [toast, setToast] = useState<{ visible: boolean; type: ToastType; message: string }>({
-        visible: false,
-        type: 'success',
-        message: ''
+        visible: false, type: 'success', message: ''
     });
 
     const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     // Form State
-    const [catatanKerusakan, setCatatanKerusakan] = useState('');
+    const [catatanKerusakan, setCatatanKerusakan] = useState(route.params?.lapKerusakan || '');
     const [description, setDescription] = useState('');
     const [estimationDay, setEstimationDay] = useState('1');
     const [transportAmount, setTransportAmount] = useState('0');
     const [serviceAmount, setServiceAmount] = useState('0');
     const [accommodationAmount, setAccommodationAmount] = useState('0');
-    const [typeTransport, setTypeTransport] = useState('');
-    const [startingDate, setStartingDate] = useState<Date | null>(null);
+    const [typeTransport, setTypeTransport] = useState('Mobil');
+    const [startingDate, setStartingDate] = useState<Date>(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
+
+    // Image
+    const [imageUri, setImageUri] = useState<string | null>(null);
 
     const transportOptions = [
         { label: 'Mobil', value: 'Mobil' },
@@ -56,28 +59,54 @@ export function LktFormScreen() {
         { label: 'Lain - lain', value: 'Lain - lain' }
     ];
 
+    const pickImage = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
+        });
+        if (!result.canceled) setImageUri(result.assets[0].uri);
+    };
+
     const handleSubmit = async () => {
-        const errorMsg = validateLktForm({ typeTransport, description, startingDate });
+        const errorMsg = validateLktForm({ typeTransport, description, startingDate: startingDate.toISOString().split('T')[0] });
         if (errorMsg) {
             setToast({ visible: true, type: 'error', message: errorMsg });
             return;
         }
-
         setShowConfirmModal(true);
     };
 
-    const handleConfirmSave = () => {
+    const handleConfirmSave = async () => {
         setShowConfirmModal(false);
         setIsLoading(true);
-        // Simulasi request API
-        setTimeout(() => {
-            setIsLoading(false);
+
+        const payload = {
+            cst_code: cstCode,
+            description,
+            estimation_day: parseInt(estimationDay) || 1,
+            starting_date: startingDate.toISOString().split('T')[0],
+            service_amount: parseInt(serviceAmount.replace(/\D/g, '')) || 0,
+            transport_amount: parseInt(transportAmount.replace(/\D/g, '')) || 0,
+            accommodation_amount: parseInt(accommodationAmount.replace(/\D/g, '')) || 0,
+            type_transport: typeTransport,
+            added_by: user?.nm_karyawan || 'Admin',
+            image: imageUri || undefined,
+        };
+
+        const result = await handleCreateLkt(payload);
+        setIsLoading(false);
+
+        if (result.success && result.lkt_code) {
             navigation.replace('LktEditScreen', {
-                id: 'LKT-123',
+                id: result.lkt_code,
                 showSuccessToast: true,
                 successMessage: 'LKT berhasil ditambahkan'
             });
-        }, 1000);
+        } else {
+            setToast({ visible: true, type: 'error', message: result.message || 'Gagal menyimpan LKT' });
+        }
     };
 
     return (
@@ -117,15 +146,12 @@ export function LktFormScreen() {
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeInDown.springify()} layout={Layout.springify()} className="space-y-4">
-
-                        {/* Unified Form Card */}
                         <View className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-                            {/* Header Info */}
                             <View className="mb-4">
                                 <Text className="text-lg font-extrabold text-slate-800">{cstCode}</Text>
                                 <View className="flex-row items-center mt-2 ml-1">
                                     <CornerDownRight color="#334155" size={22} strokeWidth={3} className="mr-2" style={{ marginTop: -8 }} />
-                                    <Text className="text-base font-bold text-slate-800">LKT-EMM/---/--/-----</Text>
+                                    <Text className="text-base font-bold text-slate-400">LKT-EMM/---/--/-----</Text>
                                 </View>
                             </View>
 
@@ -162,9 +188,26 @@ export function LktFormScreen() {
 
                             <View className="mb-5">
                                 <Text className="text-xs font-bold text-gray-700 mb-2">Images <Text className="text-gray-400 font-normal">(Max 500kb)</Text></Text>
-                                <TouchableOpacity className="bg-gray-50 border border-gray-200 border-dashed rounded-lg p-4 items-center justify-center">
-                                    <UploadCloud color="#9CA3AF" size={24} />
-                                    <Text className="text-xs text-gray-500 mt-2 font-medium">Klik untuk Upload Foto</Text>
+                                <TouchableOpacity
+                                    className="bg-gray-50 border border-gray-200 border-dashed rounded-lg h-28 items-center justify-center overflow-hidden"
+                                    onPress={pickImage}
+                                >
+                                    {imageUri ? (
+                                        <View className="w-full h-full relative">
+                                            <Image source={{ uri: imageUri }} className="w-full h-full" resizeMode="cover" />
+                                            <TouchableOpacity
+                                                className="absolute top-2 right-2 bg-red-500 rounded-full p-1"
+                                                onPress={() => setImageUri(null)}
+                                            >
+                                                <X color="white" size={14} />
+                                            </TouchableOpacity>
+                                        </View>
+                                    ) : (
+                                        <View className="items-center justify-center p-4">
+                                            <UploadCloud color="#9CA3AF" size={24} />
+                                            <Text className="text-xs text-gray-500 mt-2 font-medium">Klik untuk Upload Foto</Text>
+                                        </View>
+                                    )}
                                 </TouchableOpacity>
                             </View>
 
@@ -177,12 +220,12 @@ export function LktFormScreen() {
                                     >
                                         <Calendar color="#9CA3AF" size={18} />
                                         <Text className="ml-2 text-sm text-gray-800 flex-1">
-                                            {startingDate ? formatDate(startingDate) : 'Pilih Tanggal'}
+                                            {formatDate(startingDate)}
                                         </Text>
                                     </TouchableOpacity>
                                     {showDatePicker && (
                                         <DateTimePicker
-                                            value={startingDate || new Date()}
+                                            value={startingDate}
                                             mode="date"
                                             display="default"
                                             onChange={(event, date) => {
@@ -255,7 +298,6 @@ export function LktFormScreen() {
 
                         </View>
 
-                        {/* Action Buttons */}
                         <View className="flex-row space-x-3 mt-4">
                             <TouchableOpacity
                                 className="flex-1 flex-row items-center justify-center h-12 rounded-xl"
@@ -266,7 +308,6 @@ export function LktFormScreen() {
                                 <Text className="font-bold text-white ml-2">Save LKT</Text>
                             </TouchableOpacity>
                         </View>
-
                     </Animated.View>
                 )}
             </ScrollView>

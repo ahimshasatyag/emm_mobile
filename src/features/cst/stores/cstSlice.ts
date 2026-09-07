@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { Cst, CstDetail } from '../types/cst.types';
-import * as cstApi from '../api/cst.api';
+import { cstApi } from '../api/cst.api';
 
 interface CstState {
     cstList: Cst[];
@@ -20,7 +20,7 @@ export const fetchCstList = createAsyncThunk(
     'cst/fetchList',
     async (_, { rejectWithValue }) => {
         try {
-            return await cstApi.fetchCstList();
+            return await cstApi.getAll();
         } catch (error: any) {
             return rejectWithValue(error.message || 'Failed to fetch CST list');
         }
@@ -31,7 +31,7 @@ export const fetchCstDetail = createAsyncThunk(
     'cst/fetchDetail',
     async (cst_code: string, { rejectWithValue }) => {
         try {
-            return await cstApi.fetchCstDetail(cst_code);
+            return await cstApi.getById(cst_code);
         } catch (error: any) {
             return rejectWithValue(error.message || 'Failed to fetch CST detail');
         }
@@ -40,9 +40,9 @@ export const fetchCstDetail = createAsyncThunk(
 
 export const closeCst = createAsyncThunk(
     'cst/close',
-    async (cst_code: string, { rejectWithValue }) => {
+    async ({ cst_code, cst_by }: { cst_code: string, cst_by: string }, { rejectWithValue }) => {
         try {
-            await cstApi.closeCst(cst_code);
+            await cstApi.updateAction(cst_code, 'DONE', cst_by);
             return cst_code;
         } catch (error: any) {
             return rejectWithValue(error.message || 'Failed to close CST');
@@ -52,9 +52,9 @@ export const closeCst = createAsyncThunk(
 
 export const cancelCst = createAsyncThunk(
     'cst/cancel',
-    async (cst_code: string, { rejectWithValue }) => {
+    async ({ cst_code, cst_by }: { cst_code: string, cst_by: string }, { rejectWithValue }) => {
         try {
-            await cstApi.cancelCst(cst_code);
+            await cstApi.updateAction(cst_code, 'CANCEL', cst_by);
             return cst_code;
         } catch (error: any) {
             return rejectWithValue(error.message || 'Failed to cancel CST');
