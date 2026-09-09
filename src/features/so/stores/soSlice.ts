@@ -66,6 +66,42 @@ export const updateSO = createAsyncThunk(
     }
 );
 
+export const confirmSO = createAsyncThunk(
+    'so/confirm',
+    async (id_so: string, { rejectWithValue }) => {
+        try {
+            const result = await soApi.confirmSO(id_so);
+            return result;
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Failed to confirm SO');
+        }
+    }
+);
+
+export const checkPaymentSO = createAsyncThunk(
+    'so/checkPayment',
+    async ({ id_so, tgl_status }: { id_so: string; tgl_status?: string }, { rejectWithValue }) => {
+        try {
+            const result = await soApi.checkPayment(id_so, tgl_status);
+            return result;
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Failed to check payment');
+        }
+    }
+);
+
+export const cancelSO = createAsyncThunk(
+    'so/cancel',
+    async ({ id_so, alasan, username }: { id_so: string; alasan: string; username?: string }, { rejectWithValue }) => {
+        try {
+            const result = await soApi.cancelSO(id_so, alasan, username);
+            return result;
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Failed to cancel SO');
+        }
+    }
+);
+
 const soSlice = createSlice({
     name: 'so',
     initialState,

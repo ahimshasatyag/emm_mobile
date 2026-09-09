@@ -1,12 +1,15 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../../stores';
-import { 
-    fetchSOList, 
-    getSOById, 
-    createSO, 
-    updateSO, 
-    clearCurrentSO, 
-    clearError 
+import {
+    fetchSOList,
+    getSOById,
+    createSO,
+    updateSO,
+    clearCurrentSO,
+    clearError,
+    confirmSO,
+    checkPaymentSO,
+    cancelSO
 } from '../stores/soSlice';
 import { SalesOrder } from '../types/so.types';
 import { useCallback } from 'react';
@@ -39,6 +42,18 @@ export const useSO = () => {
         dispatch(clearError());
     }, [dispatch]);
 
+    const handleConfirmSO = useCallback(async (id_so: string) => {
+        return await dispatch(confirmSO(id_so)).unwrap();
+    }, [dispatch]);
+
+    const handleCheckPaymentSO = useCallback(async (id_so: string, tgl_status?: string) => {
+        return await dispatch(checkPaymentSO({ id_so, tgl_status })).unwrap();
+    }, [dispatch]);
+
+    const handleCancelSO = useCallback(async (id_so: string, alasan: string, username?: string) => {
+        return await dispatch(cancelSO({ id_so, alasan, username })).unwrap();
+    }, [dispatch]);
+
     return {
         items,
         currentSO,
@@ -49,6 +64,9 @@ export const useSO = () => {
         addSO,
         modifySO,
         resetCurrent,
-        dismissError
+        dismissError,
+        confirmSO: handleConfirmSO,
+        checkPaymentSO: handleCheckPaymentSO,
+        cancelSO: handleCancelSO
     };
 };

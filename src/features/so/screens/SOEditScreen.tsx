@@ -6,12 +6,14 @@ import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useSO } from '../hooks/useSO';
 import { SalesOrder, SOItem } from '../types/so.types';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { formatRp } from '../../../utils/helpers/money';
 import { Dropdown } from 'react-native-element-dropdown';
 import { theme } from '../../../theme/theme';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ProductSOModal } from '../components/ProductSOModal';
 import { ExtGaransiModal } from '../components/ExtGaransiModal';
 import { ExtGaransiTable } from '../components/ExtGaransiTable';
+import { ModalCreateInvoice } from '../components/ModalCreateInvoice';
 import { SOEditSkeleton } from '../skeleton/SOEditSkeleton';
 
 const RadioGroup = ({ label, options, selectedValue, onSelect, disabled }: any) => (
@@ -74,33 +76,44 @@ const DropdownStyled = ({ label, placeholder, data, value, onChange, disabled }:
 export function SOEditScreen() {
     const navigation = useNavigation();
     const route = useRoute();
-    const { id } = route.params as { id: string };
-    const { items } = useSO();
+    const { id, successMessage } = route.params as { id: string, successMessage?: string };
+    const { currentSO, loadDetail, isLoading: isLoadingSO } = useSO();
     const [isFetching, setIsFetching] = useState(true);
     const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'info' });
+
+    const getStatusColor = (status?: string) => {
+        if (!status) return 'bg-gray-500 text-white';
+        switch (status.toUpperCase()) {
+            case 'DRAFT SALES ORDER': return 'bg-gray-800 text-white';
+            case 'OUTSTANDING SALES ORDER': return 'bg-yellow-500 text-white';
+            case 'CANCEL SALES ORDER': return 'bg-red-500 text-white';
+            case 'SALES ORDER': return 'bg-blue-500 text-white';
+            default: return 'bg-gray-500 text-white';
+        }
+    };
 
     const [formData, setFormData] = useState<Partial<SalesOrder>>({
         nm_karyawan: '',
         nm_customers: '',
         customers_address: '',
         date_estimasi: '',
-        vcurrency: 'IDR',
-        nkurs: '1',
-        flag_ppn: '1',
+        vcurrency: '',
+        nkurs: '',
+        flag_ppn: '',
         delivery_term: '',
 
-        freight: '1',
-        freight_amount: '0',
+        freight: '',
+        freight_amount: '',
 
-        teknisi: '1',
-        teknisi_amount: '0',
+        teknisi: '',
+        teknisi_amount: '',
         teknisi_customer1_select: '',
 
-        forklift: '1',
-        forklift_amount: '0',
+        forklift: '',
+        forklift_amount: '',
 
         date_so: new Date().toLocaleDateString('id-ID'),
-        nm_type_pembayaran: 'Tunai',
+        nm_type_pembayaran: '',
         nm_cara_pembayaran: '',
         nm_waktu_bayar: '',
         ndp_persen: '',
@@ -119,29 +132,38 @@ export function SOEditScreen() {
 
     const [isProductModalVisible, setIsProductModalVisible] = useState(false);
     const [isGaransiModalVisible, setIsGaransiModalVisible] = useState(false);
+    const [isInvoiceModalVisible, setIsInvoiceModalVisible] = useState(false);
     const [editingItemIndex, setEditingItemIndex] = useState<number | undefined>(undefined);
     const [extGaransis, setExtGaransis] = useState<{ id: string, name: string, status: string, durasi: string }[]>([]);
     const [editingGaransiId, setEditingGaransiId] = useState<string | undefined>(undefined);
 
-    const loadInitialData = () => {
-        const so = items.find(s => s.id_so === id);
-        if (so) {
-            setFormData(so);
+    useEffect(() => {
+        setIsFetching(true);
+        loadDetail(id);
+    }, [id, loadDetail]);
+
+    // Handle success message from navigation
+    useEffect(() => {
+        if (successMessage) {
+            setToast({ visible: true, message: successMessage, type: 'success' });
+            // Clear the param so it doesn't trigger again on re-render
+            navigation.setParams({ successMessage: undefined } as any);
         }
-    };
+    }, [successMessage, navigation]);
+
+    useEffect(() => {
+        if (currentSO && currentSO.id_so === id) {
+            setFormData(currentSO);
+            setIsFetching(false);
+        } else if (!isLoadingSO) {
+            setIsFetching(false);
+        }
+    }, [currentSO, id, isLoadingSO]);
 
     const handleRefresh = () => {
         setIsFetching(true);
-        setTimeout(() => {
-            loadInitialData();
-            setIsFetching(false);
-        }, 1000);
+        loadDetail(id);
     };
-
-    useEffect(() => {
-        loadInitialData();
-        setIsFetching(false);
-    }, [id, items]);
 
     const handleSaveItem = (itemData: SOItem, index?: number) => {
         if (index !== undefined) {
@@ -160,8 +182,6 @@ export function SOEditScreen() {
         setFormData(prev => ({ ...prev, [key]: value }));
     };
 
-
-
     const handleExtGaransi = (durasi: string) => {
         if (editingGaransiId) {
             setExtGaransis(prev => prev.map(p => p.id === editingGaransiId ? { ...p, name: `Garansi Sparepart ${durasi} Hari`, durasi } : p));
@@ -175,6 +195,22 @@ export function SOEditScreen() {
         }
         setIsGaransiModalVisible(false);
         setEditingGaransiId(undefined);
+    };
+
+    const handleCreateInvoice = async (date: string) => {
+        setIsInvoiceModalVisible(false);
+        if (!date) {
+            setToast({ visible: true, message: 'Tanggal Invoice harus diisi', type: 'error' });
+            return;
+        }
+
+        try {
+            await checkPaymentSOAction({ id_so: id, tgl_status: date });
+            setToast({ visible: true, message: 'Berhasil membuat Invoice', type: 'success' });
+            loadDetail(id);
+        } catch (error: any) {
+            setToast({ visible: true, message: error?.message || 'Gagal membuat Invoice', type: 'error' });
+        }
     };
 
     return (
@@ -214,34 +250,57 @@ export function SOEditScreen() {
                             {/* SECTION: ACTION BUTTONS (TOP) */}
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4" contentContainerStyle={{ flexDirection: 'row', alignItems: 'center' }}>
 
-                                <TouchableOpacity className="bg-gray-800 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => setToast({ visible: true, message: 'Fitur Print belum diimplementasikan', type: 'info' })}>
-                                    <Printer size={14} color="white" />
-                                    <Text className="text-white text-xs font-bold ml-1">Print</Text>
-                                </TouchableOpacity>
+                                {formData.status_so === 'SALE TO INVOICE' && (
+                                    <TouchableOpacity className="bg-emerald-600 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => setIsInvoiceModalVisible(true)}>
+                                        <FileText size={14} color="white" />
+                                        <Text className="text-white text-xs font-bold ml-1">Create Invoice</Text>
+                                    </TouchableOpacity>
+                                )}
 
-                                <TouchableOpacity className="bg-cyan-500 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => setToast({ visible: true, message: 'Fitur Print Q belum diimplementasikan', type: 'info' })}>
-                                    <Printer size={14} color="white" />
-                                    <Text className="text-white text-xs font-bold ml-1">Print Q</Text>
-                                </TouchableOpacity>
+                                {(formData.status_so === 'SALE TO INVOICE' || formData.status_so === 'SALES ORDER') && (
+                                    <>
+                                        <TouchableOpacity className="bg-gray-800 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => setToast({ visible: true, message: 'Fitur Print belum diimplementasikan', type: 'info' })}>
+                                            <Printer size={14} color="white" />
+                                            <Text className="text-white text-xs font-bold ml-1">Print</Text>
+                                        </TouchableOpacity>
 
-                                <TouchableOpacity className="bg-emerald-600 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => (navigation as any).navigate('CustomerInvoiceEditScreen', { id: id, fromSO: true })}>
-                                    <FileText size={14} color="white" />
-                                    <Text className="text-white text-xs font-bold ml-1">View Invoice</Text>
-                                </TouchableOpacity>
+                                        <TouchableOpacity className="bg-cyan-500 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => setToast({ visible: true, message: 'Fitur Print Q belum diimplementasikan', type: 'info' })}>
+                                            <Printer size={14} color="white" />
+                                            <Text className="text-white text-xs font-bold ml-1">Print Q</Text>
+                                        </TouchableOpacity>
+                                    </>
+                                )}
 
-                                <TouchableOpacity className="bg-indigo-500 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => setIsGaransiModalVisible(true)}>
-                                    <Shield size={14} color="white" />
-                                    <Text className="text-white text-xs font-bold ml-1">Ext Garansi</Text>
-                                </TouchableOpacity>
+                                {formData.status_so === 'SALES ORDER' && (
+                                    <>
+                                        <TouchableOpacity className="bg-emerald-600 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => (navigation as any).navigate('CustomerInvoiceEditScreen', { id: id, fromSO: true })}>
+                                            <FileText size={14} color="white" />
+                                            <Text className="text-white text-xs font-bold ml-1">View Invoice</Text>
+                                        </TouchableOpacity>
+
+                                        <TouchableOpacity className="bg-indigo-500 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => setIsGaransiModalVisible(true)}>
+                                            <Shield size={14} color="white" />
+                                            <Text className="text-white text-xs font-bold ml-1">Ext Garansi</Text>
+                                        </TouchableOpacity>
+                                    </>
+                                )}
                             </ScrollView>
 
                             {/* SECTION: INFORMASI UMUM */}
                             <View className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                                <Text className="text-xs font-bold text-gray-500 uppercase mb-4 border-b border-gray-100 pb-2">Informasi Umum</Text>
+                                <View className="flex-row justify-between items-center mb-4 border-b border-gray-100 pb-2">
+                                    <View>
+                                        <Text className="text-xs font-bold text-gray-500 uppercase">Informasi Umum</Text>
+                                        <Text className="text-sm font-bold text-gray-800 mt-1">{currentSO?.code_so}</Text>
+                                    </View>
+                                    <View className={`px-2.5 py-1 rounded-md ${getStatusColor(currentSO?.status_so).split(' ')[0]}`}>
+                                        <Text className={`text-[10px] font-bold uppercase ${getStatusColor(currentSO?.status_so).split(' ')[1]}`}>{currentSO?.status_so}</Text>
+                                    </View>
+                                </View>
                                 <DropdownStyled
                                     label="Sales Person"
                                     placeholder="Pilih Sales..."
-                                    data={[{ label: 'Sales A', value: 'Sales A' }, { label: 'Sales B', value: 'Sales B' }, { label: 'Budi Santoso', value: 'Budi Santoso' }, { label: 'Siti Aminah', value: 'Siti Aminah' }]}
+                                    data={formData.nm_karyawan ? [{ label: formData.nm_karyawan, value: formData.nm_karyawan }] : []}
                                     value={formData.nm_karyawan}
                                     onChange={(v: string) => updateField('nm_karyawan', v)}
                                     disabled
@@ -249,7 +308,7 @@ export function SOEditScreen() {
                                 <DropdownStyled
                                     label="Delivery To"
                                     placeholder="Pilih Customer..."
-                                    data={[{ label: 'Customer A', value: 'Customer A' }, { label: 'PT. Maju Mundur', value: 'PT. Maju Mundur' }, { label: 'CV. Sentosa Abadi', value: 'CV. Sentosa Abadi' }]}
+                                    data={formData.nm_customers ? [{ label: formData.nm_customers, value: formData.nm_customers }] : []}
                                     value={formData.nm_customers}
                                     onChange={(v: string) => updateField('nm_customers', v)}
                                     disabled
@@ -348,7 +407,7 @@ export function SOEditScreen() {
                                 <DropdownStyled
                                     label="Metode Payment"
                                     placeholder="Pilih Metode Payment"
-                                    data={[{ label: 'Kredit', value: 'Kredit' }, { label: 'Tunai', value: 'Tunai' }]}
+                                    data={formData.nm_type_pembayaran ? [{ label: formData.nm_type_pembayaran, value: formData.nm_type_pembayaran }] : []}
                                     value={formData.nm_type_pembayaran}
                                     onChange={(v: string) => updateField('nm_type_pembayaran', v)}
                                     disabled
@@ -378,7 +437,7 @@ export function SOEditScreen() {
                                 <DropdownStyled
                                     label="Tipe Pembayaran"
                                     placeholder="Pilih Tipe Pembayaran"
-                                    data={[{ label: 'Transfer BCA', value: 'Transfer BCA' }, { label: 'Tunai', value: 'Tunai' }]}
+                                    data={formData.nm_cara_pembayaran ? [{ label: formData.nm_cara_pembayaran, value: formData.nm_cara_pembayaran }] : []}
                                     value={formData.nm_cara_pembayaran}
                                     onChange={(v: string) => updateField('nm_cara_pembayaran', v)}
                                     disabled
@@ -386,7 +445,7 @@ export function SOEditScreen() {
                                 <DropdownStyled
                                     label="Waktu Bayar"
                                     placeholder="Pilih Waktu Bayar"
-                                    data={[{ label: '30 Hari', value: '30 Hari' }, { label: 'COD', value: 'COD' }]}
+                                    data={formData.nm_waktu_bayar ? [{ label: formData.nm_waktu_bayar, value: formData.nm_waktu_bayar }] : []}
                                     value={formData.nm_waktu_bayar}
                                     onChange={(v: string) => updateField('nm_waktu_bayar', v)}
                                     disabled
@@ -434,11 +493,11 @@ export function SOEditScreen() {
                                                         <Text className="w-24 text-xs text-gray-800">{item.product_code}</Text>
                                                         <Text className="w-48 text-xs text-gray-800">{item.product_name}</Text>
                                                         <Text className="w-24 text-xs text-gray-800">{item.status_barang}</Text>
-                                                        <Text className="w-24 text-xs text-gray-800 text-right">{item.harga}</Text>
+                                                        <Text className="w-24 text-xs text-gray-800 text-right">{formatRp(item.harga)}</Text>
                                                         <Text className="w-16 text-xs text-gray-800 text-center">{item.qty}</Text>
                                                         <Text className="w-20 text-xs text-gray-800 text-center">{item.satuan}</Text>
                                                         <Text className="w-24 text-xs text-gray-800">{item.delivery_term}</Text>
-                                                        <Text className="w-32 text-xs text-gray-800 text-right font-bold">{lineTotal}</Text>
+                                                        <Text className="w-32 text-xs text-gray-800 text-right font-bold">{formatRp(lineTotal)}</Text>
                                                     </TouchableOpacity>
                                                 );
                                             })
@@ -448,7 +507,7 @@ export function SOEditScreen() {
 
                             </View>
 
-                            <ExtGaransiTable 
+                            <ExtGaransiTable
                                 data={extGaransis}
                                 onEdit={(id) => {
                                     setEditingGaransiId(id);
@@ -486,6 +545,12 @@ export function SOEditScreen() {
                 }}
                 onSave={handleExtGaransi}
                 initialDurasi={editingGaransiId ? extGaransis.find(e => e.id === editingGaransiId)?.durasi : undefined}
+            />
+
+            <ModalCreateInvoice
+                visible={isInvoiceModalVisible}
+                onConfirm={handleCreateInvoice}
+                onCancel={() => setIsInvoiceModalVisible(false)}
             />
         </KeyboardAvoidingView>
     );

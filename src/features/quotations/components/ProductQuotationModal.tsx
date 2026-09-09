@@ -5,6 +5,7 @@ import { X, Trash2, Save } from 'lucide-react-native';
 import { theme } from '../../../theme/theme';
 import { ProductQuotationModalTable } from './ProductQuotationModalTable';
 import { formatInputNumber, parseInputNumber } from '../../../utils/helpers/money';
+import { useQuotationProducts } from '../hooks/useQuotationProducts';
 
 interface ProductQuotationModalProps {
     visible: boolean;
@@ -14,10 +15,19 @@ interface ProductQuotationModalProps {
     initialData?: any;
     editIndex?: number;
     readOnly?: boolean;
+    mata_uang?: string;
+    kurs?: number;
+    flag_agent?: string;
 }
 
-export function ProductQuotationModal({ visible, onClose, onSave, onDelete, initialData, editIndex, readOnly }: ProductQuotationModalProps) {
+export function ProductQuotationModal({ 
+    visible, onClose, onSave, onDelete, initialData, editIndex, readOnly,
+    mata_uang = 'IDR', kurs = 1, flag_agent = '0'
+}: ProductQuotationModalProps) {
+    const { products } = useQuotationProducts();
+
     const [formData, setFormData] = useState({
+        id_product: '',
         product_code: '',
         product_name: '',
         status_barang: '',
@@ -32,9 +42,15 @@ export function ProductQuotationModal({ visible, onClose, onSave, onDelete, init
     React.useEffect(() => {
         if (visible) {
             if (initialData) {
-                setFormData(initialData);
+                setFormData({
+                    ...initialData,
+                    harga: initialData.harga?.toString() || '',
+                    qty: initialData.qty?.toString() || '1',
+                    lama_indent: initialData.indent_amount?.toString() || initialData.lama_indent?.toString() || '',
+                });
             } else {
                 setFormData({
+                    id_product: '',
                     product_code: '',
                     product_name: '',
                     status_barang: '',
@@ -51,6 +67,52 @@ export function ProductQuotationModal({ visible, onClose, onSave, onDelete, init
 
     const updateField = (key: string, value: string) => {
         setFormData(prev => ({ ...prev, [key]: value }));
+    };
+
+    const productOptions = products.map((p: any) => ({
+        label: p.code_product,
+        value: p.id_product,
+        originalData: p
+    }));
+
+    const handleProductChange = (item: any) => {
+        const p = products.find(x => x.id_product === item.value);
+        if (p) {
+            let base_price = Number(p.product_price) || 0;
+            if (flag_agent === '1' || flag_agent === 1) {
+                base_price = Number(p.product_price_agent) || 0;
+            }
+            
+            let calculated_price = base_price * (kurs || 1);
+            if (mata_uang === 'IDR' && calculated_price > 1000000) {
+                calculated_price = Math.ceil(calculated_price / 1000000) * 1000000;
+            }
+
+            // Options
+            const options = p.options_product ? p.options_product.map((opt: any) => {
+                let amount_option = Number(opt.amount) || 0;
+                if (mata_uang === 'IDR') {
+                    amount_option = amount_option * (kurs || 1);
+                }
+                return {
+                    id_product_price_opt: opt.id_product_price_opt,
+                    nm_product_opt: opt.nm_product_opt,
+                    amount: amount_option,
+                    qty: '1'
+                };
+            }) : [];
+
+            setFormData(prev => ({
+                ...prev,
+                id_product: p.id_product,
+                product_code: p.code_product,
+                product_name: p.nm_product || '',
+                harga: calculated_price > 0 ? String(calculated_price) : prev.harga,
+                satuan: p.nm_product_satuan || p.satuan?.nm_product_satuan || '',
+                delivery_term: p.delivery_term || prev.delivery_term,
+                options: options
+            }));
+        }
     };
 
     return (
@@ -76,15 +138,18 @@ export function ProductQuotationModal({ visible, onClose, onSave, onDelete, init
                             <View className="border border-gray-200 rounded-lg bg-gray-50 overflow-hidden">
                                 <Dropdown
                                     style={{ height: 44, paddingHorizontal: 12 }}
-                                    data={[{ label: 'P001', value: 'P001' }, { label: 'P002', value: 'P002' }]}
+                                    data={productOptions}
                                     labelField="label"
                                     valueField="value"
                                     placeholder="Pilih Product Code..."
-                                    value={formData.product_code}
-                                    onChange={(item) => updateField('product_code', item.value)}
+                                    value={formData.id_product}
+                                    onChange={handleProductChange}
                                     selectedTextStyle={{ color: readOnly ? '#9ca3af' : '#1f2937', fontSize: 14 }}
                                     placeholderStyle={{ color: '#9ca3af', fontSize: 14 }}
                                     disable={readOnly}
+                                    search
+                                    searchPlaceholder="Cari Produk..."
+                                    inputSearchStyle={{ height: 40, fontSize: 14 }}
                                 />
                             </View>
                         </View>
@@ -122,7 +187,7 @@ export function ProductQuotationModal({ visible, onClose, onSave, onDelete, init
                                 <Text className="text-xs text-gray-600 font-medium mb-1.5">Lama Indent (Hari)</Text>
                                 <TextInput
                                     className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-gray-800 text-sm"
-                                    placeholder="Contoh: 14"
+                                    placeholder="Masukan lama indent"
                                     value={formData.lama_indent}
                                     onChangeText={(v) => updateField('lama_indent', v)}
                                     keyboardType="numeric"
@@ -136,22 +201,20 @@ export function ProductQuotationModal({ visible, onClose, onSave, onDelete, init
                             <View className="flex-1">
                                 <Text className="text-xs text-gray-600 font-medium mb-1.5">Harga</Text>
                                 <TextInput
-                                    className={`border border-gray-200 rounded-lg px-3 py-2.5 text-sm ${readOnly ? 'bg-gray-100 text-gray-500' : 'bg-gray-50 text-gray-800'}`}
-                                    value={formatInputNumber(formData.harga)}
-                                    onChangeText={(v) => updateField('harga', parseInputNumber(v))}
+                                    className={`flex-1 h-10 border border-gray-200 rounded-lg px-3 text-sm text-gray-800 ${readOnly ? 'bg-gray-100 text-gray-500' : 'bg-white'}`}
+                                    value={formatInputNumber(formData.harga?.toString() || '')}
+                                    onChangeText={(text) => setFormData(prev => ({ ...prev, harga: parseInputNumber(text) }))}
                                     keyboardType="numeric"
-                                    placeholder="0"
                                     editable={!readOnly}
                                 />
                             </View>
                             <View className="flex-1">
                                 <Text className="text-xs text-gray-600 font-medium mb-1.5">Qty</Text>
                                 <TextInput
-                                    className={`border border-gray-200 rounded-lg px-3 py-2.5 text-sm ${readOnly ? 'bg-gray-100 text-gray-500' : 'bg-gray-50 text-gray-800'}`}
-                                    value={formData.qty}
-                                    onChangeText={(v) => updateField('qty', v)}
+                                    className={`flex-1 h-10 border border-gray-200 rounded-lg px-3 text-sm text-gray-800 ${readOnly ? 'bg-gray-100 text-gray-500' : 'bg-white'}`}
+                                    value={formData.qty?.toString()}
+                                    onChangeText={(text) => setFormData(prev => ({ ...prev, qty: text }))}
                                     keyboardType="numeric"
-                                    placeholder="0"
                                     editable={!readOnly}
                                 />
                             </View>
@@ -179,7 +242,20 @@ export function ProductQuotationModal({ visible, onClose, onSave, onDelete, init
                         </View>
 
                         {/* Options Table */}
-                        <ProductQuotationModalTable />
+                        <ProductQuotationModalTable 
+                            options={formData.options}
+                            readOnly={readOnly}
+                            onChange={(index, field, value) => {
+                                const newOptions = [...formData.options];
+                                (newOptions[index] as any)[field] = value;
+                                updateField('options', newOptions);
+                            }}
+                            onDelete={(index) => {
+                                const newOptions = [...formData.options];
+                                newOptions.splice(index, 1);
+                                updateField('options', newOptions);
+                            }}
+                        />
                     </ScrollView>
 
                     {/* Footer / Action Buttons */}

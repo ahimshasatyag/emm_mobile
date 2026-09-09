@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Modal, TextInput, TouchableOpacity, ScrollView, Platform, KeyboardAvoidingView } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { X } from 'lucide-react-native';
-import { Button } from '../../../components/ui/button';
+import { formatRp, formatInputNumber, parseInputNumber } from '../../../utils/helpers/money';
 
 interface ProductSOModalProps {
     visible: boolean;
@@ -48,7 +48,7 @@ export function ProductSOModal({ visible, onClose, onSave, initialData, editInde
 
     return (
         <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-            <KeyboardAvoidingView 
+            <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 className="flex-1 bg-black/50 justify-end"
             >
@@ -68,7 +68,10 @@ export function ProductSOModal({ visible, onClose, onSave, initialData, editInde
                             <View className="border border-gray-200 rounded-lg bg-gray-50 overflow-hidden">
                                 <Dropdown
                                     style={{ height: 44, paddingHorizontal: 12 }}
-                                    data={[{label: 'P-001', value: 'P-001'}, {label: 'P-002', value: 'P-002'}]}
+                                    data={
+                                        [{ label: 'P-001', value: 'P-001' }, { label: 'P-002', value: 'P-002' }]
+                                            .concat(formData.product_code && !['P-001', 'P-002'].includes(formData.product_code) ? [{ label: formData.product_code, value: formData.product_code }] : [])
+                                    }
                                     labelField="label"
                                     valueField="value"
                                     placeholder="Pilih Product Code..."
@@ -80,10 +83,10 @@ export function ProductSOModal({ visible, onClose, onSave, initialData, editInde
                                 />
                             </View>
                         </View>
-                        
+
                         <View className="mb-4">
                             <Text className="text-xs text-gray-600 font-medium mb-1.5">Product Name</Text>
-                            <TextInput 
+                            <TextInput
                                 className="border border-gray-200 rounded-lg px-3 py-2.5 text-gray-800 text-sm bg-gray-100"
                                 value={formData.product_name}
                                 editable={false}
@@ -96,7 +99,10 @@ export function ProductSOModal({ visible, onClose, onSave, initialData, editInde
                             <View className="border border-gray-200 rounded-lg bg-gray-50 overflow-hidden">
                                 <Dropdown
                                     style={{ height: 44, paddingHorizontal: 12 }}
-                                    data={[{label: 'Ready', value: 'Ready'}, {label: 'Indent', value: 'Indent'}]}
+                                    data={
+                                        [{ label: 'Ready', value: 'Ready' }, { label: 'Indent', value: 'Indent' }]
+                                            .concat(formData.status_barang && !['Ready', 'Indent'].includes(formData.status_barang) ? [{ label: formData.status_barang, value: formData.status_barang }] : [])
+                                    }
                                     labelField="label"
                                     valueField="value"
                                     placeholder="Pilih Status..."
@@ -112,10 +118,10 @@ export function ProductSOModal({ visible, onClose, onSave, initialData, editInde
                         <View className="flex-row gap-4 mb-4">
                             <View className="flex-1">
                                 <Text className="text-xs text-gray-600 font-medium mb-1.5">Harga</Text>
-                                <TextInput 
+                                <TextInput
                                     className={`border border-gray-200 rounded-lg px-3 py-2.5 text-sm ${readOnly ? 'bg-gray-100 text-gray-500' : 'bg-gray-50 text-gray-800'}`}
-                                    value={formData.harga}
-                                    onChangeText={(v) => updateField('harga', v)}
+                                    value={readOnly ? formatRp(formData.harga || 0) : formatInputNumber(formData.harga?.toString() || '')}
+                                    onChangeText={(v) => updateField('harga', parseInputNumber(v))}
                                     keyboardType="numeric"
                                     placeholder="0"
                                     editable={!readOnly}
@@ -123,7 +129,7 @@ export function ProductSOModal({ visible, onClose, onSave, initialData, editInde
                             </View>
                             <View className="flex-1">
                                 <Text className="text-xs text-gray-600 font-medium mb-1.5">Qty</Text>
-                                <TextInput 
+                                <TextInput
                                     className={`border border-gray-200 rounded-lg px-3 py-2.5 text-sm ${readOnly ? 'bg-gray-100 text-gray-500' : 'bg-gray-50 text-gray-800'}`}
                                     value={formData.qty}
                                     onChangeText={(v) => updateField('qty', v)}
@@ -137,7 +143,7 @@ export function ProductSOModal({ visible, onClose, onSave, initialData, editInde
                         <View className="flex-row gap-4 mb-4">
                             <View className="flex-1">
                                 <Text className="text-xs text-gray-600 font-medium mb-1.5">Satuan</Text>
-                                <TextInput 
+                                <TextInput
                                     className="border border-gray-200 rounded-lg px-3 py-2.5 text-gray-800 text-sm bg-gray-100"
                                     value={formData.satuan}
                                     editable={false}
@@ -146,42 +152,13 @@ export function ProductSOModal({ visible, onClose, onSave, initialData, editInde
                             </View>
                             <View className="flex-1">
                                 <Text className="text-xs text-gray-600 font-medium mb-1.5">Delivery Term</Text>
-                                <TextInput 
+                                <TextInput
                                     className="border border-gray-200 rounded-lg px-3 py-2.5 text-gray-800 text-sm bg-gray-100"
                                     value={formData.delivery_term}
                                     editable={false}
                                     placeholder="Term"
                                 />
                             </View>
-                        </View>
-
-                        <View className="flex-row gap-3 mt-4 mb-10">
-                            {readOnly ? (
-                                <Button 
-                                    variant="outline"
-                                    className="flex-1 h-12 rounded-xl"
-                                    onPress={onClose}
-                                >
-                                    <Text className="font-bold text-gray-700">Tutup</Text>
-                                </Button>
-                            ) : (
-                                <>
-                                    <Button 
-                                        variant="outline"
-                                        className="flex-1 h-12 rounded-xl"
-                                        onPress={onClose}
-                                    >
-                                        <Text className="font-bold text-gray-700">Batal</Text>
-                                    </Button>
-                                    <Button 
-                                        variant="default"
-                                        className="flex-1 h-12 rounded-xl bg-blue-600"
-                                        onPress={() => onSave(formData, editIndex)}
-                                    >
-                                        <Text className="font-bold text-white">Simpan Barang</Text>
-                                    </Button>
-                                </>
-                            )}
                         </View>
                     </ScrollView>
                 </View>

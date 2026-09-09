@@ -18,11 +18,14 @@ export interface Quotation {
     date_so: string;
     customer_id: string;
     customer_name: string;
+    customers_email?: string;
     sales_person_id: string;
     sales_person_name: string;
     price_list?: string;
     total: number;
+    requires_approval?: boolean;
     status: string; // 'Draft', 'Approved', etc.
+    created_by_name?: string;
     
     // Add form specific fields
     delivery_to?: string;
@@ -57,5 +60,10 @@ export interface Quotation {
     success_fee?: number;
     internal_notes?: string;
 
+    // Revision
+    is_revision?: boolean;
+    id_so_reference?: string;
+
+    approvals?: ApprovalItem[];
     items: QuotationItem[];
 }

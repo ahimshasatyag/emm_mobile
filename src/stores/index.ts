@@ -23,6 +23,7 @@ import productBrandReducer from '../features/productbrand/stores/productBrandSli
 import productUnitReducer from '../features/productunit/stores/productUnitSlice';
 import productsnReducer from '../features/productsn/stores/productsnSlice';
 import productPriceReducer from '../features/productprice/stores/productPriceSlice';
+import quotationReducer from '../features/quotations/stores/quotationSlice';
 import productPriceMktReducer from '../features/productpricemkt/stores/productPriceMktSlice';
 import productPriceAgentReducer from '../features/productpriceagent/stores/productPriceAgentSlice';
 import brosurReducer from '../features/brosur/stores/brosurSlice';
@@ -84,6 +85,7 @@ export const store = configureStore({
     productUnit: productUnitReducer,
     productsn: productsnReducer,
     productPrice: productPriceReducer,
+    quotations: quotationReducer,
     productPriceMkt: productPriceMktReducer,
     productPriceAgent: productPriceAgentReducer,
     brosur: brosurReducer,

@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { FileText, User, Hash, Briefcase } from 'lucide-react-native';
 import { SalesOrder } from '../types/so.types';
+import { formatDate } from '../../../utils/helpers/date';
 
 interface SOCardProps {
     item: SalesOrder;
@@ -22,7 +23,7 @@ export function SOCard({ item, index, onPress }: SOCardProps) {
     };
 
     return (
-        <Animated.View entering={FadeInDown.delay(index * 100).springify()}>
+        <Animated.View entering={FadeInDown.delay((index % 10) * 100).springify()}>
             <TouchableOpacity 
                 activeOpacity={0.7}
                 onPress={onPress}
@@ -36,7 +37,7 @@ export function SOCard({ item, index, onPress }: SOCardProps) {
                         </View>
                         <View>
                             <Text className="text-sm font-bold text-gray-800">{item.code_so}</Text>
-                            <Text className="text-xs text-gray-500">{item.date_so}</Text>
+                            <Text className="text-xs text-gray-500">{item.date_so ? formatDate(new Date(item.date_so)) : '-'}</Text>
                         </View>
                     </View>
                     <View className={`${getStatusColor(item.status_so)} px-2.5 py-1 rounded-full`}>

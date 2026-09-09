@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { FileText, User, Calendar, MoreVertical, Edit, ChevronRight } from 'lucide-react-native';
+import { FileText, User, Calendar } from 'lucide-react-native';
 import { Quotation } from '../types/quotation.types';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { formatDate } from '../../../utils/helpers/date';
 
 interface QuotationCardProps {
     item: Quotation;
@@ -11,20 +12,29 @@ interface QuotationCardProps {
 }
 
 export function QuotationCard({ item, index, onPress }: QuotationCardProps) {
-    const getStatusColor = (status: string) => {
+    const getStatusColor = (status?: string) => {
+        if (!status) return 'bg-gray-100 text-gray-700';
         switch (status.toUpperCase()) {
+            case 'DRAFT QUOTATION': return 'bg-gray-100 text-gray-700';
+            case 'CANCEL QUOTATION': return 'bg-red-100 text-red-700';
             case 'APPROVED': return 'bg-green-100 text-green-700';
-            case 'DRAFT': return 'bg-gray-100 text-gray-700';
             default: return 'bg-blue-100 text-blue-700';
         }
     };
 
+    const formatCurrency = (amount: number, currency?: string) => {
+        if (currency === 'USD') {
+            return `$ ${amount.toLocaleString('en-US')}`;
+        }
+        return `Rp ${amount.toLocaleString('id-ID')}`;
+    };
+
     return (
         <Animated.View
-            entering={FadeInUp.delay(index * 100).duration(400)}
+            entering={FadeInUp.delay((index % 10) * 100).duration(400)}
             className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-4 overflow-hidden"
         >
-            <TouchableOpacity 
+            <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={onPress}
                 className="p-4"
@@ -40,7 +50,7 @@ export function QuotationCard({ item, index, onPress }: QuotationCardProps) {
                         <View className="flex-row items-center space-x-2 mt-1">
                             <Calendar size={12} color="#6B7280" />
                             <Text className="text-xs text-gray-500">
-                                {item.date_so}
+                                {item.date_so ? formatDate(new Date(item.date_so)) : '-'}
                             </Text>
                         </View>
                     </View>
@@ -65,13 +75,13 @@ export function QuotationCard({ item, index, onPress }: QuotationCardProps) {
                     <View>
                         <Text className="text-[10px] text-gray-500 font-medium uppercase mb-0.5">Total</Text>
                         <Text className="text-sm font-bold text-indigo-600">
-                            Rp {item.total.toLocaleString('id-ID')}
+                            {formatCurrency(item.total, item.mata_uang)}
                         </Text>
                     </View>
                     <View className="items-end">
                         <Text className="text-[10px] text-gray-500 font-medium uppercase mb-0.5">Price List</Text>
                         <Text className="text-sm font-bold text-gray-700">
-                            {item.price_list || '-'}
+                            {item.mata_uang || 'IDR'}
                         </Text>
                     </View>
                 </View>

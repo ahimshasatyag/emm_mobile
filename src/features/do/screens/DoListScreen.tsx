@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, FlatList, RefreshControl, TextInput } from 'react-native';
+import { View, FlatList, RefreshControl, TextInput, ActivityIndicator } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -19,6 +19,9 @@ export const DoListScreen = () => {
     const [isInitializing, setIsInitializing] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [statusFilter, setStatusFilter] = useState('ALL STATUS');
+
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
     React.useEffect(() => {
         if (route.params?.timestamp) {
@@ -84,6 +87,20 @@ export const DoListScreen = () => {
         return matchSearch && matchStatus;
     });
 
+    React.useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, statusFilter, list]);
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < filteredList.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, filteredList.length, isLoadMore]);
+
     return (
         <View className="flex-1 bg-gray-50">
             <HeaderNavigator title="DELIVERY ORDER" />
@@ -118,17 +135,30 @@ export const DoListScreen = () => {
 
             <View className="flex-1">
                 <Animated.FlatList
+                    className="flex-1"
                     entering={FadeInDown}
-                    data={(loading || isInitializing) && !isRefreshing ? [] : filteredList}
+                    data={(loading || isInitializing) && !isRefreshing ? [] : filteredList.slice(0, visibleCount)}
                     keyExtractor={(item) => item.id_do}
-                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 20, paddingHorizontal: 16 }}
+                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 100, paddingHorizontal: 16 }}
                     showsVerticalScrollIndicator={false}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
                     refreshControl={
                         <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={['#2563eb']} />
                     }
                     renderItem={({ item }) => (
                         <DoCard item={item} onPress={handleDetail} />
                     )}
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color="#2563eb" />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
                     ListEmptyComponent={() => {
                         if (error && !isInitializing) {
                             return (

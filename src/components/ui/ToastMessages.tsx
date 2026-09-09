@@ -70,8 +70,8 @@ export const ToastMessages: React.FC<ToastMessagesProps> = ({
     const config = getToastConfig();
 
     return (
-        <Animated.View 
-            entering={FadeInUp.duration(400).springify()} 
+        <Animated.View
+            entering={FadeInUp.duration(400).springify()}
             exiting={FadeOutUp.duration(300)}
             className="absolute top-20 left-4 right-4 z-50"
             style={styles.shadow}
