@@ -27,18 +27,18 @@ interface DoProductTableProps {
   onFocusPlat?: () => void;
 }
 
-export const DoProductTable: React.FC<DoProductTableProps> = ({ 
-  items, 
-  selectable = false, 
-  selectedIds = [], 
-  onToggleSelect = () => {},
+export const DoProductTable: React.FC<DoProductTableProps> = ({
+  items,
+  selectable = false,
+  selectedIds = [],
+  onToggleSelect = () => { },
   isEditMode = false,
-  onUpdatePlat = () => {},
-  onUpdateSN = () => {},
-  onUpdateTahun = () => {},
+  onUpdatePlat = () => { },
+  onUpdateSN = () => { },
+  onUpdateTahun = () => { },
   onFocusPlat
 }) => {
-  const [snOptions, setSnOptions] = useState<Record<string, {label: string, value: string}[]>>({});
+  const [snOptions, setSnOptions] = useState<Record<string, { label: string, value: string }[]>>({});
 
   useEffect(() => {
     if (isEditMode && items && items.length > 0) {
@@ -104,8 +104,8 @@ export const DoProductTable: React.FC<DoProductTableProps> = ({
         {items.map((item, index) => {
           const isSelected = selectedIds.includes(item.id_do_dtl);
           return (
-            <View 
-              key={item.id_do_dtl || index} 
+            <View
+              key={item.id_do_dtl || index}
               className={`flex-row border-b border-gray-100 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
             >
               {selectable && (
@@ -123,64 +123,64 @@ export const DoProductTable: React.FC<DoProductTableProps> = ({
               )}
               <View className="w-32 p-3 border-r border-gray-100 justify-center">
                 <Text className="text-sm text-gray-800">{item.code_product || '-'}</Text>
-            </View>
-            <View className="w-48 p-3 border-r border-gray-100 justify-center">
-              <Text className="text-sm text-gray-800">{item.nm_product || '-'}</Text>
-            </View>
-            <View className="w-20 p-3 border-r border-gray-100 justify-center items-center">
-              <Text className="text-sm text-gray-800 font-medium">{item.nqty || '0'}</Text>
-            </View>
-            <View className="w-24 p-3 border-r border-gray-100 justify-center items-center">
-              <Text className="text-sm text-gray-800">{item.nm_product_satuan || '-'}</Text>
-            </View>
-            <View className="w-40 p-3 border-r border-gray-100 justify-center">
-              {isEditMode ? (
-                <View className="bg-gray-100 border border-gray-200 rounded">
-                  <Dropdown
-                    style={{ height: 32, paddingHorizontal: 8 }}
-                    data={item.id_product && snOptions[item.id_product] ? snOptions[item.id_product] : []}
-                    labelField="label"
-                    valueField="value"
-                    placeholder="Pilih SN"
-                    value={item.nbarcode}
-                    onChange={(selected) => onUpdateSN(item.id_do_dtl, selected.value)}
-                    selectedTextStyle={{ fontSize: 12, color: '#1f2937' }}
-                    placeholderStyle={{ fontSize: 12, color: '#9ca3af' }}
-                    itemTextStyle={{ fontSize: 12 }}
+              </View>
+              <View className="w-48 p-3 border-r border-gray-100 justify-center">
+                <Text className="text-sm text-gray-800">{item.nm_product || '-'}</Text>
+              </View>
+              <View className="w-20 p-3 border-r border-gray-100 justify-center items-center">
+                <Text className="text-sm text-gray-800 font-medium">{item.nqty || '0'}</Text>
+              </View>
+              <View className="w-24 p-3 border-r border-gray-100 justify-center items-center">
+                <Text className="text-sm text-gray-800">{item.nm_product_satuan || '-'}</Text>
+              </View>
+              <View className="w-40 p-3 border-r border-gray-100 justify-center">
+                {isEditMode ? (
+                  <View className="bg-gray-100 border border-gray-200 rounded">
+                    <Dropdown
+                      style={{ height: 32, paddingHorizontal: 8 }}
+                      data={item.id_product && snOptions[item.id_product] ? snOptions[item.id_product] : []}
+                      labelField="label"
+                      valueField="value"
+                      placeholder="Pilih SN"
+                      value={item.nbarcode}
+                      onChange={(selected) => onUpdateSN(item.id_do_dtl, selected.value)}
+                      selectedTextStyle={{ fontSize: 12, color: '#1f2937' }}
+                      placeholderStyle={{ fontSize: 12, color: '#9ca3af' }}
+                      itemTextStyle={{ fontSize: 12 }}
+                    />
+                  </View>
+                ) : (
+                  <Text className="text-sm text-gray-800">{item.nbarcode || '-'}</Text>
+                )}
+              </View>
+              <View className="w-24 p-3 border-r border-gray-100 justify-center items-center">
+                {isEditMode ? (
+                  <TextInput
+                    className="bg-gray-100 border border-gray-200 rounded px-2 py-1 text-sm text-gray-800 w-full text-center"
+                    value={item.leasing_tahun || ''}
+                    onChangeText={(text) => onUpdateTahun(item.id_do_dtl, text)}
+                    placeholder="Tahun"
+                    keyboardType="numeric"
+                    maxLength={4}
                   />
-                </View>
-              ) : (
-                <Text className="text-sm text-gray-800">{item.nbarcode || '-'}</Text>
-              )}
+                ) : (
+                  <Text className="text-sm text-gray-800">{item.leasing_tahun || '-'}</Text>
+                )}
+              </View>
+              <View className="w-40 p-3 justify-center">
+                {isEditMode ? (
+                  <TextInput
+                    className="bg-gray-100 border border-gray-200 rounded px-2 py-1 text-sm text-gray-800"
+                    value={item.leasing_plat || ''}
+                    onChangeText={(text) => onUpdatePlat(item.id_do_dtl, text)}
+                    placeholder="Masukkan SN Plat"
+                    onFocus={onFocusPlat}
+                  />
+                ) : (
+                  <Text className="text-sm text-gray-800">{item.leasing_plat || '-'}</Text>
+                )}
+              </View>
             </View>
-            <View className="w-24 p-3 border-r border-gray-100 justify-center items-center">
-              {isEditMode ? (
-                <TextInput 
-                  className="bg-gray-100 border border-gray-200 rounded px-2 py-1 text-sm text-gray-800 w-full text-center"
-                  value={item.leasing_tahun || ''}
-                  onChangeText={(text) => onUpdateTahun(item.id_do_dtl, text)}
-                  placeholder="2004"
-                  keyboardType="numeric"
-                  maxLength={4}
-                />
-              ) : (
-                <Text className="text-sm text-gray-800">{item.leasing_tahun || '-'}</Text>
-              )}
-            </View>
-            <View className="w-40 p-3 justify-center">
-              {isEditMode ? (
-                <TextInput 
-                  className="bg-gray-100 border border-gray-200 rounded px-2 py-1 text-sm text-gray-800"
-                  value={item.leasing_plat || ''}
-                  onChangeText={(text) => onUpdatePlat(item.id_do_dtl, text)}
-                  placeholder="Plat"
-                  onFocus={onFocusPlat}
-                />
-              ) : (
-                <Text className="text-sm text-gray-800">{item.leasing_plat || '-'}</Text>
-              )}
-            </View>
-          </View>
           );
         })}
       </View>
