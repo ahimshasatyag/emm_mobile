@@ -36,11 +36,40 @@ export const fetchDoDetail = createAsyncThunk(
 
 export const submitDoAction = createAsyncThunk(
     'do/submitAction',
-    async ({ id, action }: { id: string, action: string }, { rejectWithValue }) => {
+    async ({ id, action, payload }: { id: string, action: string, payload?: any }, { rejectWithValue }) => {
         try {
-            const success = await doApi.submitAction(id, action);
+            let success = false;
+            switch (action) {
+                case 'CONFIRM':
+                    success = await doApi.confirmDo(id);
+                    break;
+                case 'PAYMENT':
+                    success = await doApi.checkPaymentDo(id);
+                    break;
+                case 'AVAILABILITY':
+                    success = await doApi.checkAvailabilityDo(id);
+                    break;
+                case 'DELIVERED':
+                    success = await doApi.deliveredDo(id);
+                    break;
+                case 'CANCEL':
+                    success = await doApi.cancelDo(id, payload?.alasan || '', payload?.username);
+                    break;
+                case 'SPLIT':
+                    success = await doApi.splitDo(id, payload?.details || []);
+                    break;
+                case 'REVISI':
+                    success = await doApi.revisiDo(id);
+                    break;
+                case 'UPDATE':
+                    success = await doApi.updateDo(id, payload);
+                    break;
+                default:
+                    throw new Error('Unknown action');
+            }
+            
             if (success) {
-                return { id, action };
+                return { id, action, payload };
             }
             return rejectWithValue('Gagal memproses aksi');
         } catch (error: any) {

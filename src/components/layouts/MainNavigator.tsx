@@ -60,8 +60,11 @@ import { ApprovebaruListScreen } from '../../features/approvebaru/screens/Approv
 import { DoListScreen } from '../../features/do/screens/DoListScreen';
 import { DoEditScreen } from '../../features/do/screens/DoEditScreen';
 import { DoEditSplitScreen } from '../../features/do/screens/DoEditSplitScreen';
+import DoPrintSjScreen from '../../features/do/screens/DoPrintSjScreen';
 import { CustomerInvoiceListScreen } from '../../features/customerinvoice/screens/CustomerInvoiceListScreen';
 import { CustomerInvoiceEditScreen } from '../../features/customerinvoice/screens/CustomerInvoiceEditScreen';
+import { SOPrintScreen } from '../../features/so/screens/SOPrintScreen';
+import { SOPrintQScreen } from '../../features/so/screens/SOPrintQScreen';
 import { PaymentListScreen } from '../../features/payment/screens/PaymentListScreen';
 import { PaymentEditScreen } from '../../features/payment/screens/PaymentEditScreen';
 import { PaymentFormScreen } from '../../features/payment/screens/PaymentFormScreen';
@@ -126,8 +129,11 @@ export function MainNavigator() {
             <Stack.Screen name="DoListScreen" component={DoListScreen} />
             <Stack.Screen name="DoEditScreen" component={DoEditScreen} />
             <Stack.Screen name="DoEditSplitScreen" component={DoEditSplitScreen} />
+            <Stack.Screen name="DoPrintSjScreen" component={DoPrintSjScreen} options={{ headerShown: false }} />
             <Stack.Screen name="CustomerInvoiceListScreen" component={CustomerInvoiceListScreen} />
             <Stack.Screen name="CustomerInvoiceEditScreen" component={CustomerInvoiceEditScreen} />
+            <Stack.Screen name="SOPrintScreen" component={SOPrintScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="SOPrintQScreen" component={SOPrintQScreen} options={{ headerShown: false }} />
 
             <Stack.Screen name="PaymentList" component={PaymentListScreen} />
             <Stack.Screen name="PaymentEdit" component={PaymentEditScreen} />

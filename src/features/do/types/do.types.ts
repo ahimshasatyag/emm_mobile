@@ -27,6 +27,8 @@ export interface DoDetail {
     nm_customers: string;
     customers_address: string;
     code_so: string;
+    code_invoice?: string;
+    status_invoice?: string;
     keterangan_so: string | null;
     freight: string;
     freight_amount: string;

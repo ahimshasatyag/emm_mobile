@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { Check } from 'lucide-react-native';
+import { Dropdown } from 'react-native-element-dropdown';
+import { api } from '../../../services/api/api';
 
 export interface DoProduct {
   id_do_dtl: string | number;
@@ -20,6 +22,8 @@ interface DoProductTableProps {
   onToggleSelect?: (id: string | number) => void;
   isEditMode?: boolean;
   onUpdatePlat?: (id_do_dtl: string | number, newPlat: string) => void;
+  onUpdateSN?: (id_do_dtl: string | number, newSN: string) => void;
+  onUpdateTahun?: (id_do_dtl: string | number, newTahun: string) => void;
   onFocusPlat?: () => void;
 }
 
@@ -30,8 +34,31 @@ export const DoProductTable: React.FC<DoProductTableProps> = ({
   onToggleSelect = () => {},
   isEditMode = false,
   onUpdatePlat = () => {},
+  onUpdateSN = () => {},
+  onUpdateTahun = () => {},
   onFocusPlat
 }) => {
+  const [snOptions, setSnOptions] = useState<Record<string, {label: string, value: string}[]>>({});
+
+  useEffect(() => {
+    if (isEditMode && items && items.length > 0) {
+      items.forEach(item => {
+        if (item.id_product && !snOptions[item.id_product]) {
+          api.get(`/do/sn/${item.id_product}`).then(res => {
+            if (res.data?.status && res.data?.data) {
+              setSnOptions(prev => ({
+                ...prev,
+                [item.id_product]: res.data.data.map((snItem: any) => ({
+                  label: snItem.sn,
+                  value: snItem.sn
+                }))
+              }));
+            }
+          }).catch(err => console.log('Error fetching SN for product', item.id_product, err));
+        }
+      });
+    }
+  }, [isEditMode, items]);
   if (!items || items.length === 0) {
     return (
       <View className="p-4 items-center justify-center">
@@ -107,10 +134,38 @@ export const DoProductTable: React.FC<DoProductTableProps> = ({
               <Text className="text-sm text-gray-800">{item.nm_product_satuan || '-'}</Text>
             </View>
             <View className="w-40 p-3 border-r border-gray-100 justify-center">
-              <Text className="text-sm text-gray-800">{item.nbarcode || '-'}</Text>
+              {isEditMode ? (
+                <View className="bg-gray-100 border border-gray-200 rounded">
+                  <Dropdown
+                    style={{ height: 32, paddingHorizontal: 8 }}
+                    data={item.id_product && snOptions[item.id_product] ? snOptions[item.id_product] : []}
+                    labelField="label"
+                    valueField="value"
+                    placeholder="Pilih SN"
+                    value={item.nbarcode}
+                    onChange={(selected) => onUpdateSN(item.id_do_dtl, selected.value)}
+                    selectedTextStyle={{ fontSize: 12, color: '#1f2937' }}
+                    placeholderStyle={{ fontSize: 12, color: '#9ca3af' }}
+                    itemTextStyle={{ fontSize: 12 }}
+                  />
+                </View>
+              ) : (
+                <Text className="text-sm text-gray-800">{item.nbarcode || '-'}</Text>
+              )}
             </View>
             <View className="w-24 p-3 border-r border-gray-100 justify-center items-center">
-              <Text className="text-sm text-gray-800">{item.leasing_tahun || '-'}</Text>
+              {isEditMode ? (
+                <TextInput 
+                  className="bg-gray-100 border border-gray-200 rounded px-2 py-1 text-sm text-gray-800 w-full text-center"
+                  value={item.leasing_tahun || ''}
+                  onChangeText={(text) => onUpdateTahun(item.id_do_dtl, text)}
+                  placeholder="2004"
+                  keyboardType="numeric"
+                  maxLength={4}
+                />
+              ) : (
+                <Text className="text-sm text-gray-800">{item.leasing_tahun || '-'}</Text>
+              )}
             </View>
             <View className="w-40 p-3 justify-center">
               {isEditMode ? (

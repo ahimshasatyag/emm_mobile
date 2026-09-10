@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Save, CornerDownLeft, Pencil, Shield, Check, X, Printer, FileText, Trash2 } from 'lucide-react-native';
+import { Shield, Printer, FileText } from 'lucide-react-native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useSO } from '../hooks/useSO';
 import { SalesOrder, SOItem } from '../types/so.types';
@@ -77,7 +77,7 @@ export function SOEditScreen() {
     const navigation = useNavigation();
     const route = useRoute();
     const { id, successMessage } = route.params as { id: string, successMessage?: string };
-    const { currentSO, loadDetail, isLoading: isLoadingSO } = useSO();
+    const { currentSO, loadDetail, isLoading: isLoadingSO, checkPaymentSO } = useSO();
     const [isFetching, setIsFetching] = useState(true);
     const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'info' });
 
@@ -205,7 +205,7 @@ export function SOEditScreen() {
         }
 
         try {
-            await checkPaymentSOAction({ id_so: id, tgl_status: date });
+            await checkPaymentSO(id, date);
             setToast({ visible: true, message: 'Berhasil membuat Invoice', type: 'success' });
             loadDetail(id);
         } catch (error: any) {
@@ -259,12 +259,12 @@ export function SOEditScreen() {
 
                                 {(formData.status_so === 'SALE TO INVOICE' || formData.status_so === 'SALES ORDER') && (
                                     <>
-                                        <TouchableOpacity className="bg-gray-800 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => setToast({ visible: true, message: 'Fitur Print belum diimplementasikan', type: 'info' })}>
+                                        <TouchableOpacity className="bg-gray-800 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => (navigation as any).navigate('SOPrintScreen', { id })}>
                                             <Printer size={14} color="white" />
                                             <Text className="text-white text-xs font-bold ml-1">Print</Text>
                                         </TouchableOpacity>
 
-                                        <TouchableOpacity className="bg-cyan-500 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => setToast({ visible: true, message: 'Fitur Print Q belum diimplementasikan', type: 'info' })}>
+                                        <TouchableOpacity className="bg-cyan-500 px-3 py-2 rounded flex-row items-center mr-2" onPress={() => (navigation as any).navigate('SOPrintQScreen', { id })}>
                                             <Printer size={14} color="white" />
                                             <Text className="text-white text-xs font-bold ml-1">Print Q</Text>
                                         </TouchableOpacity>

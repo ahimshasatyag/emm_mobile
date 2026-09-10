@@ -10,6 +10,7 @@ import { DoProductTable } from '../components/DoProductTable';
 import { DoEditSplitSkeleton } from '../skeleton/DoEditSplitSkeleton';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { formatDate } from '../../../utils/helpers/date';
 
 export const DoEditSplitScreen = () => {
     const route = useRoute<any>();
@@ -61,14 +62,21 @@ export const DoEditSplitScreen = () => {
         setModalConfig({ visible: true });
     };
 
-    const handleConfirmSplit = () => {
+    const handleConfirmSplit = async () => {
         setModalConfig({ visible: false });
-        setTimeout(() => {
+        setIsSubmitting(true);
+        try {
+            const detailsPayload = selectedIds.map(selectedId => ({ id_do_dtl: selectedId }));
+            await submitAction(id, 'SPLIT', { details: detailsPayload });
             setToast({ visible: true, message: 'Data split berhasil disimpan!', type: 'success' });
             setTimeout(() => {
                 navigation.goBack();
             }, 1000);
-        }, 300);
+        } catch (err: any) {
+            setToast({ visible: true, message: 'Gagal melakukan split DO', type: 'error' });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -185,17 +193,17 @@ export const DoEditSplitScreen = () => {
                             <View className="mb-3 flex-row justify-between">
                                 <View className="flex-1 mr-2">
                                     <Text className="text-xs text-gray-500">Creation Date</Text>
-                                    <Text className="text-sm font-medium text-gray-800">{detail.date_do}</Text>
+                                    <Text className="text-sm font-medium text-gray-800">{detail.date_do ? formatDate(new Date(detail.date_do)) : '-'}</Text>
                                 </View>
                                 <View className="flex-1">
                                     <Text className="text-xs text-gray-500">Scheduled Time</Text>
-                                    <Text className="text-sm font-medium text-gray-800">{detail.date_estimasi}</Text>
+                                    <Text className="text-sm font-medium text-gray-800">{detail.date_estimasi ? formatDate(new Date(detail.date_estimasi)) : '-'}</Text>
                                 </View>
                             </View>
 
                             <View className="mb-3">
                                 <Text className="text-xs text-gray-500">Tanggal Delivered</Text>
-                                <Text className="text-sm font-medium text-gray-800">{detail.date_delivery || '-'}</Text>
+                                <Text className="text-sm font-medium text-gray-800">{detail.date_delivery ? formatDate(new Date(detail.date_delivery)) : '-'}</Text>
                             </View>
 
                             <View className="mb-3">
@@ -213,10 +221,10 @@ export const DoEditSplitScreen = () => {
                                 <Text className="text-sm text-gray-800 italic">{detail.keterangan_so || '-'}</Text>
                             </View>
                             <View className="h-[1px] bg-gray-200 my-4 mx-[-16px]" />
-                            <Text className="text-xs font-bold text-gray-400 mb-3 uppercase">Daftar Barang ({detail.items.length})</Text>
+                            <Text className="text-xs font-bold text-gray-400 mb-3 uppercase">Daftar Barang ({(detail?.items || (detail as any)?.details)?.length || 0})</Text>
                             <View className="mx-[-16px]">
                                 <DoProductTable
-                                    items={detail.items}
+                                    items={(detail?.items || (detail as any)?.details) ?? []}
                                     selectable={true}
                                     selectedIds={selectedIds}
                                     onToggleSelect={onToggleSelect}
@@ -246,6 +254,14 @@ export const DoEditSplitScreen = () => {
                     </View>
                 )}
             </ScrollView>
+            
+            {isSubmitting && (
+                <View className="absolute inset-0 bg-black/30 justify-center items-center z-50">
+                    <View className="bg-white px-6 py-4 rounded-xl flex-row items-center">
+                        <Text className="text-gray-800 font-bold ml-2">Memproses...</Text>
+                    </View>
+                </View>
+            )}
         </View>
     );
 };

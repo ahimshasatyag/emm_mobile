@@ -80,10 +80,10 @@ export const DoListScreen = () => {
     };
 
     const filteredList = list.filter(item => {
-        const matchSearch = item.code_do.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            item.nm_customers.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            item.code_so.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchStatus = statusFilter === 'ALL STATUS' || item.status_do?.toUpperCase() === statusFilter;
+        const matchSearch = (item.code_do || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            (item.nm_customers || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            (item.code_so || '').toLowerCase().includes(searchQuery.toLowerCase());
+        const matchStatus = statusFilter === 'ALL STATUS' || (item.status_do || '').toUpperCase() === statusFilter;
         return matchSearch && matchStatus;
     });
 
@@ -134,11 +134,10 @@ export const DoListScreen = () => {
             </Animated.View>
 
             <View className="flex-1">
-                <Animated.FlatList
+                <FlatList
                     className="flex-1"
-                    entering={FadeInDown}
                     data={(loading || isInitializing) && !isRefreshing ? [] : filteredList.slice(0, visibleCount)}
-                    keyExtractor={(item) => item.id_do}
+                    keyExtractor={(item) => item.id_do ? item.id_do.toString() : Math.random().toString()}
                     contentContainerStyle={{ flexGrow: 1, paddingBottom: 100, paddingHorizontal: 16 }}
                     showsVerticalScrollIndicator={false}
                     onEndReached={handleLoadMore}

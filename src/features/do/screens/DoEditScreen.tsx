@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, ScrollView, Text, TextInput, Alert, TouchableOpacity, RefreshControl, Platform, Keyboard } from 'react-native';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
-import { useDo } from '../hooks/useDo';
+import { getDoStatusColor, useDo } from '../hooks/useDo';
 import { theme } from '../../../theme/theme';
 import { CheckCircle, Info, Truck, Edit, Split, Printer, X, Save, Calendar } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -11,6 +11,7 @@ import { DoProductTable } from '../components/DoProductTable';
 import { DoEditSkeleton } from '../skeleton/DoEditSkeleton';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { formatDate } from '../../../utils/helpers/date';
 
 export const DoEditScreen = () => {
     const route = useRoute<any>();
@@ -26,13 +27,13 @@ export const DoEditScreen = () => {
     const scrollViewRef = useRef<ScrollView>(null);
 
     const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'error' });
-    const [modalConfig, setModalConfig] = useState<{ 
-        visible: boolean; 
-        type: 'save_edit' | 'action' | null; 
-        title: string; 
-        message: string; 
-        confirmText: string; 
-        actionParams?: { actionName: string, actionValue: string } 
+    const [modalConfig, setModalConfig] = useState<{
+        visible: boolean;
+        type: 'save_edit' | 'action' | null;
+        title: string;
+        message: string;
+        confirmText: string;
+        actionParams?: { actionName: string, actionValue: string }
     }>({
         visible: false,
         type: null,
@@ -70,10 +71,29 @@ export const DoEditScreen = () => {
     };
 
     const updatePlat = (id_do_dtl: string | number, newPlat: string) => {
-        setFormData((prev: any) => ({
-            ...prev,
-            items: prev.items.map((item: any) => item.id_do_dtl === id_do_dtl ? { ...item, leasing_plat: newPlat } : item)
-        }));
+        setFormData((prev: any) => {
+            const arr = prev.items || prev.details || [];
+            const newArr = arr.map((item: any) => item.id_do_dtl === id_do_dtl ? { ...item, leasing_plat: newPlat } : item);
+            return prev.items ? { ...prev, items: newArr } : { ...prev, details: newArr };
+        });
+    };
+
+    const updateSN = (id_do_dtl: string | number, newSN: string) => {
+        setFormData((prev: any) => {
+            const arr = prev.items || prev.details || [];
+            const newArr = arr.map((item: any) => item.id_do_dtl === id_do_dtl ? { ...item, nbarcode: newSN } : item);
+            return prev.items ? { ...prev, items: newArr } : { ...prev, details: newArr };
+        });
+    };
+
+    const updateTahun = (id_do_dtl: string | number, newTahun: string) => {
+        // Hanya membolehkan angka maksimal 4 digit
+        const sanitized = newTahun.replace(/[^0-9]/g, '').substring(0, 4);
+        setFormData((prev: any) => {
+            const arr = prev.items || prev.details || [];
+            const newArr = arr.map((item: any) => item.id_do_dtl === id_do_dtl ? { ...item, leasing_tahun: sanitized } : item);
+            return prev.items ? { ...prev, items: newArr } : { ...prev, details: newArr };
+        });
     };
 
     const handleFocusPlat = () => {
@@ -117,26 +137,31 @@ export const DoEditScreen = () => {
         setModalConfig(prev => ({ ...prev, visible: false }));
 
         if (currentConfig.type === 'save_edit') {
-            setTimeout(() => {
+            setIsSubmitting(true);
+            try {
+                await submitAction(id, 'UPDATE', formData);
                 setToast({ visible: true, message: 'Data berhasil diperbarui!', type: 'success' });
                 setIsEditMode(false);
-            }, 300);
+                getDetail(id);
+            } catch (error: any) {
+                setToast({ visible: true, message: 'Gagal memperbarui data', type: 'error' });
+            } finally {
+                setIsSubmitting(false);
+            }
         } else if (currentConfig.type === 'action' && currentConfig.actionParams) {
             setIsSubmitting(true);
             const { actionName, actionValue } = currentConfig.actionParams;
-            const res = await submitAction(id, actionValue);
-            setIsSubmitting(false);
-            
-            setTimeout(() => {
-                if (res) {
-                    setToast({ visible: true, message: `${actionName} berhasil!`, type: 'success' });
-                    getDetail(id);
-                } else {
-                    setToast({ visible: true, message: `${actionName} gagal!`, type: 'error' });
-                }
-            }, 300);
+            try {
+                await submitAction(id, actionValue);
+                setToast({ visible: true, message: `${actionName} berhasil!`, type: 'success' });
+                getDetail(id);
+            } catch (error: any) {
+                setToast({ visible: true, message: `${actionName} gagal!`, type: 'error' });
+            } finally {
+                setIsSubmitting(false);
+            }
         }
-    };    const renderActionButtons = () => {
+    }; const renderActionButtons = () => {
         const btns = [];
         if (detail.status_do === 'DRAFT DELIVERY ORDER') {
             btns.push(
@@ -153,7 +178,7 @@ export const DoEditScreen = () => {
                     <Text className="text-white font-bold ml-2 text-center leading-tight">Check Availability</Text>
                 </TouchableOpacity>
             );
-            if (detail.flag_payment === '0') {
+            if (String(detail.flag_payment) === '0') {
                 btns.push(
                     <TouchableOpacity key="payment" onPress={() => handleAction('Check Payment', 'PAYMENT')} className="flex-1 bg-blue-500 py-3 rounded-xl flex-row justify-center items-center ml-2">
                         <Info size={18} color="white" />
@@ -175,14 +200,14 @@ export const DoEditScreen = () => {
                         <Text className="text-white font-bold ml-2">Edit</Text>
                     </TouchableOpacity>
 
-                    {detail.items && detail.items.length > 1 && (
+                    {((detail?.items || (detail as any)?.details)?.length > 1) && (
                         <TouchableOpacity key="split" onPress={() => navigation.navigate('DoEditSplitScreen', { id })} className="w-[48%] bg-purple-500 py-3 rounded-xl flex-row justify-center items-center mb-3">
                             <Split size={18} color="white" />
                             <Text className="text-white font-bold ml-2">Split</Text>
                         </TouchableOpacity>
                     )}
 
-                    <TouchableOpacity key="print" onPress={() => setToast({ visible: true, message: 'Fitur Print SJ belum tersedia', type: 'info' })} className="w-[48%] bg-teal-500 py-3 rounded-xl flex-row justify-center items-center mb-3">
+                    <TouchableOpacity key="print" onPress={() => navigation.navigate('DoPrintSjScreen', { id })} className="w-[48%] bg-teal-500 py-3 rounded-xl flex-row justify-center items-center mb-3">
                         <Printer size={18} color="white" />
                         <Text className="text-white font-bold ml-2">Print SJ</Text>
                     </TouchableOpacity>
@@ -191,7 +216,7 @@ export const DoEditScreen = () => {
         }
         if (detail.status_do === 'DELIVERED') {
             btns.push(
-                <TouchableOpacity key="print-delivered" onPress={() => setToast({ visible: true, message: 'Fitur Print SJ belum tersedia', type: 'info' })} className="bg-teal-500 px-5 py-2.5 rounded-xl flex-row justify-center items-center self-start">
+                <TouchableOpacity key="print-delivered" onPress={() => navigation.navigate('DoPrintSjScreen', { id })} className="bg-teal-500 px-5 py-2.5 rounded-xl flex-row justify-center items-center self-start">
                     <Printer size={18} color="white" />
                     <Text className="text-white font-bold ml-2">Print SJ</Text>
                 </TouchableOpacity>
@@ -222,10 +247,10 @@ export const DoEditScreen = () => {
                 onConfirm={handleConfirmModal}
                 onCancel={() => setModalConfig(prev => ({ ...prev, visible: false }))}
             />
-            <HeaderNavigator 
-                title={(refreshing || loadingDetail) ? 'MEMUAT DATA...' : `${isEditMode ? 'EDIT' : 'DETAIL'} ${detail?.code_do || ''}`} 
+            <HeaderNavigator
+                title={(refreshing || loadingDetail) ? 'MEMUAT DATA...' : `${isEditMode ? 'EDIT DELIVERY ORDER' : 'DETAIL DELIVERY ORDER'}`}
 
-                showBackButton={true} 
+                showBackButton={true}
             />
 
             <ScrollView
@@ -242,8 +267,21 @@ export const DoEditScreen = () => {
                 ) : (
                     <View className="p-4">
                         {!isEditMode && renderActionButtons()}
-                        {/* Info Pelanggan */}
-                        <View className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-4">
+
+                        {/* Info Pelanggan & Invoice */}
+                        <View className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
+                            <View className="flex-row justify-between items-center mb-4 border-b border-gray-100 pb-2">
+                                <View>
+                                    <Text className="text-xs font-bold text-gray-500 uppercase">Informasi Umum</Text>
+                                    <Text className="text-sm font-bold text-gray-800 mt-1">{detail.code_do}</Text>
+                                </View>
+                                <View className={`px-2.5 py-1 rounded-md border ${getDoStatusColor(detail.status_do).bg}`}>
+                                    <Text className={`text-[10px] font-bold uppercase ${getDoStatusColor(detail.status_do).text}`}>
+                                        {detail.status_do}
+                                    </Text>
+                                </View>
+                            </View>
+
                             <Text className="text-xs font-bold text-gray-400 mb-3 uppercase">Informasi Pelanggan</Text>
 
                             <View className="mb-3">
@@ -255,6 +293,7 @@ export const DoEditScreen = () => {
                                 <Text className="text-xs text-gray-500">Alamat</Text>
                                 <Text className="text-sm text-gray-800">{detail.customers_address}</Text>
                             </View>
+
                             <View className="h-[1px] bg-gray-200 my-4 mx-[-16px]" />
                             <Text className="text-xs font-bold text-gray-400 mb-4 uppercase">Informasi Biaya Tambahan</Text>
 
@@ -317,22 +356,22 @@ export const DoEditScreen = () => {
                                     <Text className="text-xs text-gray-500 mb-1">Creation Date</Text>
                                     {isEditMode ? (
                                         <TouchableOpacity onPress={() => setShowDatePicker('date_do')} className="flex-row items-center border border-gray-200 rounded-lg p-2 bg-gray-50">
-                                            <Text className="text-sm flex-1">{formData?.date_do || '-'}</Text>
+                                            <Text className="text-sm flex-1">{formData?.date_do ? formatDate(new Date(formData.date_do)) : '-'}</Text>
                                             <Calendar size={16} color="#9ca3af" />
                                         </TouchableOpacity>
                                     ) : (
-                                        <Text className="text-sm font-medium text-gray-800">{detail.date_do}</Text>
+                                        <Text className="text-sm font-medium text-gray-800">{detail.date_do ? formatDate(new Date(detail.date_do)) : '-'}</Text>
                                     )}
                                 </View>
                                 <View className="flex-1">
                                     <Text className="text-xs text-gray-500 mb-1">Scheduled Time</Text>
                                     {isEditMode ? (
                                         <TouchableOpacity onPress={() => setShowDatePicker('date_estimasi')} className="flex-row items-center border border-gray-200 rounded-lg p-2 bg-gray-50">
-                                            <Text className="text-sm flex-1">{formData?.date_estimasi || '-'}</Text>
+                                            <Text className="text-sm flex-1">{formData?.date_estimasi ? formatDate(new Date(formData.date_estimasi)) : '-'}</Text>
                                             <Calendar size={16} color="#9ca3af" />
                                         </TouchableOpacity>
                                     ) : (
-                                        <Text className="text-sm font-medium text-gray-800">{detail.date_estimasi}</Text>
+                                        <Text className="text-sm font-medium text-gray-800">{detail.date_estimasi ? formatDate(new Date(detail.date_estimasi)) : '-'}</Text>
                                     )}
                                 </View>
                             </View>
@@ -341,11 +380,11 @@ export const DoEditScreen = () => {
                                 <Text className="text-xs text-gray-500 mb-1">Tanggal Delivered</Text>
                                 {isEditMode ? (
                                     <TouchableOpacity onPress={() => setShowDatePicker('date_delivery')} className="flex-row items-center border border-gray-200 rounded-lg p-2 bg-gray-50">
-                                        <Text className="text-sm flex-1">{formData?.date_delivery || '-'}</Text>
+                                        <Text className="text-sm flex-1">{formData?.date_delivery ? formatDate(new Date(formData.date_delivery)) : '-'}</Text>
                                         <Calendar size={16} color="#9ca3af" />
                                     </TouchableOpacity>
                                 ) : (
-                                    <Text className="text-sm font-medium text-gray-800">{detail.date_delivery || '-'}</Text>
+                                    <Text className="text-sm font-medium text-gray-800">{detail.date_delivery ? formatDate(new Date(detail.date_delivery)) : '-'}</Text>
                                 )}
                             </View>
 
@@ -374,12 +413,14 @@ export const DoEditScreen = () => {
                                 <Text className="text-sm text-gray-800 italic">{detail.keterangan_so || '-'}</Text>
                             </View>
                             <View className="h-[1px] bg-gray-200 my-4 mx-[-16px]" />
-                            <Text className="text-xs font-bold text-gray-400 mb-3 uppercase">Daftar Barang ({detail.items.length})</Text>
+                            <Text className="text-xs font-bold text-gray-400 mb-3 uppercase">Daftar Barang ({(detail?.items || (detail as any)?.details)?.length || 0})</Text>
                             <View className="mx-[-16px]">
                                 <DoProductTable
-                                    items={isEditMode ? formData?.items : detail.items}
+                                    items={isEditMode ? (formData?.items || formData?.details) : (detail?.items || (detail as any)?.details)}
                                     isEditMode={isEditMode}
                                     onUpdatePlat={updatePlat}
+                                    onUpdateSN={updateSN}
+                                    onUpdateTahun={updateTahun}
                                     onFocusPlat={handleFocusPlat}
                                 />
                             </View>
