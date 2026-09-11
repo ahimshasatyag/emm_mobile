@@ -4,6 +4,7 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Search } from 'lucide-react-native';
+import { theme } from '../../../theme/theme';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { EmptyState } from '../../../components/shared/EmptyState';
 import { ErrorState } from '../../../components/shared/ErrorState';
@@ -81,8 +82,8 @@ export const DoListScreen = () => {
 
     const filteredList = list.filter(item => {
         const matchSearch = (item.code_do || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            (item.nm_customers || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            (item.code_so || '').toLowerCase().includes(searchQuery.toLowerCase());
+            (item.nm_customers || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.code_so || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchStatus = statusFilter === 'ALL STATUS' || (item.status_do || '').toUpperCase() === statusFilter;
         return matchSearch && matchStatus;
     });
@@ -152,7 +153,7 @@ export const DoListScreen = () => {
                         if (isLoadMore) {
                             return (
                                 <View className="py-4 items-center justify-center">
-                                    <ActivityIndicator size="small" color="#2563eb" />
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
                                 </View>
                             );
                         }

@@ -1,15 +1,27 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { formatRp, formatUsd } from '../../../utils/helpers/money';
+import { formatDate } from '../../../utils/helpers/date';
 
 interface PaymentTableProps {
     detail: any;
     onEditPayment?: (payment: any) => void;
     onCairPayment?: (payment: any) => void;
     onBatalPayment?: (payment: any) => void;
+    onPiDetail?: (payment: any) => void;
+    onInvDetail?: (payment: any) => void;
+    onInvLeasingDetail?: (payment: any) => void;
 }
 
-export const PaymentTable: React.FC<PaymentTableProps> = ({ detail, onEditPayment, onCairPayment, onBatalPayment }) => {
+export const PaymentTable: React.FC<PaymentTableProps> = ({ 
+    detail, 
+    onEditPayment, 
+    onCairPayment, 
+    onBatalPayment,
+    onPiDetail,
+    onInvDetail,
+    onInvLeasingDetail
+}) => {
     return (
         <View>
             <View className="p-4 border-b border-gray-100 flex-row justify-between items-center">
@@ -22,7 +34,7 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({ detail, onEditPaymen
                     <View className="flex-row bg-gray-100 py-3 px-4 border-b border-gray-200">
                         <Text className="w-10 text-xs font-bold text-gray-600 text-center">No</Text>
                         <Text className="w-32 text-xs font-bold text-gray-600">Method</Text>
-                        <Text className="w-24 text-xs font-bold text-gray-600 text-center">Tgl</Text>
+                        <Text className="w-40 text-xs font-bold text-gray-600 text-center">Tgl</Text>
                         <Text className="w-32 text-xs font-bold text-gray-600">Ref/Keterangan</Text>
                         <Text className="w-32 text-xs font-bold text-gray-600 text-right">Amount</Text>
                         <Text className="w-24 text-xs font-bold text-gray-600 text-center">Status</Text>
@@ -30,12 +42,12 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({ detail, onEditPaymen
                     </View>
 
                     {/* Table Body */}
-                    {detail.payments && detail.payments.length > 0 ? (
-                        detail.payments.map((payment: any, index: number) => (
+                    {detail.invoice_dtl && detail.invoice_dtl.length > 0 ? (
+                        detail.invoice_dtl.map((payment: any, index: number) => (
                             <View key={payment.id_invoice_dtl} className="flex-row py-3 px-4 border-b border-gray-100 items-center">
                                 <Text className="w-10 text-sm text-gray-600 text-center">{index + 1}</Text>
                                 <Text className="w-32 text-sm text-gray-800 font-medium">{payment.nm_payment_method}</Text>
-                                <Text className="w-24 text-sm text-gray-600 text-center">{payment.date_draft}</Text>
+                                <Text className="w-40 text-sm text-gray-600 text-center">{payment.date_draft ? formatDate(new Date(payment.date_draft)) : '-'}</Text>
                                 <Text className="w-32 text-sm text-gray-600">{payment.payment_ref}</Text>
                                 <Text className="w-32 text-sm text-gray-800 text-right font-bold">{detail.vcurrency === 'USD' ? formatUsd(payment.v_amount) : formatRp(payment.v_amount)}</Text>
                                 <View className="w-24 items-center">
@@ -64,16 +76,25 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({ detail, onEditPaymen
                                     >
                                         <Text className="text-white text-xs font-bold">Batal</Text>
                                     </TouchableOpacity>
-                                    <TouchableOpacity className="bg-purple-500 px-3 py-1.5 rounded">
+                                    <TouchableOpacity 
+                                        onPress={() => onPiDetail && onPiDetail(payment)}
+                                        className="bg-purple-500 px-3 py-1.5 rounded"
+                                    >
                                         <Text className="text-white text-xs font-bold">PI</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity className="bg-orange-500 px-3 py-1.5 rounded">
                                         <Text className="text-white text-xs font-bold">Back</Text>
                                     </TouchableOpacity>
-                                    <TouchableOpacity className="bg-blue-600 px-3 py-1.5 rounded">
+                                    <TouchableOpacity 
+                                        onPress={() => onInvDetail && onInvDetail(payment)}
+                                        className="bg-blue-600 px-3 py-1.5 rounded"
+                                    >
                                         <Text className="text-white text-xs font-bold">INV</Text>
                                     </TouchableOpacity>
-                                    <TouchableOpacity className="bg-indigo-500 px-3 py-1.5 rounded">
+                                    <TouchableOpacity 
+                                        onPress={() => onInvLeasingDetail && onInvLeasingDetail(payment)}
+                                        className="bg-indigo-500 px-3 py-1.5 rounded"
+                                    >
                                         <Text className="text-white text-xs font-bold">INV Leasing</Text>
                                     </TouchableOpacity>
                                 </View>

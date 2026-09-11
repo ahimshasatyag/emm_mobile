@@ -63,6 +63,13 @@ import { DoEditSplitScreen } from '../../features/do/screens/DoEditSplitScreen';
 import DoPrintSjScreen from '../../features/do/screens/DoPrintSjScreen';
 import { CustomerInvoiceListScreen } from '../../features/customerinvoice/screens/CustomerInvoiceListScreen';
 import { CustomerInvoiceEditScreen } from '../../features/customerinvoice/screens/CustomerInvoiceEditScreen';
+import { CustomerInvoicePrintInvoiceScreen } from '../../features/customerinvoice/screens/CustomerInvoicePrintInvoiceScreen';
+import { CustomerInvoicePrintInvoice2Screen } from '../../features/customerinvoice/screens/CustomerInvoicePrintInvoice2Screen';
+import { CustomerInvoicePrintTTScreen } from '../../features/customerinvoice/screens/CustomerInvoicePrintTTScreen';
+import { CustomerInvoicePrintTT2Screen } from '../../features/customerinvoice/screens/CustomerInvoicePrintTT2Screen';
+import { CustomerInvoicePIDetailScreen } from '../../features/customerinvoice/screens/CustomerInvoicePIDetailScreen';
+import { CustomerInvoiceInvDetailScreen } from '../../features/customerinvoice/screens/CustomerInvoiceInvDetailScreen';
+import { CustomerInvoiceInvLeasingDetailScreen } from '../../features/customerinvoice/screens/CustomerInvoiceInvLeasingDetailScreen';
 import { SOPrintScreen } from '../../features/so/screens/SOPrintScreen';
 import { SOPrintQScreen } from '../../features/so/screens/SOPrintQScreen';
 import { PaymentListScreen } from '../../features/payment/screens/PaymentListScreen';
@@ -132,6 +139,13 @@ export function MainNavigator() {
             <Stack.Screen name="DoPrintSjScreen" component={DoPrintSjScreen} options={{ headerShown: false }} />
             <Stack.Screen name="CustomerInvoiceListScreen" component={CustomerInvoiceListScreen} />
             <Stack.Screen name="CustomerInvoiceEditScreen" component={CustomerInvoiceEditScreen} />
+            <Stack.Screen name="CustomerInvoicePrintInvoiceScreen" component={CustomerInvoicePrintInvoiceScreen} />
+            <Stack.Screen name="CustomerInvoicePrintInvoice2Screen" component={CustomerInvoicePrintInvoice2Screen} />
+            <Stack.Screen name="CustomerInvoicePrintTTScreen" component={CustomerInvoicePrintTTScreen} />
+            <Stack.Screen name="CustomerInvoicePrintTT2Screen" component={CustomerInvoicePrintTT2Screen} />
+            <Stack.Screen name="CustomerInvoicePIDetailScreen" component={CustomerInvoicePIDetailScreen} />
+            <Stack.Screen name="CustomerInvoiceInvDetailScreen" component={CustomerInvoiceInvDetailScreen} />
+            <Stack.Screen name="CustomerInvoiceInvLeasingDetailScreen" component={CustomerInvoiceInvLeasingDetailScreen} />
             <Stack.Screen name="SOPrintScreen" component={SOPrintScreen} options={{ headerShown: false }} />
             <Stack.Screen name="SOPrintQScreen" component={SOPrintQScreen} options={{ headerShown: false }} />
 

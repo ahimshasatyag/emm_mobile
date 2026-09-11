@@ -3,12 +3,22 @@ import { StatusBar, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { theme } from './theme/theme';
-
 import { RootNavigator } from './components/layouts/RootNavigator';
 import { ErrorState } from './components/shared/ErrorState';
 import { Loading } from './components/shared/Loading';
 import { Provider } from 'react-redux';
 import { store } from './stores';
+import { Platform } from 'react-native';
+
+if (Platform.OS === 'web') {
+    try {
+        const style = document.createElement('style');
+        style.innerHTML = `@media print { * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }`;
+        document.head.appendChild(style);
+    } catch (e) {
+        // ignore if window/document is not available in SSR
+    }
+}
 
 interface ErrorBoundaryProps {
     children: ReactNode;
@@ -41,7 +51,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             return (
                 <SafeAreaProvider>
                     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-                        <ErrorState 
+                        <ErrorState
                             title="Aplikasi Bermasalah"
                             message="Maaf, terjadi kesalahan yang tidak terduga pada aplikasi. Silakan coba muat ulang."
                             onRetry={this.handleRetry}

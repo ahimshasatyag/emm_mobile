@@ -1,16 +1,18 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { ChevronRight, FileText, Calendar, Building2, User, Banknote } from 'lucide-react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { CustomerInvoice } from '../types/customerinvoice';
 import { formatRp, formatUsd } from '../../../utils/helpers/money';
+import { formatDate } from '../../../utils/helpers/date';
 
 interface CustomerInvoiceCardProps {
     item: CustomerInvoice;
+    index: number;
     onPress: (id: string) => void;
 }
 
-export const CustomerInvoiceCard = ({ item, onPress }: CustomerInvoiceCardProps) => {
+export const CustomerInvoiceCard = ({ item, index, onPress }: CustomerInvoiceCardProps) => {
 
     const getStatusColor = (status: string) => {
         switch (status?.toUpperCase()) {
@@ -22,7 +24,7 @@ export const CustomerInvoiceCard = ({ item, onPress }: CustomerInvoiceCardProps)
     };
 
     return (
-        <Animated.View entering={FadeInDown.duration(400)}>
+        <Animated.View entering={FadeInUp.delay((index % 10) * 100).duration(400)}>
             <TouchableOpacity
                 onPress={() => onPress(item.id_invoice)}
                 activeOpacity={0.7}
@@ -49,7 +51,7 @@ export const CustomerInvoiceCard = ({ item, onPress }: CustomerInvoiceCardProps)
                     <View className="flex-1">
                         <View className="flex-row items-center mb-1.5">
                             <Calendar size={14} color="#6B7280" />
-                            <Text className="text-[12px] text-gray-600 ml-2">{item.date_invoice}</Text>
+                            <Text className="text-[12px] text-gray-600 ml-2">{item.date_invoice ? formatDate(new Date(item.date_invoice)) : '-'}</Text>
                         </View>
                         <View className="flex-row items-center">
                             <Building2 size={14} color="#6B7280" />

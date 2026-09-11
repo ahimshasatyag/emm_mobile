@@ -9,6 +9,7 @@ import { CustomerInvoiceEditSkeleton } from '../skeleton/CustomerInvoiceEditSkel
 import { ProductTable } from '../components/ProductTable';
 import { PaymentTable } from '../components/PaymentTable';
 import { PaymentModal } from '../components/PaymentModal';
+import { formatDate } from '../../../utils/helpers/date';
 import { NotifModal, NotifModalType } from '../components/NotifModal';
 import { ErrorState } from '../../../components/shared/ErrorState';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
@@ -18,7 +19,7 @@ export const CustomerInvoiceEditScreen = () => {
     const navigation = useNavigation<any>();
     const { id } = route.params;
 
-    const { detail, loading, error, getDetail, clearInvoiceDetail } = useCustomerInvoice();
+    const { detail, loadingDetail, error, getDetail, clearInvoiceDetail, submitAction, validatePayment } = useCustomerInvoice();
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
 
@@ -82,7 +83,7 @@ export const CustomerInvoiceEditScreen = () => {
                 onClose={() => setToast(prev => ({ ...prev, visible: false }))}
             />
             <HeaderNavigator
-                title={loading || !detail ? "MEMUAT DATA..." : `DETAIL ${detail.code_invoice}`}
+                title={loadingDetail || !detail ? "MEMUAT DATA..." : `DETAIL CUSTOMER INVOICE`}
                 showBackButton
                 onBackPress={() => {
                     if (route.params?.fromCreateInvoice) {
@@ -98,7 +99,7 @@ export const CustomerInvoiceEditScreen = () => {
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={['#2563eb']} />}
             >
-                {loading || !detail ? (
+                {loadingDetail || !detail ? (
                     <Animated.View key="skeleton">
                         <CustomerInvoiceEditSkeleton />
                     </Animated.View>
@@ -120,22 +121,34 @@ export const CustomerInvoiceEditScreen = () => {
                                     </TouchableOpacity>
                                 )}
 
-                                <TouchableOpacity className="bg-gray-800 flex-row items-center px-3 py-2 rounded mr-2">
+                                <TouchableOpacity
+                                    onPress={() => navigation.navigate('CustomerInvoicePrintTTScreen', { id: detail.id_invoice })}
+                                    className="bg-gray-800 flex-row items-center px-3 py-2 rounded mr-2"
+                                >
                                     <Printer size={14} color="white" />
                                     <Text className="text-white font-bold ml-1 text-xs">Print Tanda Terima 1</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity className="bg-gray-800 flex-row items-center px-3 py-2 rounded mr-2">
+                                <TouchableOpacity
+                                    onPress={() => navigation.navigate('CustomerInvoicePrintTT2Screen', { id: detail.id_invoice })}
+                                    className="bg-gray-800 flex-row items-center px-3 py-2 rounded mr-2"
+                                >
                                     <Printer size={14} color="white" />
                                     <Text className="text-white font-bold ml-1 text-xs">Print Tanda Terima 2</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity className="bg-green-600 flex-row items-center px-3 py-2 rounded mr-2">
+                                <TouchableOpacity
+                                    onPress={() => navigation.navigate('CustomerInvoicePrintInvoiceScreen', { id: detail.id_invoice })}
+                                    className="bg-green-600 flex-row items-center px-3 py-2 rounded mr-2"
+                                >
                                     <Printer size={14} color="white" />
                                     <Text className="text-white font-bold ml-1 text-xs">Print Invoice V1</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity className="bg-green-600 flex-row items-center px-3 py-2 rounded mr-4">
+                                <TouchableOpacity
+                                    onPress={() => navigation.navigate('CustomerInvoicePrintInvoice2Screen', { id: detail.id_invoice })}
+                                    className="bg-green-600 flex-row items-center px-3 py-2 rounded mr-4"
+                                >
                                     <Printer size={14} color="white" />
                                     <Text className="text-white font-bold ml-1 text-xs">Print Invoice V2</Text>
                                 </TouchableOpacity>
@@ -153,9 +166,32 @@ export const CustomerInvoiceEditScreen = () => {
 
                                     {/* Header Info */}
                                     <View className="p-4 border-b border-gray-100">
-                                        <Text className="text-sm font-bold text-gray-800 mb-3 border-b border-gray-100 pb-2">Informasi Tagihan</Text>
-
                                         <View className="space-y-3">
+                                            {/* Code Invoice + Status */}
+                                            <View className="flex-row items-end justify-between pb-3 border-b border-gray-50">
+                                                <View className="flex-1">
+                                                    <Text className="text-[10px] font-bold text-gray-400 mb-1">INFORMASI UMUM</Text>
+                                                    <Text className="text-[15px] font-extrabold text-gray-800 tracking-tight">{detail.code_invoice}</Text>
+                                                </View>
+                                                <View className={`px-3 py-1 rounded-lg border ${
+                                                    detail.status_invoice?.toUpperCase() === 'OPEN'
+                                                        ? 'bg-blue-50 border-blue-100'
+                                                        : detail.status_invoice?.toUpperCase() === 'PAID'
+                                                        ? 'bg-green-50 border-green-100'
+                                                        : 'bg-gray-50 border-gray-100'
+                                                }`}>
+                                                    <Text className={`text-[10px] font-bold ${
+                                                        detail.status_invoice?.toUpperCase() === 'OPEN'
+                                                            ? 'text-blue-600'
+                                                            : detail.status_invoice?.toUpperCase() === 'PAID'
+                                                            ? 'text-green-600'
+                                                            : 'text-gray-600'
+                                                    }`}>
+                                                        {detail.status_invoice?.toUpperCase()}
+                                                    </Text>
+                                                </View>
+                                            </View>
+
                                             <View>
                                                 <Text className="text-xs text-gray-500 mb-1">Customer</Text>
                                                 <View className="flex-row items-center">
@@ -180,7 +216,7 @@ export const CustomerInvoiceEditScreen = () => {
                                                     <Text className="text-xs text-gray-500 mb-1">Invoice Date</Text>
                                                     <View className="flex-row items-center">
                                                         <Calendar size={14} color="#4B5563" />
-                                                        <Text className="text-sm font-semibold text-gray-800 ml-2">{detail.date_invoice}</Text>
+                                                        <Text className="text-sm font-semibold text-gray-800 ml-2">{detail.date_invoice ? formatDate(new Date(detail.date_invoice)) : '-'}</Text>
                                                     </View>
                                                 </View>
                                             </View>
@@ -222,6 +258,15 @@ export const CustomerInvoiceEditScreen = () => {
                                             setNotifModalType('batal');
                                             setIsNotifModalVisible(true);
                                         }}
+                                        onPiDetail={(payment) => {
+                                            navigation.navigate('CustomerInvoicePIDetailScreen', { id: detail.id_invoice, id_invoice_dtl: payment.id_invoice_dtl });
+                                        }}
+                                        onInvDetail={(payment) => {
+                                            navigation.navigate('CustomerInvoiceInvDetailScreen', { id: detail.id_invoice, id_invoice_dtl: payment.id_invoice_dtl });
+                                        }}
+                                        onInvLeasingDetail={(payment) => {
+                                            navigation.navigate('CustomerInvoiceInvLeasingDetailScreen', { id: detail.id_invoice, id_invoice_dtl: payment.id_invoice_dtl });
+                                        }}
                                     />
                                 </View>
                             </Animated.View>
@@ -232,11 +277,23 @@ export const CustomerInvoiceEditScreen = () => {
 
             {/* Modals */}
             <PaymentModal
+                idInvoice={detail?.id_invoice || ''}
                 visible={isPaymentModalVisible}
                 onDismiss={() => setIsPaymentModalVisible(false)}
-                onSave={(data) => {
-                    setIsPaymentModalVisible(false);
-                    setToast({ visible: true, message: 'Payment berhasil disimpan!', type: 'success' });
+                onSave={async (data) => {
+                    try {
+                        await submitAction('STORE_DETAIL', {
+                            id_invoice: detail?.id_invoice,
+                            id_invoice_dtl: selectedPayment?.id_invoice_dtl ?? null,
+                            ...data
+                        });
+                        setIsPaymentModalVisible(false);
+                        setSelectedPayment(null);
+                        setToast({ visible: true, message: 'Payment berhasil disimpan!', type: 'success' });
+                        getDetail(id);
+                    } catch (e: any) {
+                        setToast({ visible: true, message: e.message || 'Gagal menyimpan payment', type: 'error' });
+                    }
                 }}
             />
 
@@ -244,8 +301,30 @@ export const CustomerInvoiceEditScreen = () => {
                 visible={isNotifModalVisible}
                 type={notifModalType}
                 onDismiss={() => setIsNotifModalVisible(false)}
-                onConfirm={(data) => {
-                    setIsNotifModalVisible(false);
+                onConfirm={async (data) => {
+                    try {
+                        if (notifModalType === 'cair') {
+                            await submitAction('GANTI_STATUS', {
+                                id_invoice_dtl: selectedPayment?.id_invoice_dtl,
+                                status: 'CAIR',
+                                tgl_status: data?.date ? new Date(data.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                            });
+                        } else if (notifModalType === 'batal') {
+                            await submitAction('GANTI_STATUS', {
+                                id_invoice_dtl: selectedPayment?.id_invoice_dtl,
+                                status: 'BATAL',
+                                tgl_status: data?.date ? new Date(data.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                                alasan: data?.reason,
+                            });
+                        }
+                        setIsNotifModalVisible(false);
+                        setSelectedPayment(null);
+                        setToast({ visible: true, message: 'Status berhasil diubah!', type: 'success' });
+                        getDetail(id);
+                    } catch (e: any) {
+                        setIsNotifModalVisible(false);
+                        setToast({ visible: true, message: e.message || 'Gagal mengubah status', type: 'error' });
+                    }
                 }}
             />
         </View>

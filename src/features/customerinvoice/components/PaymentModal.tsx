@@ -7,36 +7,35 @@ import { theme } from '../../../theme/theme';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { useCustomerInvoice } from '../hooks/useCustomerInvoice';
 import { formatInputNumber } from '../../../utils/helpers/money';
+import { formatDate } from '../../../utils/helpers/date';
 
 interface PaymentModalProps {
+    idInvoice: string | number;
     visible: boolean;
     onDismiss: () => void;
     onSave: (data: any) => void;
 }
 
-const PAYMENT_METHODS = [
-    { label: 'Transfer', value: 'transfer' },
-    { label: 'Tunai', value: 'tunai' },
-    { label: 'Giro', value: 'giro' },
-];
-
-const BANK_OPTIONS = [
-    { label: 'BCA', value: 'BCA' },
-    { label: 'Mandiri', value: 'MANDIRI' },
-    { label: 'BNI', value: 'BNI' },
-];
-
-export const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onDismiss, onSave }) => {
-    const { validatePayment } = useCustomerInvoice();
+export const PaymentModal: React.FC<PaymentModalProps> = ({ idInvoice, visible, onDismiss, onSave }) => {
+    const { validatePayment, getSupportData } = useCustomerInvoice();
     const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'error' });
     const [paymentMethod, setPaymentMethod] = useState('');
     const [amount, setAmount] = useState('');
     const [paymentDate, setPaymentDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [bank, setBank] = useState('');
+    const [noGiro, setNoGiro] = useState('');
+    const [noRetur, setNoRetur] = useState('');
+    const [noKasBank, setNoKasBank] = useState('');
     const [keterangan, setKeterangan] = useState('');
     const [isDp, setIsDp] = useState(false);
     const scrollViewRef = useRef<ScrollView>(null);
+
+    const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+    const [bankOptions, setBankOptions] = useState<any[]>([]);
+    const [returOptions, setReturOptions] = useState<any[]>([]);
+    const [kbMasukOptions, setKbMasukOptions] = useState<any[]>([]);
+    const [isLoadingData, setIsLoadingData] = useState(false);
 
     useEffect(() => {
         if (visible) {
@@ -44,20 +43,50 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onDismiss, 
             setAmount('');
             setPaymentDate(new Date());
             setBank('');
+            setNoGiro('');
+            setNoRetur('');
+            setNoKasBank('');
             setKeterangan('');
             setIsDp(false);
             setToast({ visible: false, message: '', type: 'error' });
+
+            // Fetch support data
+            if (idInvoice) {
+                setIsLoadingData(true);
+                getSupportData(idInvoice)
+                    .then((res: any) => {
+                        if (res?.status) {
+                            setPaymentMethods(res.payment_methods || []);
+                            setBankOptions(res.banks || []);
+                            setReturOptions(res.retur || []);
+                            setKbMasukOptions(res.kb_masuk || []);
+                        }
+                    })
+                    .catch(() => {
+                        setToast({ visible: true, message: 'Gagal mengambil data opsi pembayaran', type: 'error' });
+                    })
+                    .finally(() => setIsLoadingData(false));
+            }
         }
-    }, [visible]);
+    }, [visible, idInvoice, getSupportData]);
 
     const handleSave = () => {
         const payload = {
+            id_payment_method: paymentMethod, // Assuming the backend expects id_payment_method or similar; we map it below
             paymentMethod,
             amount: parseInt(amount.replace(/[^0-9]/g, '')) || 0,
+            v_amount: parseInt(amount.replace(/[^0-9]/g, '')) || 0, // In case useCustomerInvoice expects v_amount
             paymentDate,
+            date_payment: paymentDate.toISOString().split('T')[0], // Backend expects string date
             bank,
+            id_bank: bank, // backend mapping
+            code_giro: noGiro,
+            retur_penjualan_id: noRetur,
+            id_kb_masuk: noKasBank,
             keterangan,
-            isDp
+            payment_ref: keterangan, // backend mapping
+            isDp,
+            dp: isDp ? '1' : '0' // backend mapping
         };
 
         const errorMsg = validatePayment(payload);
@@ -105,12 +134,19 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onDismiss, 
                             <View className="border border-gray-200 rounded-xl bg-white">
                                 <Dropdown
                                     style={{ height: 50, paddingHorizontal: 16 }}
-                                    data={PAYMENT_METHODS}
+                                    data={paymentMethods}
                                     labelField="label"
                                     valueField="value"
-                                    placeholder="Pilih Payment Method"
+                                    placeholder={isLoadingData ? "Loading..." : "Pilih Metode Pembayaran"}
                                     value={paymentMethod}
-                                    onChange={opt => setPaymentMethod(opt.value)}
+                                    onChange={opt => {
+                                        setPaymentMethod(opt.value);
+                                        // Reset nilai jika pindah tipe pembayaran
+                                        if (opt.value !== '1' && opt.value !== '6') setBank('');
+                                        if (opt.value !== '2') setNoGiro('');
+                                        if (opt.value !== '4') setNoRetur('');
+                                        if (opt.value !== '6') setNoKasBank('');
+                                    }}
                                 />
                             </View>
                         </View>
@@ -135,7 +171,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onDismiss, 
                                 className="px-4 py-3 rounded-xl border border-gray-200 bg-white flex-row justify-between items-center"
                             >
                                 <Text className="text-gray-900">
-                                    {paymentDate.toISOString().split('T')[0]}
+                                    {formatDate(paymentDate)}
                                 </Text>
                                 <Calendar size={20} color="#9CA3AF" />
                             </TouchableOpacity>
@@ -155,20 +191,71 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onDismiss, 
                         </View>
 
                         {/* Bank Tujuan */}
-                        <View className="mb-4">
-                            <Text className="text-sm font-bold text-gray-700 mb-2">Bank Tujuan</Text>
-                            <View className="border border-gray-200 rounded-xl bg-white">
-                                <Dropdown
-                                    style={{ height: 50, paddingHorizontal: 16 }}
-                                    data={BANK_OPTIONS}
-                                    labelField="label"
-                                    valueField="value"
-                                    placeholder="Pilih Bank Tujuan"
-                                    value={bank}
-                                    onChange={opt => setBank(opt.value)}
+                        {paymentMethod !== '4' && paymentMethod !== '3' && (
+                            <View className="mb-4">
+                                <Text className="text-sm font-bold text-gray-700 mb-2">Bank Tujuan</Text>
+                                <View className="border border-gray-200 rounded-xl bg-white">
+                                    <Dropdown
+                                        style={{ height: 50, paddingHorizontal: 16 }}
+                                        data={bankOptions}
+                                        labelField="label"
+                                        valueField="value"
+                                        placeholder={isLoadingData ? "Loading..." : "Pilih Bank Tujuan"}
+                                        value={bank}
+                                        onChange={opt => setBank(opt.value)}
+                                    />
+                                </View>
+                            </View>
+                        )}
+
+                        {/* No Giro */}
+                        {paymentMethod === '2' && (
+                            <View className="mb-4">
+                                <Text className="text-sm font-bold text-gray-700 mb-2">No Giro <Text className="text-red-500">*</Text></Text>
+                                <TextInput
+                                    className="bg-white px-4 py-3 rounded-xl border border-gray-200 text-gray-900"
+                                    value={noGiro}
+                                    onChangeText={setNoGiro}
+                                    placeholder="Masukkan No Giro"
                                 />
                             </View>
-                        </View>
+                        )}
+
+                        {/* No Retur */}
+                        {paymentMethod === '4' && (
+                            <View className="mb-4">
+                                <Text className="text-sm font-bold text-gray-700 mb-2">No Retur <Text className="text-red-500">*</Text></Text>
+                                <View className="border border-gray-200 rounded-xl bg-white">
+                                    <Dropdown
+                                        style={{ height: 50, paddingHorizontal: 16 }}
+                                        data={returOptions}
+                                        labelField="label"
+                                        valueField="value"
+                                        placeholder={isLoadingData ? "Loading..." : "Pilih No Retur"}
+                                        value={noRetur}
+                                        onChange={opt => setNoRetur(opt.value)}
+                                    />
+                                </View>
+                            </View>
+                        )}
+
+                        {/* No KasBank */}
+                        {paymentMethod === '6' && (
+                            <View className="mb-4">
+                                <Text className="text-sm font-bold text-gray-700 mb-2">No KasBank <Text className="text-red-500">*</Text></Text>
+                                <View className="border border-gray-200 rounded-xl bg-white">
+                                    <Dropdown
+                                        style={{ height: 50, paddingHorizontal: 16 }}
+                                        data={kbMasukOptions}
+                                        labelField="label"
+                                        valueField="value"
+                                        placeholder={isLoadingData ? "Loading..." : "Pilih No KasBank"}
+                                        value={noKasBank}
+                                        onChange={opt => setNoKasBank(opt.value)}
+                                    />
+                                </View>
+                            </View>
+                        )}
 
                         {/* Keterangan */}
                         <View className="mb-4">
