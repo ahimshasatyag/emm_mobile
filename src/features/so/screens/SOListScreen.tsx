@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { View, Text, FlatList, TextInput, RefreshControl, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, FlatList, TextInput, RefreshControl, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
@@ -7,6 +7,8 @@ import { useSO } from '../hooks/useSO';
 import { SOCard } from '../components/SOCard';
 import { SOListSkeleton } from '../skeleton/SOSkeleton';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
+import { EmptyState } from '../../../components/shared/EmptyState';
+import { ErrorState } from '../../../components/shared/ErrorState';
 import { theme } from '../../../theme/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -16,7 +18,7 @@ type RootStackParamList = {
 
 export function SOListScreen() {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-    const { items, isLoading, loadList } = useSO();
+    const { items, isLoading, error, loadList } = useSO();
     const [search, setSearch] = useState('');
     const [isInitializing, setIsInitializing] = useState(true);
 
@@ -34,10 +36,10 @@ export function SOListScreen() {
 
     const filteredData = useMemo(() => {
         let result = [...items];
-        
+
         if (search) {
             const query = search.toLowerCase();
-            result = result.filter(item => 
+            result = result.filter(item =>
                 (item.code_so && item.code_so.toLowerCase().includes(query)) ||
                 (item.nm_customers && item.nm_customers.toLowerCase().includes(query)) ||
                 (item.nm_karyawan && item.nm_karyawan.toLowerCase().includes(query))
@@ -112,12 +114,12 @@ export function SOListScreen() {
     );
 
     return (
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
             className="flex-1 bg-gray-50"
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
             <HeaderNavigator title="SALES ORDER" />
-            
+
             <View className="px-4 py-3">
                 <View className="flex-row items-center space-x-3">
                     <View className="flex-1 flex-row items-center bg-white border border-gray-200 rounded-xl px-4 py-3.5 shadow-sm">
@@ -155,9 +157,9 @@ export function SOListScreen() {
                 data={(isLoading || isInitializing) ? [] : filteredData.slice(0, visibleCount)}
                 keyExtractor={(item) => item.id_so}
                 renderItem={({ item, index }) => (
-                    <SOCard 
-                        item={item} 
-                        index={index} 
+                    <SOCard
+                        item={item}
+                        index={index}
                         onPress={() => handlePress(item.id_so)}
                     />
                 )}
@@ -180,6 +182,16 @@ export function SOListScreen() {
                 }}
                 ListEmptyComponent={
                     () => {
+                        if (error && !isInitializing) {
+                            return (
+                                <ErrorState
+                                    title="Gagal Memuat Sales Order"
+                                    message={error}
+                                    onRetry={loadList}
+                                    fullScreen={true}
+                                />
+                            );
+                        }
                         if (isLoading || isInitializing) {
                             return (
                                 <View style={{ marginHorizontal: -16 }}>
@@ -187,11 +199,7 @@ export function SOListScreen() {
                                 </View>
                             );
                         }
-                        return (
-                            <View className="flex-1 justify-center items-center pt-20">
-                                <Text className="text-gray-500 font-medium">Data tidak ditemukan</Text>
-                            </View>
-                        );
+                        return <EmptyState title="Tidak ada data" message="Belum ada Sales Order." fullScreen={true} />;
                     }
                 }
             />

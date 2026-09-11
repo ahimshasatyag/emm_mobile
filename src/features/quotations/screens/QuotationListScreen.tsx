@@ -7,6 +7,8 @@ import { useQuotations } from '../hooks/useQuotations';
 import { QuotationCard } from '../components/QuotationCard';
 import { QuotationListSkeleton } from '../skeleton/QuotationListSkeleton';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
+import { EmptyState } from '../../../components/shared/EmptyState';
+import { ErrorState } from '../../../components/shared/ErrorState';
 import { ButtonAdd } from '../../../components/ui/buttonAdd';
 import { theme } from '../../../theme/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -18,7 +20,7 @@ type RootStackParamList = {
 
 export function QuotationListScreen() {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-    const { quotations, isLoading, refresh } = useQuotations();
+    const { quotations, isLoading, error, refresh } = useQuotations();
     const [search, setSearch] = useState('');
     const [isInitializing, setIsInitializing] = useState(true);
 
@@ -190,6 +192,16 @@ export function QuotationListScreen() {
                 }}
                 ListEmptyComponent={
                     () => {
+                        if (error && !isInitializing) {
+                            return (
+                                <ErrorState
+                                    title="Gagal Memuat Quotation"
+                                    message={error}
+                                    onRetry={refresh}
+                                    fullScreen={true}
+                                />
+                            );
+                        }
                         if (isLoading || isInitializing) {
                             return (
                                 <View style={{ marginHorizontal: -16 }}>
@@ -197,11 +209,7 @@ export function QuotationListScreen() {
                                 </View>
                             );
                         }
-                        return (
-                            <View className="flex-1 justify-center items-center pt-20">
-                                <Text className="text-gray-500 font-medium">Data tidak ditemukan</Text>
-                            </View>
-                        );
+                        return <EmptyState title="Tidak ada data" message="Belum ada Quotation." fullScreen={true} />;
                     }
                 }
             />
