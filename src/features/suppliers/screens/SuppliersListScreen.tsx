@@ -1,10 +1,9 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { View, TextInput, FlatList, RefreshControl } from 'react-native';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { View, TextInput, FlatList, RefreshControl, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { theme } from '../../../theme/theme';
 import { Search, Building2 } from 'lucide-react-native';
-import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { useSuppliers } from '../hooks/useSuppliers';
 import { SupplierCard } from '../components/SupplierCard';
 import { SuppliersSkeleton } from '../skeleton/SuppliersSkeleton';
@@ -17,6 +16,8 @@ export function SuppliersListScreen() {
     const { suppliers, isLoading, isRefreshing, error, loadSuppliers, refreshSuppliers } = useSuppliers();
     const [searchQuery, setSearchQuery] = useState('');
     const [isInitializing, setIsInitializing] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
     useFocusEffect(
         useCallback(() => {
@@ -45,12 +46,26 @@ export function SuppliersListScreen() {
     const filteredData = useMemo(() => {
         if (!searchQuery) return suppliers;
         const query = searchQuery.toLowerCase();
-        return suppliers.filter(item => 
-            item.nm_suppliers.toLowerCase().includes(query) ||
-            item.id_suppliers.toLowerCase().includes(query) ||
+        return suppliers.filter(item =>
+            item.nm_suppliers?.toLowerCase().includes(query) ||
+            item.id_suppliers?.toString().toLowerCase().includes(query) ||
             (item.suppliers_email && item.suppliers_email.toLowerCase().includes(query))
         );
     }, [suppliers, searchQuery]);
+
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, suppliers]);
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < filteredData.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, filteredData.length, isLoadMore]);
 
     const onRefresh = useCallback(() => {
         refreshSuppliers();
@@ -61,7 +76,10 @@ export function SuppliersListScreen() {
     };
 
     return (
-        <View className="flex-1 bg-gray-50">
+        <KeyboardAvoidingView
+            className="flex-1 bg-gray-50"
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
             <HeaderNavigator title="SUPPLIERS" />
 
             <View className="px-4 py-3">
@@ -77,57 +95,64 @@ export function SuppliersListScreen() {
                 </View>
             </View>
 
-            <View className="flex-1">
-                <FlatList
-                    data={(isLoading || isInitializing || isRefreshing) ? [] : filteredData}
-                    keyExtractor={(item) => item.id_suppliers}
-                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
-                    showsVerticalScrollIndicator={false}
-                    renderItem={({ item, index }) => (
-                        <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
-                            <SupplierCard
-                                supplier={item}
-                                onPress={() => navigateToDetail(item.id_suppliers)}
-                            />
-                        </Animated.View>
-                    )}
-                    refreshControl={
-                        <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
-                    }
-                    ListEmptyComponent={() => {
-                        if (error) {
-                            return (
-                                <ErrorState
-                                    title="Gagal Memuat Data"
-                                    message={error}
-                                    onRetry={loadSuppliers}
-                                    fullScreen={true}
-                                />
-                            );
-                        }
-                        if (isLoading || isInitializing || isRefreshing) {
-                            return (
-                                <View style={{ marginHorizontal: -16 }}>
-                                    <Animated.View exiting={FadeOut.duration(300)}>
-                                        <SuppliersSkeleton />
-                                    </Animated.View>
-                                </View>
-                            );
-                        }
+            <FlatList
+                className="flex-1"
+                data={(isLoading || isInitializing || isRefreshing) ? [] : filteredData.slice(0, visibleCount)}
+                keyExtractor={(item) => item.id_suppliers?.toString()}
+                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+                showsVerticalScrollIndicator={false}
+                onEndReached={handleLoadMore}
+                onEndReachedThreshold={0.5}
+                renderItem={({ item, index }) => (
+                    <SupplierCard
+                        supplier={item}
+                        index={index}
+                        onPress={() => navigateToDetail(item.id_suppliers)}
+                    />
+                )}
+                refreshControl={
+                    <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
+                }
+                ListFooterComponent={() => {
+                    if (isLoadMore) {
                         return (
-                            <EmptyState
-                                title="Data Kosong"
-                                message="Tidak ada supplier yang ditemukan."
+                            <View className="py-4 items-center justify-center">
+                                <ActivityIndicator size="small" color={theme.colors.primary} />
+                            </View>
+                        );
+                    }
+                    return null;
+                }}
+                ListEmptyComponent={() => {
+                    if (error) {
+                        return (
+                            <ErrorState
+                                title="Gagal Memuat Data"
+                                message={error}
+                                onRetry={loadSuppliers}
                                 fullScreen={true}
                             />
                         );
-                    }}
-                />
-            </View>
-
+                    }
+                    if (isLoading || isInitializing || isRefreshing) {
+                        return (
+                            <View style={{ marginHorizontal: -16 }}>
+                                <SuppliersSkeleton />
+                            </View>
+                        );
+                    }
+                    return (
+                        <EmptyState
+                            title="Data Kosong"
+                            message="Tidak ada supplier yang ditemukan."
+                            fullScreen={true}
+                        />
+                    );
+                }}
+            />
             {(!isLoading && !isInitializing && !isRefreshing) && (
                 <ButtonAdd onPress={() => navigation.navigate('SuppliersFormScreen')} />
             )}
-        </View>
+        </KeyboardAvoidingView>
     );
 }

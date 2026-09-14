@@ -14,8 +14,8 @@ export interface Supplier {
     suppliers_phone: string;
     suppliers_fax: string;
     suppliers_website: string;
-    mata_uang: string;
+    id_mata_uang: string;
     suppliers_logo: string | null;
     qty_purchase?: number;
-    contacts: SupplierContact[];
+    contacts?: SupplierContact[];
 }

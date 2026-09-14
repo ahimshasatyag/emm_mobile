@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Supplier } from '../types/suppliers.types';
-import { DUMMY_SUPPLIERS } from '../data/suppliers.data';
 
 interface SuppliersState {
     suppliers: Supplier[];
@@ -9,7 +8,7 @@ interface SuppliersState {
 }
 
 const initialState: SuppliersState = {
-    suppliers: DUMMY_SUPPLIERS,
+    suppliers: [],
     isLoading: false,
     error: null,
 };

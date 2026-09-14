@@ -22,6 +22,7 @@ export function SuppliersEditScreen() {
     const navigation = useNavigation();
     const route = useRoute<any>();
     const id = route.params?.id;
+    const { loadSupportData, submitSupplier } = useSuppliers();
 
     const [formData, setFormData] = useState({
         nm_suppliers: '',
@@ -31,9 +32,11 @@ export function SuppliersEditScreen() {
         suppliers_phone: '',
         suppliers_fax: '',
         suppliers_website: '',
-        mata_uang: 'IDR'
+        id_mata_uang: '1',
+        suppliers_logo: null as string | null
     });
 
+    const [mataUangs, setMataUangs] = useState<any[]>([]);
     const [contacts, setContacts] = useState<SupplierContact[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [isLoadingDetail, setIsLoadingDetail] = useState(true);
@@ -64,6 +67,18 @@ export function SuppliersEditScreen() {
         }
     }, [route.params?.showSuccessToast]);
 
+    useEffect(() => {
+        const fetchSupport = async () => {
+            try {
+                const res = await loadSupportData();
+                setMataUangs(res.mata_uangs || []);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        fetchSupport();
+    }, [loadSupportData]);
+
     const loadDetail = useCallback(async (supplierId: string, mode: 'initial' | 'refresh' | 'silent' = 'initial') => {
         if (mode === 'initial') {
             setIsLoadingDetail(true);
@@ -75,16 +90,17 @@ export function SuppliersEditScreen() {
             const data = await getSupplierById(supplierId);
             if (data) {
                 setFormData({
-                    nm_suppliers: data.nm_suppliers || '',
-                    suppliers_mobile: data.suppliers_mobile || '',
-                    suppliers_email: data.suppliers_email || '',
-                    suppliers_address: data.suppliers_address || '',
-                    suppliers_phone: data.suppliers_phone || '',
-                    suppliers_fax: data.suppliers_fax || '',
-                    suppliers_website: data.suppliers_website || '',
-                    mata_uang: data.mata_uang || 'IDR'
+                    nm_suppliers: data.data?.nm_suppliers || '',
+                    suppliers_mobile: data.data?.suppliers_mobile || '',
+                    suppliers_email: data.data?.suppliers_email || '',
+                    suppliers_address: data.data?.suppliers_address || '',
+                    suppliers_phone: data.data?.suppliers_phone || '',
+                    suppliers_fax: data.data?.suppliers_fax || '',
+                    suppliers_website: data.data?.suppliers_website || '',
+                    id_mata_uang: data.data?.id_mata_uang?.toString() || '1',
+                    suppliers_logo: data.data?.suppliers_logo ? `http://192.168.1.101:8001/assets/upload/${data.data.suppliers_logo}` : null
                 });
-                setContacts(data.contacts || []);
+                setContacts(data.data_item || []);
             }
         } catch (error) {
             setToast({ visible: true, type: 'error', message: 'Gagal memuat detail supplier' });
@@ -178,11 +194,42 @@ export function SuppliersEditScreen() {
         setIsModalVisible(false);
         setIsSaving(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const formPayload = new FormData();
+            formPayload.append('nm_suppliers', formData.nm_suppliers);
+            formPayload.append('suppliers_mobile', formData.suppliers_mobile);
+            formPayload.append('suppliers_email', formData.suppliers_email);
+            formPayload.append('suppliers_address', formData.suppliers_address);
+            formPayload.append('suppliers_phone', formData.suppliers_phone);
+            formPayload.append('suppliers_fax', formData.suppliers_fax);
+            formPayload.append('suppliers_website', formData.suppliers_website);
+            formPayload.append('mata_uang', formData.id_mata_uang); // API uses mata_uang for id_mata_uang
+
+            if (formData.suppliers_logo && !formData.suppliers_logo.startsWith('http')) {
+                const uri = formData.suppliers_logo;
+                const fileType = uri.substring(uri.lastIndexOf('.') + 1);
+                formPayload.append('file', {
+                    uri,
+                    name: `logo.${fileType}`,
+                    type: `image/${fileType === 'jpg' ? 'jpeg' : fileType}`,
+                } as any);
+            }
+
+            formPayload.append('jml', contacts.length.toString());
+            contacts.forEach((contact, index) => {
+                const i = index + 1;
+                formPayload.append(`nm_suppliers_contact${i}`, contact.nm_suppliers_contact);
+                formPayload.append(`suppliers_contact_posisi${i}`, contact.suppliers_contact_posisi || '');
+                formPayload.append(`suppliers_contact_phone${i}`, contact.suppliers_contact_phone || '');
+                formPayload.append(`suppliers_contact_email${i}`, contact.suppliers_contact_email || '');
+            });
+
+            await submitSupplier(formPayload, true, id);
+            
             setToast({ visible: true, type: 'success', message: 'Perubahan berhasil disimpan' });
             setIsEditMode(false);
-        } catch (error) {
-            setToast({ visible: true, type: 'error', message: 'Gagal menyimpan perubahan' });
+            loadDetail(id, 'silent');
+        } catch (error: any) {
+            setToast({ visible: true, type: 'error', message: error.message || 'Gagal menyimpan perubahan' });
         } finally {
             setIsSaving(false);
         }
@@ -311,15 +358,12 @@ export function SuppliersEditScreen() {
                                     <View className={`border rounded-xl ${!isEditMode ? 'bg-gray-100 border-gray-200' : 'bg-gray-50 border-gray-200'}`}>
                                         <Dropdown
                                             style={{ height: 48, paddingHorizontal: 16 }}
-                                            data={[
-                                                { label: 'IDR', value: 'IDR' },
-                                                { label: 'USD', value: 'USD' }
-                                            ]}
+                                            data={mataUangs.map(mu => ({ label: mu.mata_uang, value: mu.id_mata_uang.toString() }))}
                                             labelField="label"
                                             valueField="value"
                                             placeholder="Mata Uang"
-                                            value={formData.mata_uang}
-                                            onChange={item => isEditMode && setFormData(prev => ({ ...prev, mata_uang: item.value }))}
+                                            value={formData.id_mata_uang}
+                                            onChange={item => isEditMode && setFormData(prev => ({ ...prev, id_mata_uang: item.value }))}
                                             disable={!isEditMode}
                                         />
                                     </View>

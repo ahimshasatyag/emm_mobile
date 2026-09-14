@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, RefreshControl, Image, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
@@ -15,10 +15,11 @@ import { theme } from '../../../theme/theme';
 import { Dropdown } from 'react-native-element-dropdown';
 import * as DocumentPicker from 'expo-document-picker';
 import { Plus, UploadCloud, Save } from 'lucide-react-native';
-import { validateForm } from '../hooks/useSuppliers';
+import { validateForm, useSuppliers } from '../hooks/useSuppliers';
 
 export function SuppliersFormScreen() {
     const navigation = useNavigation();
+    const { loadSupportData, submitSupplier } = useSuppliers();
 
     const [formData, setFormData] = useState({
         nm_suppliers: '',
@@ -28,9 +29,11 @@ export function SuppliersFormScreen() {
         suppliers_phone: '',
         suppliers_fax: '',
         suppliers_website: '',
-        mata_uang: 'IDR'
+        id_mata_uang: '1', // Default IDR id is typically 1, we can just bind to whatever is first
+        suppliers_logo: null as string | null
     });
 
+    const [mataUangs, setMataUangs] = useState<any[]>([]);
     const [contacts, setContacts] = useState<SupplierContact[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -46,6 +49,24 @@ export function SuppliersFormScreen() {
 
     const [contactModalVisible, setContactModalVisible] = useState(false);
     const [editingContactIndex, setEditingContactIndex] = useState<number | null>(null);
+
+    useEffect(() => {
+        const fetchSupport = async () => {
+            setIsRefreshing(true);
+            try {
+                const res = await loadSupportData();
+                setMataUangs(res.mata_uangs || []);
+                if (res.mata_uangs && res.mata_uangs.length > 0) {
+                    setFormData(prev => ({ ...prev, id_mata_uang: res.mata_uangs[0].id_mata_uang.toString() }));
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setIsRefreshing(false);
+            }
+        };
+        fetchSupport();
+    }, [loadSupportData]);
 
     const onRefresh = useCallback(() => {
         setIsRefreshing(true);
@@ -79,7 +100,7 @@ export function SuppliersFormScreen() {
             const result = await DocumentPicker.getDocumentAsync({
                 type: 'image/*',
             });
-            if (!result.canceled) {
+            if (!result.canceled && result.assets && result.assets.length > 0) {
                 setFormData(prev => ({ ...prev, suppliers_logo: result.assets[0].uri }));
             }
         } catch (error) {
@@ -119,17 +140,44 @@ export function SuppliersFormScreen() {
         setIsModalVisible(false);
         setIsSaving(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            const newId = Date.now().toString(); // Simulate new ID
-            console.log('Saved Supplier:', { ...formData, contacts, id_suppliers: newId });
+            const formPayload = new FormData();
+            formPayload.append('nm_suppliers', formData.nm_suppliers);
+            formPayload.append('suppliers_mobile', formData.suppliers_mobile);
+            formPayload.append('suppliers_email', formData.suppliers_email);
+            formPayload.append('suppliers_address', formData.suppliers_address);
+            formPayload.append('suppliers_phone', formData.suppliers_phone);
+            formPayload.append('suppliers_fax', formData.suppliers_fax);
+            formPayload.append('suppliers_website', formData.suppliers_website);
+            formPayload.append('mata_uang', formData.id_mata_uang); // API uses mata_uang for id_mata_uang
+
+            if (formData.suppliers_logo) {
+                const uri = formData.suppliers_logo;
+                const fileType = uri.substring(uri.lastIndexOf('.') + 1);
+                formPayload.append('file', {
+                    uri,
+                    name: `logo.${fileType}`,
+                    type: `image/${fileType === 'jpg' ? 'jpeg' : fileType}`,
+                } as any);
+            }
+
+            formPayload.append('jml', contacts.length.toString());
+            contacts.forEach((contact, index) => {
+                const i = index + 1;
+                formPayload.append(`nm_suppliers_contact${i}`, contact.nm_suppliers_contact);
+                formPayload.append(`suppliers_contact_posisi${i}`, contact.suppliers_contact_posisi || '');
+                formPayload.append(`suppliers_contact_phone${i}`, contact.suppliers_contact_phone || '');
+                formPayload.append(`suppliers_contact_email${i}`, contact.suppliers_contact_email || '');
+            });
+
+            const res = await submitSupplier(formPayload, false);
             
             (navigation as any).replace('SuppliersEditScreen', {
-                id: newId,
+                id: res.kode,
                 showSuccessToast: true,
                 successMessage: 'Supplier berhasil ditambahkan!'
             });
-        } catch (error) {
-            setToast({ visible: true, type: 'error', message: 'Gagal menyimpan data supplier' });
+        } catch (error: any) {
+            setToast({ visible: true, type: 'error', message: error.message || 'Gagal menyimpan data supplier' });
         } finally {
             setIsSaving(false);
         }
@@ -250,15 +298,12 @@ export function SuppliersFormScreen() {
                                     <View className="border border-gray-200 rounded-xl bg-gray-50">
                                         <Dropdown
                                             style={{ height: 48, paddingHorizontal: 16 }}
-                                            data={[
-                                                { label: 'IDR', value: 'IDR' },
-                                                { label: 'USD', value: 'USD' }
-                                            ]}
+                                            data={mataUangs.map(mu => ({ label: mu.mata_uang, value: mu.id_mata_uang.toString() }))}
                                             labelField="label"
                                             valueField="value"
                                             placeholder="Mata Uang"
-                                            value={formData.mata_uang}
-                                            onChange={item => setFormData(prev => ({ ...prev, mata_uang: item.value }))}
+                                            value={formData.id_mata_uang}
+                                            onChange={item => setFormData(prev => ({ ...prev, id_mata_uang: item.value }))}
                                         />
                                     </View>
                                 </View>
