@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, RefreshControl, TextInput, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { View, FlatList, RefreshControl, TextInput, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { Plus, Search } from 'lucide-react-native';
+import { Search } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSurvey } from '../hooks/useSurvey';
@@ -9,7 +9,6 @@ import { SurveyCard } from '../components/SurveyCard';
 import { SurveyListSkeleton } from '../skeleton/SurveySkeleton';
 import { theme } from '../../../theme/theme';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
-import { ButtonAdd } from '../../../components/ui/buttonAdd';
 import { ErrorState } from '../../../components/shared/ErrorState';
 import { EmptyState } from '../../../components/shared/EmptyState';
 
@@ -26,19 +25,31 @@ export function SurveyListScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [isInitializing, setIsInitializing] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
+    const flatListRef = useRef<FlatList>(null);
+    const isNavigatingToDetail = useRef(false);
 
     useFocusEffect(
         useCallback(() => {
             let isActive = true;
 
+            if (!isNavigatingToDetail.current) {
+                setSearchQuery('');
+            }
+            isNavigatingToDetail.current = false;
+
             const init = async () => {
-                if (isActive) {
-                    setIsInitializing(true);
-                    await loadSurveys();
-                    // Add a small delay so skeleton is visible on first load
-                    setTimeout(() => {
-                        if (isActive) setIsInitializing(false);
-                    }, 500);
+                setIsInitializing(true);
+                try {
+                    await Promise.all([
+                        loadSurveys(),
+                        new Promise(resolve => setTimeout(resolve, 800))
+                    ]);
+                } catch (e) {
+                    // ignore
+                } finally {
+                    if (isActive) setIsInitializing(false);
                 }
             };
 
@@ -53,16 +64,31 @@ export function SurveyListScreen() {
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
+        setVisibleCount(10);
         await loadSurveys();
-        setTimeout(() => {
-            setIsRefreshing(false);
-        }, 800); // Simulate network delay to show skeleton
+        setTimeout(() => setIsRefreshing(false), 800);
     };
 
-    const filteredSurveys = surveys.filter(s => 
-        s.code_survey.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.nm_customers.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredSurveys = useMemo(() => {
+        return surveys.filter(s =>
+            s.code_survey?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (s.nm_customers || '').toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [surveys, searchQuery]);
+
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, surveys]);
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < filteredSurveys.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, filteredSurveys.length, isLoadMore]);
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -83,53 +109,66 @@ export function SurveyListScreen() {
             </Animated.View>
 
             <View className="flex-1">
-                <Animated.FlatList
-                    entering={FadeInDown}
-                    data={(isLoading || isInitializing || isRefreshing) ? [] : filteredSurveys}
-                    keyExtractor={(item) => item.id_survey}
-                    renderItem={({ item }) => (
-                        <SurveyCard
-                            survey={item}
-                            onPress={() => navigation.navigate('SurveyEdit', { id: item.id_survey })}
-                        />
-                    )}
-                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
-                    showsVerticalScrollIndicator={false}
-                    refreshControl={
-                        <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
-                    }
-                    ListEmptyComponent={() => {
-                        if (error) {
+                <Animated.View entering={FadeInDown} className="flex-1">
+                    <FlatList
+                        ref={flatListRef}
+                        data={(isLoading || isInitializing || isRefreshing) ? [] : filteredSurveys.slice(0, visibleCount)}
+                        keyExtractor={(item) => item.id_survey}
+                        renderItem={({ item }) => (
+                            <SurveyCard
+                                survey={item}
+                                onPress={() => {
+                                    isNavigatingToDetail.current = true;
+                                    navigation.navigate('SurveyEdit', { id: item.id_survey });
+                                }}
+                            />
+                        )}
+                        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+                        showsVerticalScrollIndicator={false}
+                        onEndReached={handleLoadMore}
+                        onEndReachedThreshold={0.5}
+                        refreshControl={
+                            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
+                        }
+                        ListFooterComponent={() => {
+                            if (isLoadMore) {
+                                return (
+                                    <View className="py-4 items-center justify-center">
+                                        <ActivityIndicator size="small" color={theme.colors.primary} />
+                                    </View>
+                                );
+                            }
+                            return null;
+                        }}
+                        ListEmptyComponent={() => {
+                            if (error && !isInitializing) {
+                                return (
+                                    <ErrorState
+                                        title="Gagal Memuat Survey"
+                                        message={error}
+                                        onRetry={loadSurveys}
+                                        fullScreen={true}
+                                    />
+                                );
+                            }
+                            if (isLoading || isInitializing || isRefreshing) {
+                                return (
+                                    <View style={{ marginHorizontal: -16 }}>
+                                        <SurveyListSkeleton />
+                                    </View>
+                                );
+                            }
                             return (
-                                <ErrorState
-                                    title="Gagal Memuat Survey"
-                                    message={error}
-                                    onRetry={loadSurveys}
+                                <EmptyState
+                                    title="Data Survey Kosong"
+                                    message="Tidak ada survey yang ditemukan."
                                     fullScreen={true}
                                 />
                             );
-                        }
-                        if (isLoading || isInitializing || isRefreshing) {
-                            return (
-                                <View style={{ marginHorizontal: -16 }}>
-                                    <SurveyListSkeleton />
-                                </View>
-                            );
-                        }
-                        return (
-                            <EmptyState
-                                title="Data Survey Kosong"
-                                message="Tidak ada survey yang ditemukan."
-                                fullScreen={true}
-                            />
-                        );
-                    }}
-                />
+                        }}
+                    />
+                </Animated.View>
             </View>
-
-            {(!isLoading && !isInitializing && !isRefreshing) && !error && (
-                <ButtonAdd onPress={() => navigation.navigate('SurveyForm')} />
-            )}
         </View>
     );
 }

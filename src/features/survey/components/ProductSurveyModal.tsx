@@ -3,13 +3,13 @@ import { View, Text, Modal, TouchableOpacity, ScrollView, TextInput } from 'reac
 import { X } from 'lucide-react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { Button } from '../../../components/ui/button';
-import { SurveyItem } from '../types/survey.types';
 
 interface ProductSurveyModalProps {
     visible: boolean;
     onClose: () => void;
-    onSave: (item: SurveyItem) => void;
-    initialData?: SurveyItem | null;
+    onSave: (item: any) => void;
+    initialData?: any | null;
+    sourceData?: any[] | null;
 }
 
 const TextInputStyled = ({ label, placeholder, value, onChangeText, multiline, keyboardType, readonly }: any) => (
@@ -49,15 +49,12 @@ const DropdownStyled = ({ label, placeholder, data, value, onChange, disabled }:
     </View>
 );
 
-export function ProductSurveyModal({ visible, onClose, onSave, initialData }: ProductSurveyModalProps) {
-    const [formData, setFormData] = React.useState<SurveyItem>({
-        product_code: '',
-        product_name: '',
-        status_barang: 'READY',
-        harga: '',
-        qty: '1',
-        satuan: 'PCS',
-        delivery_term: 'FRANCO JKT'
+export function ProductSurveyModal({ visible, onClose, onSave, initialData, sourceData }: ProductSurveyModalProps) {
+    const [formData, setFormData] = React.useState<any>({
+        id_product: '',
+        code_product: '',
+        nm_product: '',
+        product_berat: '0',
     });
 
     React.useEffect(() => {
@@ -66,24 +63,41 @@ export function ProductSurveyModal({ visible, onClose, onSave, initialData }: Pr
                 setFormData(initialData);
             } else {
                 setFormData({
-                    product_code: '',
-                    product_name: '',
-                    status_barang: 'READY',
-                    harga: '',
-                    qty: '1',
-                    satuan: 'PCS',
-                    delivery_term: 'FRANCO JKT'
+                    id_product: '',
+                    code_product: '',
+                    nm_product: '',
+                    product_berat: '0',
                 });
             }
         }
     }, [visible, initialData]);
 
     const handleSave = () => {
-        if (!formData.product_name || !formData.harga || !formData.qty) {
+        if (!formData.id_product) {
             return;
         }
         onSave(formData);
     };
+
+    const handleProductSelect = (val: string) => {
+        const selected = sourceData?.find(p => p.id_product.toString() === val);
+        if (selected) {
+            setFormData((prev: any) => ({
+                ...prev,
+                id_product: selected.id_product.toString(),
+                code_product: selected.code_product,
+                nm_product: selected.nm_product,
+            }));
+        } else {
+            // It might be a custom id_product if there's no SO, but let's assume we need an SO product
+            setFormData((prev: any) => ({ ...prev, id_product: val }));
+        }
+    };
+
+    const productOptions = sourceData?.map(p => ({
+        label: `${p.code_product} - ${p.nm_product}`,
+        value: p.id_product.toString()
+    })) || [];
 
     return (
         <Modal visible={visible} animationType="slide" transparent>
@@ -100,64 +114,26 @@ export function ProductSurveyModal({ visible, onClose, onSave, initialData }: Pr
 
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <View className="space-y-4 mb-8">
-                            <TextInputStyled
-                                label="Kode Barang"
-                                placeholder="Pilih/Ketik Kode..."
-                                value={formData.product_code}
-                                onChangeText={(v: string) => setFormData(prev => ({ ...prev, product_code: v }))}
+                            <DropdownStyled
+                                label="Pilih Produk dari SO"
+                                placeholder="Pilih Produk..."
+                                data={productOptions}
+                                value={formData.id_product}
+                                onChange={handleProductSelect}
                             />
 
                             <TextInputStyled
                                 label="Nama Barang"
-                                placeholder="Pilih/Ketik Nama Barang..."
-                                value={formData.product_name}
-                                onChangeText={(v: string) => setFormData(prev => ({ ...prev, product_name: v }))}
-                            />
-
-                            <DropdownStyled
-                                label="Status Barang"
-                                placeholder="Pilih Status"
-                                data={[
-                                    { label: 'READY', value: 'READY' },
-                                    { label: 'INDENT', value: 'INDENT' }
-                                ]}
-                                value={formData.status_barang}
-                                onChange={(v: string) => setFormData(prev => ({ ...prev, status_barang: v }))}
+                                value={formData.nm_product}
+                                readonly
                             />
 
                             <TextInputStyled
-                                label="Harga (Rp)"
+                                label="Estimasi Berat Barang (Optional)"
                                 placeholder="0"
-                                value={formData.harga}
-                                onChangeText={(v: string) => setFormData(prev => ({ ...prev, harga: v }))}
+                                value={formData.product_berat}
+                                onChangeText={(v: string) => setFormData((prev: any) => ({ ...prev, product_berat: v }))}
                                 keyboardType="numeric"
-                            />
-
-                            <View className="flex-row gap-4">
-                                <View className="flex-1">
-                                    <TextInputStyled
-                                        label="Qty"
-                                        placeholder="1"
-                                        value={formData.qty}
-                                        onChangeText={(v: string) => setFormData(prev => ({ ...prev, qty: v }))}
-                                        keyboardType="numeric"
-                                    />
-                                </View>
-                                <View className="flex-1">
-                                    <TextInputStyled
-                                        label="Satuan"
-                                        placeholder="PCS"
-                                        value={formData.satuan}
-                                        onChangeText={(v: string) => setFormData(prev => ({ ...prev, satuan: v }))}
-                                    />
-                                </View>
-                            </View>
-
-                            <TextInputStyled
-                                label="Delivery Term"
-                                placeholder="FRANCO JKT"
-                                value={formData.delivery_term}
-                                onChangeText={(v: string) => setFormData(prev => ({ ...prev, delivery_term: v }))}
                             />
                         </View>
                     </ScrollView>

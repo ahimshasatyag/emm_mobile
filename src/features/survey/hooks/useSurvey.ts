@@ -1,66 +1,82 @@
 import { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../../stores';
-import { Survey } from '../types/survey.types';
-import { setLoading, setError, addSurvey, updateSurvey } from '../stores/surveySlice';
-import { createSurveyApi, updateSurveyApi } from '../api/surveyApi';
+import { AppDispatch, RootState } from '../../../stores';
+import { 
+    fetchSurveys, 
+    fetchSurveySupportData,
+    getSurveyById,
+    createSurvey,
+    updateSurvey,
+    clearCurrentSurvey,
+    clearError
+} from '../stores/surveySlice';
+import { surveyApi } from '../api/surveyApi';
 
 export const useSurvey = () => {
-    const dispatch = useDispatch();
-    const { surveys, isLoading, error } = useSelector((state: RootState) => state.survey);
+    const dispatch = useDispatch<AppDispatch>();
+    const { surveys, currentSurvey, supportData, isLoading, error } = useSelector((state: RootState) => state.survey);
 
     const loadSurveys = useCallback(async () => {
-        dispatch(setLoading(true));
-        try {
-            // In a real app we'd fetch from API and dispatch setSurveys
-            // Here we just use the initial state dummy data
-            dispatch(setError(null));
-        } catch (err: any) {
-            dispatch(setError(err.message));
-        } finally {
-            dispatch(setLoading(false));
-        }
+        return await dispatch(fetchSurveys()).unwrap();
     }, [dispatch]);
 
-    const getSurvey = useCallback((id: string) => {
-        return surveys.find((s) => s.id_survey === id);
-    }, [surveys]);
+    const loadSupportData = useCallback(async (id_so?: string) => {
+        return await dispatch(fetchSurveySupportData(id_so)).unwrap();
+    }, [dispatch]);
 
-    const createNewSurvey = async (survey: Survey) => {
-        dispatch(setLoading(true));
-        try {
-            const newSurvey = await createSurveyApi(survey);
-            dispatch(addSurvey(newSurvey));
-            return newSurvey;
-        } catch (err: any) {
-            dispatch(setError(err.message));
-            throw err;
-        } finally {
-            dispatch(setLoading(false));
-        }
-    };
+    const loadSurveyDetail = useCallback(async (id: string) => {
+        return await dispatch(getSurveyById(id)).unwrap();
+    }, [dispatch]);
 
-    const modifySurvey = async (survey: Survey) => {
-        dispatch(setLoading(true));
-        try {
-            const updatedSurvey = await updateSurveyApi(survey);
-            dispatch(updateSurvey(updatedSurvey));
-            return updatedSurvey;
-        } catch (err: any) {
-            dispatch(setError(err.message));
-            throw err;
-        } finally {
-            dispatch(setLoading(false));
-        }
-    };
+    const createNewSurvey = useCallback(async (data: any) => {
+        return await dispatch(createSurvey(data)).unwrap();
+    }, [dispatch]);
+
+    const modifySurvey = useCallback(async (id: string, data: any) => {
+        return await dispatch(updateSurvey({ id, data })).unwrap();
+    }, [dispatch]);
+
+    const resetCurrent = useCallback(() => {
+        dispatch(clearCurrentSurvey());
+    }, [dispatch]);
+
+    const dismissError = useCallback(() => {
+        dispatch(clearError());
+    }, [dispatch]);
+
+    // Extra Actions (can be called directly via API without changing Redux state, or you can add them to Redux later)
+    const handleCancelSurvey = useCallback(async (id: string) => {
+        return await surveyApi.cancelSurvey(id);
+    }, []);
+
+    const handleConfirmSurvey = useCallback(async (id: string) => {
+        return await surveyApi.confirmSurvey(id);
+    }, []);
+
+    const handleUpdateAfs = useCallback(async (id: string, data: any) => {
+        return await surveyApi.updateAfs(id, data);
+    }, []);
+
+    const handleUpdateGudang = useCallback(async (id: string, data: any) => {
+        return await surveyApi.updateGudang(id, data);
+    }, []);
 
     return {
         surveys,
+        currentSurvey,
+        supportData,
         isLoading,
         error,
         loadSurveys,
-        getSurvey,
+        loadSupportData,
+        loadSurveyDetail,
         createNewSurvey,
-        modifySurvey
+        modifySurvey,
+        resetCurrent,
+        dismissError,
+        cancelSurvey: handleCancelSurvey,
+        confirmSurvey: handleConfirmSurvey,
+        updateAfs: handleUpdateAfs,
+        updateGudang: handleUpdateGudang
     };
 };

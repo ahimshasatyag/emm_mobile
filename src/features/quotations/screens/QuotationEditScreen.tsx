@@ -421,7 +421,7 @@ export function QuotationEditScreen() {
                     message: "Apakah Anda yakin ingin menuju ke halaman pengajuan survey?",
                     onConfirm: () => {
                         setActiveModal(null);
-                        navigation.navigate('QuotationEditSurvey', { showSurveyToast: true });
+                        navigation.navigate('SurveyForm');
                     },
                     confirmText: "Ya, Lanjutkan"
                 };
