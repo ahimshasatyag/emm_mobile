@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
+import { notificationService } from '../../../services/notification/notificationService';
 import {
     fetchSalesContracts,
     getSalesContractById,
@@ -15,6 +16,7 @@ import { SalesContract } from '../types/salescontract.types';
 
 export function useSalesContract() {
     const dispatch = useAppDispatch();
+    const authUser = useAppSelector((state) => state.auth.user);
     const {
         items,
         soWithoutContracts,
@@ -40,13 +42,35 @@ export function useSalesContract() {
         dispatch(getSOWithoutContractById(id));
     }, [dispatch]);
 
-    const createContract = useCallback(async (data: SalesContract) => {
-        return dispatch(createSalesContract(data)).unwrap();
-    }, [dispatch]);
+    const createContract = useCallback(async (data: any) => {
+        const res = await dispatch(createSalesContract(data)).unwrap();
+        if (res) {
+            await notificationService.store({
+                user_id: authUser?.id_user ?? 1,
+                id_users_level: authUser?.id_users_level ?? 1,
+                kode_trans: 'SALES CONTRACT',
+                judul: 'Sales Contract Baru',
+                pesan: `Sales Contract ${res.kode || ''} berhasil ditambahkan oleh ${authUser?.nm_users || 'User'}`,
+                action: 'Create'
+            }).catch(() => {});
+        }
+        return res;
+    }, [dispatch, authUser]);
 
     const updateContract = useCallback(async (id: string, data: Partial<SalesContract>) => {
-        return dispatch(updateSalesContract({ id, data })).unwrap();
-    }, [dispatch]);
+        const res = await dispatch(updateSalesContract({ id, data })).unwrap();
+        if (res) {
+            await notificationService.store({
+                user_id: authUser?.id_user ?? 1,
+                id_users_level: authUser?.id_users_level ?? 1,
+                kode_trans: 'SALES CONTRACT',
+                judul: 'Sales Contract Diperbarui',
+                pesan: `Sales Contract berhasil diperbarui oleh ${authUser?.nm_users || 'User'}`,
+                action: 'Update'
+            }).catch(() => {});
+        }
+        return res;
+    }, [dispatch, authUser]);
 
     const clearContract = useCallback(() => {
         dispatch(clearCurrentContract());

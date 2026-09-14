@@ -156,9 +156,9 @@ const salescontractSlice = createSlice({
             })
             .addCase(createSalesContract.fulfilled, (state, action) => {
                 state.isLoading = false; 
-                state.items.unshift(action.payload);
-                // Also remove from soWithoutContracts
-                state.soWithoutContracts = state.soWithoutContracts.filter(so => so.id_so !== action.payload.id_so);
+                // Since API doesn't return full object, we don't unshift. 
+                // The UI should refetch the list.
+                // We still remove from soWithoutContracts manually if we want or UI can refetch that too.
             })
             .addCase(createSalesContract.rejected, (state, action) => {
                 state.isLoading = false; state.error = action.payload as string;
@@ -170,13 +170,8 @@ const salescontractSlice = createSlice({
             })
             .addCase(updateSalesContract.fulfilled, (state, action) => {
                 state.isLoading = false;
-                const index = state.items.findIndex(s => s.id_sales_contract === action.payload.id_sales_contract);
-                if (index !== -1) {
-                    state.items[index] = action.payload;
-                }
-                if (state.currentContract?.id_sales_contract === action.payload.id_sales_contract) {
-                    state.currentContract = action.payload;
-                }
+                // Since API doesn't return full object, we don't update state.items. 
+                // The UI should refetch the list.
             })
             .addCase(updateSalesContract.rejected, (state, action) => {
                 state.isLoading = false; state.error = action.payload as string;

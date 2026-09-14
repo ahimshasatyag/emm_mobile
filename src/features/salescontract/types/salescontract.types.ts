@@ -4,6 +4,8 @@ export interface SalesContractItem {
     nm_product: string;
     n_qty: string | number;
     product_price: string | number;
+    pilih_product?: boolean;
+    ntot_product_price_netto?: string | number;
 }
 
 export interface SalesContract {

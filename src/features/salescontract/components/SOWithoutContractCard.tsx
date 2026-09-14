@@ -14,7 +14,7 @@ interface Props {
 export function SOWithoutContractCard({ item, index, onPress }: Props) {
     return (
         <Animated.View
-            entering={FadeInDown.delay(index * 100).springify()}
+            entering={FadeInDown.delay(index < 10 ? index * 100 : 0).springify()}
         >
             <TouchableOpacity
                 activeOpacity={0.7}

@@ -88,14 +88,19 @@ export function SalesContractFormScreen() {
     const processSave = async () => {
         setIsConfirmVisible(false);
 
-        const payload: SalesContract = {
-            ...form as SalesContract,
+        const payload = {
+            ...form,
             f_company: fCompany,
-            items: activeItems,
             n_amount: totalSemua,
             dp_nominal: dpNominal,
             n_sisa: sisa,
-            jml_cicilan_rp: jmlCicilanRp
+            jml_cicilan_rp: jmlCicilanRp,
+            products: activeItems.map(item => ({
+                id_product: item.id_product,
+                pilih_product: true,
+                ntot_product_price_netto: item.product_price,
+                n_qty: item.n_qty
+            }))
         };
 
         try {

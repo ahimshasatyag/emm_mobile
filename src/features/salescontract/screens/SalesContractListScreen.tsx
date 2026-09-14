@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, TextInput, RefreshControl, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { View, Text, FlatList, TextInput, RefreshControl, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
 import { useSalesContract } from '../hooks/useSalesContract';
@@ -8,6 +8,7 @@ import { SalesContractSkeleton } from '../skeleton/SalesContractSkeleton';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { ButtonAdd } from '../../../components/ui/buttonAdd';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { theme } from '../../../theme/theme';
 
 type RootStackParamList = {
     SalesContractEdit: { id: string };
@@ -19,6 +20,9 @@ export function SalesContractListScreen() {
     const { items, isLoading, loadContracts } = useSalesContract();
     const [search, setSearch] = useState('');
     const [isInitializing, setIsInitializing] = useState(true);
+
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
     useFocusEffect(
         useCallback(() => {
@@ -49,11 +53,29 @@ export function SalesContractListScreen() {
         }, [loadContracts])
     );
 
-    const filteredData = items.filter(item => 
-        item.code_sales_contract?.toLowerCase().includes(search.toLowerCase()) ||
-        item.code_so?.toLowerCase().includes(search.toLowerCase()) ||
-        item.nm_customers?.toLowerCase().includes(search.toLowerCase())
-    );
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [search, items]);
+
+    const filteredData = useMemo(() => {
+        if (!search) return items;
+        const query = search.toLowerCase();
+        return items.filter(item => 
+            item.code_sales_contract?.toLowerCase().includes(query) ||
+            item.code_so?.toLowerCase().includes(query) ||
+            item.nm_customers?.toLowerCase().includes(query)
+        );
+    }, [items, search]);
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < filteredData.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, filteredData.length, isLoadMore]);
 
     const handlePress = (id: string) => {
         navigation.navigate('SalesContractEdit', { id });
@@ -80,7 +102,7 @@ export function SalesContractListScreen() {
             </View>
 
             <FlatList
-                data={(isLoading || isInitializing) ? [] : filteredData}
+                data={(isLoading || isInitializing) ? [] : filteredData.slice(0, visibleCount)}
                 keyExtractor={(item) => item.id_sales_contract}
                 renderItem={({ item, index }) => (
                     <SalesContractCard 
@@ -89,11 +111,23 @@ export function SalesContractListScreen() {
                         onPress={() => handlePress(item.id_sales_contract)}
                     />
                 )}
-                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
                 showsVerticalScrollIndicator={false}
+                onEndReached={handleLoadMore}
+                onEndReachedThreshold={0.5}
                 refreshControl={
-                    <RefreshControl refreshing={isLoading} onRefresh={loadContracts} />
+                    <RefreshControl refreshing={isLoading} onRefresh={loadContracts} colors={[theme.colors.primary]} />
                 }
+                ListFooterComponent={() => {
+                    if (isLoadMore) {
+                        return (
+                            <View className="py-4 items-center justify-center">
+                                <ActivityIndicator size="small" color={theme.colors.primary} />
+                            </View>
+                        );
+                    }
+                    return null;
+                }}
                 ListEmptyComponent={
                     () => {
                         if (isLoading || isInitializing) {

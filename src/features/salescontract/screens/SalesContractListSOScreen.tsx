@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, TextInput, RefreshControl, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { View, Text, FlatList, TextInput, RefreshControl, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
 import { useSalesContract } from '../hooks/useSalesContract';
@@ -7,6 +7,7 @@ import { SOWithoutContractCard } from '../components/SOWithoutContractCard';
 import { SalesContractListSOSkeleton } from '../skeleton/SalesContractListSOSkeleton';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { theme } from '../../../theme/theme';
 
 type RootStackParamList = {
     SalesContractForm: { id_so: string };
@@ -18,6 +19,9 @@ export function SalesContractListSOScreen() {
     const { soWithoutContracts, isLoading, loadSOWithoutContract } = useSalesContract();
     const [search, setSearch] = useState('');
     const [isInitializing, setIsInitializing] = useState(true);
+
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
     useFocusEffect(
         useCallback(() => {
@@ -48,10 +52,28 @@ export function SalesContractListSOScreen() {
         }, [loadSOWithoutContract])
     );
 
-    const filteredData = soWithoutContracts.filter(item => 
-        item.code_so?.toLowerCase().includes(search.toLowerCase()) ||
-        item.nm_customers?.toLowerCase().includes(search.toLowerCase())
-    );
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [search, soWithoutContracts]);
+
+    const filteredData = useMemo(() => {
+        if (!search) return soWithoutContracts;
+        const query = search.toLowerCase();
+        return soWithoutContracts.filter(item => 
+            item.code_so?.toLowerCase().includes(query) ||
+            item.nm_customers?.toLowerCase().includes(query)
+        );
+    }, [soWithoutContracts, search]);
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < filteredData.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, filteredData.length, isLoadMore]);
 
     const handlePress = (id_so: string) => {
         navigation.navigate('SalesContractForm', { id_so });
@@ -82,7 +104,7 @@ export function SalesContractListSOScreen() {
             </View>
 
             <FlatList
-                data={(isLoading || isInitializing) ? [] : filteredData}
+                data={(isLoading || isInitializing) ? [] : filteredData.slice(0, visibleCount)}
                 keyExtractor={(item) => item.id_so}
                 renderItem={({ item, index }) => (
                     <SOWithoutContractCard 
@@ -91,11 +113,23 @@ export function SalesContractListSOScreen() {
                         onPress={() => handlePress(item.id_so)}
                     />
                 )}
-                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
                 showsVerticalScrollIndicator={false}
+                onEndReached={handleLoadMore}
+                onEndReachedThreshold={0.5}
                 refreshControl={
-                    <RefreshControl refreshing={isLoading} onRefresh={loadSOWithoutContract} />
+                    <RefreshControl refreshing={isLoading} onRefresh={loadSOWithoutContract} colors={[theme.colors.primary]} />
                 }
+                ListFooterComponent={() => {
+                    if (isLoadMore) {
+                        return (
+                            <View className="py-4 items-center justify-center">
+                                <ActivityIndicator size="small" color={theme.colors.primary} />
+                            </View>
+                        );
+                    }
+                    return null;
+                }}
                 ListEmptyComponent={
                     () => {
                         if (isLoading || isInitializing) {

@@ -21,7 +21,7 @@ export function SalesContractCard({ item, index, onPress }: Props) {
 
     return (
         <Animated.View
-            entering={FadeInDown.delay(index * 100).springify()}
+            entering={FadeInDown.delay(index < 10 ? index * 100 : 0).springify()}
         >
             <TouchableOpacity
                 activeOpacity={0.7}
@@ -56,10 +56,10 @@ export function SalesContractCard({ item, index, onPress }: Props) {
                     <View className="flex-row items-center justify-between mt-1">
                         <View className="flex-row items-center">
                             <Calendar color="#6b7280" size={14} className="mr-1" />
-                            <Text className="text-sm text-gray-500">{item.date_contract}</Text>
+                            <Text className="text-sm text-gray-500">{item.date_contract || item.date_so}</Text>
                         </View>
                         <View className="items-end">
-                            <Text className="text-sm font-bold text-gray-700">{formatCurrency(item.n_amount)}</Text>
+                            <Text className="text-sm font-bold text-gray-700">{item.n_amount ? formatCurrency(item.n_amount) : ''}</Text>
                         </View>
                     </View>
                 </View>
