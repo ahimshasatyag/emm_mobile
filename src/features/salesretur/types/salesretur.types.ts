@@ -2,11 +2,11 @@ export interface SalesRetur {
     id: string; // from id
     code_sr: string;
     date: string;
-    id_customers: string;
+    id_customers?: string;
     nm_customers?: string;
-    id_do: string;
+    id_do?: string;
     code_do?: string;
-    keterangan: string;
+    keterangan?: string;
     status: string;
     items?: SalesReturItem[];
 }

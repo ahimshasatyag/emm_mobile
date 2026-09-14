@@ -113,7 +113,7 @@ export function SalesReturFormScreen() {
                 keterangan,
                 items: items.filter(item => item.selected)
             });
-            navigation.replace('SalesReturEdit' as never, { id: res.id, showSuccessToast: true } as never);
+            navigation.replace('SalesReturEdit' as never, { id: res.kode, showSuccessToast: true } as never);
         } catch (error: any) {
             setToastConfig({ visible: true, type: 'error', message: error.message || "Gagal menyimpan" });
         } finally {

@@ -1,87 +1,58 @@
 import { SalesRetur, SalesReturListResponse, SalesReturDetailResponse } from '../types/salesretur.types';
-import { dummySalesRetur, dummyCustomers, dummyDO, dummyDODetail } from '../data/dummy';
-
-// Mocking the API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import { api } from '../../../services/api/api';
 
 export const salesReturApi = {
     // Get all sales retur
-    getSalesReturs: async (): Promise<SalesReturListResponse> => {
-        await delay(800);
-        return { data: dummySalesRetur };
+    getSalesReturs: async (search?: string): Promise<SalesReturListResponse> => {
+        const response = await api.get('/salesretur', { params: { search } });
+        return response.data;
     },
 
     // Get specific sales retur
-    getSalesReturById: async (id: string): Promise<SalesReturDetailResponse> => {
-        await delay(500);
-        const retur = dummySalesRetur.find(r => r.id === id);
-        if (!retur) throw new Error("Sales Retur not found");
-        return { data: retur };
+    getSalesReturById: async (id: string): Promise<any> => {
+        const response = await api.get(`/salesretur/${id}`);
+        return response.data;
     },
 
     // Get customers
     getCustomers: async () => {
-        await delay(300);
-        return { data: dummyCustomers };
+        const response = await api.get('/salesretur/support/data');
+        return { data: response.data.customers };
     },
 
     // Get DO by customer
     getDOByCustomer: async (id_customer: string) => {
-        await delay(300);
-        return { data: dummyDO.filter(d => d.id_customers === id_customer) };
+        const response = await api.get('/salesretur/get-do', { params: { id_customer } });
+        return response.data;
     },
 
     // Get DO details
     getDODetails: async (id_do: string) => {
-        await delay(300);
-        return { data: dummyDODetail[id_do as keyof typeof dummyDODetail] || [] };
+        const response = await api.get('/salesretur/get-do-detail', { params: { id_do } });
+        return response.data;
     },
 
     // Create new sales retur
-    createSalesRetur: async (data: Partial<SalesRetur>): Promise<SalesRetur> => {
-        await delay(1000);
-        const newRetur: SalesRetur = {
-            id: String(dummySalesRetur.length + 1),
-            code_sr: `SR-202310-000${dummySalesRetur.length + 1}`,
-            date: data.date || new Date().toISOString().split('T')[0],
-            id_customers: data.id_customers || "",
-            id_do: data.id_do || "",
-            keterangan: data.keterangan || "",
-            status: "DRAFT",
-            items: data.items || []
-        };
-        // In real app, we'd send to backend here
-        dummySalesRetur.unshift(newRetur);
-        return newRetur;
+    createSalesRetur: async (data: any): Promise<any> => {
+        const response = await api.post('/salesretur', data);
+        return response.data;
     },
 
     // Update existing sales retur
-    updateSalesRetur: async (id: string, data: Partial<SalesRetur>): Promise<SalesRetur> => {
-        await delay(1000);
-        const index = dummySalesRetur.findIndex(r => r.id === id);
-        if (index === -1) throw new Error("Sales Retur not found");
-        
-        dummySalesRetur[index] = { ...dummySalesRetur[index], ...data };
-        return dummySalesRetur[index];
+    updateSalesRetur: async (id: string, data: any): Promise<any> => {
+        const response = await api.put(`/salesretur/${id}`, data);
+        return response.data;
     },
 
     // Confirm sales retur
-    confirmSalesRetur: async (id: string): Promise<SalesRetur> => {
-        await delay(800);
-        const index = dummySalesRetur.findIndex(r => r.id === id);
-        if (index === -1) throw new Error("Sales Retur not found");
-        
-        dummySalesRetur[index].status = "CONFIRMED";
-        return dummySalesRetur[index];
+    confirmSalesRetur: async (id: string): Promise<any> => {
+        const response = await api.put(`/salesretur/confirm/${id}`);
+        return response.data;
     },
 
     // Cancel sales retur
-    cancelSalesRetur: async (id: string): Promise<SalesRetur> => {
-        await delay(800);
-        const index = dummySalesRetur.findIndex(r => r.id === id);
-        if (index === -1) throw new Error("Sales Retur not found");
-        
-        dummySalesRetur[index].status = "CANCEL";
-        return dummySalesRetur[index];
+    cancelSalesRetur: async (id: string): Promise<any> => {
+        const response = await api.put(`/salesretur/cancel/${id}`);
+        return response.data;
     }
 };

@@ -18,9 +18,9 @@ const initialState: SalesReturState = {
 
 export const fetchSalesReturs = createAsyncThunk(
     'salesretur/fetchAll',
-    async () => {
-        const response = await salesReturApi.getSalesReturs();
-        return response.data;
+    async (search?: string) => {
+        const response = await salesReturApi.getSalesReturs(search);
+        return response.data?.data || response.data || [];
     }
 );
 
@@ -28,7 +28,13 @@ export const fetchSalesReturById = createAsyncThunk(
     'salesretur/fetchById',
     async (id: string) => {
         const response = await salesReturApi.getSalesReturById(id);
-        return response.data;
+        const header = response.data;
+        const items = response.data_barang;
+        
+        return {
+            ...header,
+            items: items || [],
+        };
     }
 );
 

@@ -18,7 +18,7 @@ export function SalesReturEditScreen() {
     const route = useRoute<any>();
     const { id, showSuccessToast } = route.params;
 
-    const { currentRetur, getCustomers, getDOByCustomer, getDODetails, updateRetur, loadReturById, clearRetur, validateForm } = useSalesRetur();
+    const { currentRetur, getCustomers, getDOByCustomer, getDODetails, updateRetur, confirmRetur, cancelRetur, loadReturById, clearRetur, validateForm } = useSalesRetur();
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -149,6 +149,32 @@ export function SalesReturEditScreen() {
     };
 
     const canEdit = currentRetur?.status === 'DRAFT';
+
+    const handleConfirm = async () => {
+        setIsSaving(true);
+        try {
+            await confirmRetur(id);
+            setToastConfig({ visible: true, type: 'success', message: "Sales Retur berhasil disetujui" });
+            loadData();
+        } catch (error: any) {
+            setToastConfig({ visible: true, type: 'error', message: error.message || "Gagal menyetujui" });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleCancel = async () => {
+        setIsSaving(true);
+        try {
+            await cancelRetur(id);
+            setToastConfig({ visible: true, type: 'success', message: "Sales Retur berhasil dibatalkan" });
+            loadData();
+        } catch (error: any) {
+            setToastConfig({ visible: true, type: 'error', message: error.message || "Gagal membatalkan" });
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -309,14 +335,31 @@ export function SalesReturEditScreen() {
                             {canEdit && (
                                 <Animated.View entering={FadeInUp.delay(100)} className="mt-10">
                                     {!isEditing ? (
-                                        <Button
-                                            onPress={() => setIsEditing(true)}
-                                            className="w-full h-14 rounded-2xl flex-row items-center justify-center bg-indigo-600"
-                                            style={{ elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
-                                        >
-                                            <Edit3 color="white" size={20} className="mr-2" />
-                                            <Text className="text-white font-bold text-lg">Edit</Text>
-                                        </Button>
+                                        <View className="flex-row flex-wrap justify-between gap-3">
+                                            <Button
+                                                onPress={() => setIsEditing(true)}
+                                                className="flex-1 h-12 rounded-xl flex-row items-center justify-center bg-indigo-600"
+                                            >
+                                                <Edit3 color="white" size={18} className="mr-2" />
+                                                <Text className="text-white font-bold text-sm">Edit</Text>
+                                            </Button>
+                                            <Button
+                                                onPress={handleConfirm}
+                                                disabled={isSaving}
+                                                className="flex-1 h-12 rounded-xl flex-row items-center justify-center bg-green-600"
+                                            >
+                                                <Check color="white" size={18} className="mr-2" />
+                                                <Text className="text-white font-bold text-sm">Confirm</Text>
+                                            </Button>
+                                            <Button
+                                                onPress={handleCancel}
+                                                disabled={isSaving}
+                                                className="flex-1 h-12 rounded-xl flex-row items-center justify-center bg-red-600"
+                                            >
+                                                <X color="white" size={18} className="mr-2" />
+                                                <Text className="text-white font-bold text-sm">Cancel</Text>
+                                            </Button>
+                                        </View>
                                     ) : (
                                         <View className="flex-row gap-4">
                                             <Button

@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, TextInput, RefreshControl, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { View, Text, FlatList, TextInput, RefreshControl, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
 import { useSalesRetur } from '../hooks/useSalesRetur';
@@ -8,6 +8,7 @@ import { SalesReturSkeleton } from '../skeleton/SalesReturSkeleton';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { ButtonAdd } from '../../../components/ui/buttonAdd';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { theme } from '../../../theme/theme';
 
 type RootStackParamList = {
     SalesReturEdit: { id: string };
@@ -19,6 +20,9 @@ export function SalesReturListScreen() {
     const { items, isLoading, loadReturs } = useSalesRetur();
     const [search, setSearch] = useState('');
     const [isInitializing, setIsInitializing] = useState(true);
+
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
     useFocusEffect(
         useCallback(() => {
@@ -47,11 +51,29 @@ export function SalesReturListScreen() {
         }, [loadReturs])
     );
 
-    const filteredData = items.filter(item => 
-        item.code_sr?.toLowerCase().includes(search.toLowerCase()) ||
-        item.code_do?.toLowerCase().includes(search.toLowerCase()) ||
-        item.nm_customers?.toLowerCase().includes(search.toLowerCase())
-    );
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [search, items]);
+
+    const filteredData = useMemo(() => {
+        if (!search) return items;
+        const query = search.toLowerCase();
+        return items.filter(item => 
+            item.code_sr?.toLowerCase().includes(query) ||
+            item.code_do?.toLowerCase().includes(query) ||
+            item.nm_customers?.toLowerCase().includes(query)
+        );
+    }, [items, search]);
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < filteredData.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, filteredData.length, isLoadMore]);
 
     const handlePress = (id: string) => {
         navigation.navigate('SalesReturEdit', { id });
@@ -78,7 +100,7 @@ export function SalesReturListScreen() {
             </View>
 
             <FlatList
-                data={(isLoading || isInitializing) ? [] : filteredData}
+                data={(isLoading || isInitializing) ? [] : filteredData.slice(0, visibleCount)}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item, index }) => (
                     <SalesReturCard 
@@ -87,11 +109,23 @@ export function SalesReturListScreen() {
                         onPress={() => handlePress(item.id)}
                     />
                 )}
-                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
                 showsVerticalScrollIndicator={false}
+                onEndReached={handleLoadMore}
+                onEndReachedThreshold={0.5}
                 refreshControl={
-                    <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={loadReturs} />
+                    <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={() => loadReturs()} colors={[theme.colors.primary]} />
                 }
+                ListFooterComponent={() => {
+                    if (isLoadMore) {
+                        return (
+                            <View className="py-4 items-center justify-center">
+                                <ActivityIndicator size="small" color={theme.colors.primary} />
+                            </View>
+                        );
+                    }
+                    return null;
+                }}
                 ListEmptyComponent={
                     () => {
                         if (isLoading || isInitializing) {
