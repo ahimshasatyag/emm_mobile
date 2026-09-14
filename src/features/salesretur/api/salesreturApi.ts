@@ -16,19 +16,19 @@ export const salesReturApi = {
 
     // Get customers
     getCustomers: async () => {
-        const response = await api.get('/salesretur/support/data');
+        const response = await api.get('/salesretur/support-data');
         return { data: response.data.customers };
     },
 
     // Get DO by customer
     getDOByCustomer: async (id_customer: string) => {
-        const response = await api.get('/salesretur/get-do', { params: { id_customer } });
+        const response = await api.post('/salesretur/get-do', { id_customer });
         return response.data;
     },
 
     // Get DO details
     getDODetails: async (id_do: string) => {
-        const response = await api.get('/salesretur/get-do-detail', { params: { id_do } });
+        const response = await api.post('/salesretur/get-do-detail', { id_do });
         return response.data;
     },
 
