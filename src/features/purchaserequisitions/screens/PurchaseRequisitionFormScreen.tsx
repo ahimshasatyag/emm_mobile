@@ -1,5 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import { Dropdown } from 'react-native-element-dropdown';
 import { useNavigation } from '@react-navigation/native';
 import { Save, Plus, Trash2, Package } from 'lucide-react-native';
 import { usePurchaseRequisitions, validateForm } from '../hooks/usePurchaseRequisitions';
@@ -14,18 +15,30 @@ import { PurchaseRequisitionFormSkeleton } from '../skeleton/PurchaseRequisition
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
-const DUMMY_PRODUCTS = [
-    { id_product: 'PRD001', code_product: 'P001', nm_product: 'Laptop Dell XPS 13', satuan: 'Unit' },
-    { id_product: 'PRD002', code_product: 'P002', nm_product: 'Mouse Wireless Logitech', satuan: 'Pcs' },
-    { id_product: 'PRD003', code_product: 'P003', nm_product: 'Kertas HVS A4', satuan: 'Rim' }
-];
-
 export function PurchaseRequisitionFormScreen() {
     const navigation = useNavigation<any>();
-    const { create, isSaving } = usePurchaseRequisitions();
+    const { create, isSaving, supportData } = usePurchaseRequisitions();
+
+    const [products, setProducts] = useState<any[]>([]);
+    const [users, setUsers] = useState<any[]>([]);
+
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const res = await supportData();
+                if (res.status) {
+                    setProducts(res.data_product || []);
+                    setUsers(res.data_users || []);
+                }
+            } catch (err) {
+                console.log(err);
+            }
+        };
+        loadData();
+    }, [supportData]);
 
     const [formData, setFormData] = useState({
-        username: 'admin', // Dummy default
+        username: '',
         date_request: new Date().toISOString().split('T')[0],
         date_deadline: new Date().toISOString().split('T')[0],
     });
@@ -89,18 +102,21 @@ export function PurchaseRequisitionFormScreen() {
     const confirmSave = async () => {
         setIsSaveModalVisible(false);
         try {
-            await create({
+            const res = await create({
                 ...formData,
                 details
             });
-            const newId = Date.now().toString(); // Simulate returning new ID
-            navigation.replace('PurchaseRequisitionEditScreen', { 
-                id: newId, 
-                showSuccessToast: true, 
-                successMessage: 'Purchase Requisition berhasil dibuat!' 
-            });
-        } catch (error) {
-            setToast({ visible: true, type: 'error', message: 'Gagal menyimpan data', title: 'Error' });
+            if (res.status) {
+                navigation.replace('PurchaseRequisitionEditScreen', { 
+                    id: res.id_pr, 
+                    showSuccessToast: true, 
+                    successMessage: 'Purchase Requisition berhasil dibuat!' 
+                });
+            } else {
+                setToast({ visible: true, type: 'error', message: res.message || 'Gagal menyimpan data', title: 'Error' });
+            }
+        } catch (error: any) {
+            setToast({ visible: true, type: 'error', message: error.message || 'Gagal menyimpan data', title: 'Error' });
         }
     };
 
@@ -146,12 +162,19 @@ export function PurchaseRequisitionFormScreen() {
                         <View className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
                         {/* Header Section */}
                         <Text className="text-sm font-bold text-gray-700 mb-2">Responsible <Text className="text-red-500">*</Text></Text>
-                        <TextInput
-                            className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 text-gray-900 mb-4"
-                            value={formData.username}
-                            onChangeText={t => setFormData(prev => ({ ...prev, username: t }))}
-                            placeholder="Responsible User"
-                        />
+                        <View className="border border-gray-200 rounded-xl bg-white mb-4">
+                            <Dropdown
+                                style={{ height: 50, paddingHorizontal: 16 }}
+                                data={users.map(u => ({ label: u.nm_users || u.username, value: u.username }))}
+                                labelField="label"
+                                valueField="value"
+                                placeholder="Pilih Responsible"
+                                search
+                                searchPlaceholder="Cari User..."
+                                value={formData.username}
+                                onChange={opt => setFormData(prev => ({ ...prev, username: opt.value }))}
+                            />
+                        </View>
 
                         <View className="flex-row justify-between mb-2">
                             <View className="flex-1 mr-2">
@@ -217,7 +240,7 @@ export function PurchaseRequisitionFormScreen() {
                 onDismiss={() => setIsModalVisible(false)}
                 onSave={handleSaveProduct}
                 onDelete={editingIndex !== null ? () => handleRemoveProduct(editingIndex) : undefined}
-                productsList={DUMMY_PRODUCTS}
+                productsList={products}
                 initialData={editingIndex !== null ? details[editingIndex] : null}
             />
         </KeyboardAvoidingView>

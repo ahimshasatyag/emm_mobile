@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, RefreshControl, TextInput } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, RefreshControl, TextInput, ActivityIndicator, FlatList } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -19,6 +19,22 @@ export function PurchaseRequisitionListScreen() {
 
     const [isInitializing, setIsInitializing] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
+
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, items]);
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < items.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, items.length, isLoadMore]);
 
     const onRefresh = useCallback(async () => {
         setIsRefreshing(true);
@@ -88,9 +104,8 @@ export function PurchaseRequisitionListScreen() {
             </Animated.View>
 
             <View className="flex-1">
-                <Animated.FlatList
-                    entering={FadeInDown}
-                    data={(isLoadingList || isInitializing) ? [] : items}
+                <FlatList
+                    data={(isLoadingList || isInitializing) ? [] : items.slice(0, visibleCount)}
                     keyExtractor={(item) => item.id_pr}
                     renderItem={({ item, index }) => (
                         <PurchaseRequisitionCard
@@ -101,9 +116,21 @@ export function PurchaseRequisitionListScreen() {
                     )}
                     contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
                     showsVerticalScrollIndicator={false}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
                     refreshControl={
                         <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
                     }
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
                     ListEmptyComponent={() => {
                         if (error) {
                             return (

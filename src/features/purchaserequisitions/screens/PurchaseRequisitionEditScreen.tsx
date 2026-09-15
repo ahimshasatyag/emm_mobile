@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import { Dropdown } from 'react-native-element-dropdown';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Save, Plus, Trash2, Package, Send, X, Edit2, ArrowLeft, Pencil } from 'lucide-react-native';
 import { usePurchaseRequisitions, validateForm } from '../hooks/usePurchaseRequisitions';
@@ -14,18 +15,30 @@ import { PurchaseRequisitionEditSkeleton } from '../skeleton/PurchaseRequisition
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
-const DUMMY_PRODUCTS = [
-    { id_product: 'PRD001', code_product: 'P001', nm_product: 'Laptop Dell XPS 13', satuan: 'Unit' },
-    { id_product: 'PRD002', code_product: 'P002', nm_product: 'Mouse Wireless Logitech', satuan: 'Pcs' },
-    { id_product: 'PRD003', code_product: 'P003', nm_product: 'Kertas HVS A4', satuan: 'Rim' }
-];
-
 export function PurchaseRequisitionEditScreen() {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
     const id = route.params?.id;
 
-    const { currentDetail, isLoadingDetail, isSaving, loadDetail, update, ajukan, resetDetail } = usePurchaseRequisitions();
+    const { currentDetail, isLoadingDetail, isSaving, loadDetail, update, ajukan, resetDetail, supportData } = usePurchaseRequisitions();
+
+    const [products, setProducts] = useState<any[]>([]);
+    const [users, setUsers] = useState<any[]>([]);
+
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const res = await supportData();
+                if (res.status) {
+                    setProducts(res.data_product || []);
+                    setUsers(res.data_users || []);
+                }
+            } catch (err) {
+                console.log(err);
+            }
+        };
+        loadData();
+    }, [supportData]);
 
     const [formData, setFormData] = useState({
         username: '',
@@ -125,15 +138,19 @@ export function PurchaseRequisitionEditScreen() {
     const confirmSave = async () => {
         setIsConfirmModalVisible(false);
         try {
-            await update({
-                id_pr: id,
+            const res = await update(id, {
                 ...formData,
                 details
             });
-            setToast({ visible: true, type: 'success', message: 'Purchase Requisition berhasil diupdate' });
-            setIsEditMode(false);
-        } catch (error) {
-            setToast({ visible: true, type: 'error', message: 'Gagal menyimpan data' });
+            if (res.status || res.id_pr) {
+                setToast({ visible: true, type: 'success', message: 'Purchase Requisition berhasil diupdate' });
+                setIsEditMode(false);
+                loadDetail(id); // Reload the updated data
+            } else {
+                setToast({ visible: true, type: 'error', message: res.message || 'Gagal menyimpan data' });
+            }
+        } catch (error: any) {
+            setToast({ visible: true, type: 'error', message: error.message || 'Gagal menyimpan data' });
         }
     };
 
@@ -145,14 +162,14 @@ export function PurchaseRequisitionEditScreen() {
     const confirmAjukan = async () => {
         setIsConfirmModalVisible(false);
         try {
-            await ajukan(id);
+            const res = await ajukan(id);
             navigation.replace('PurchaseRequisitionEditScreen', {
                 id: id,
                 showSuccessToast: true,
                 successMessage: 'PR berhasil diajukan!'
             });
-        } catch (error) {
-            setToast({ visible: true, type: 'error', message: 'Gagal mengajukan PR' });
+        } catch (error: any) {
+            setToast({ visible: true, type: 'error', message: error.message || 'Gagal mengajukan PR' });
         }
     };
 
@@ -180,7 +197,7 @@ export function PurchaseRequisitionEditScreen() {
             />
 
             <HeaderNavigator
-                title={isLoadingDetail ? 'MEMUAT DATA...' : isEditMode ? `EDIT ${currentDetail?.code_pr}` : `DETAIL ${currentDetail?.code_pr || 'PR'}`}
+                title={isLoadingDetail ? 'MEMUAT DATA...' : isEditMode ? `EDIT PURCHASE REQUISITION` : `DETAIL PURCHASE REQUISITION`}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
             />
@@ -201,15 +218,32 @@ export function PurchaseRequisitionEditScreen() {
                     <Animated.View key="content" entering={FadeIn.duration(600)} className="p-4">
 
                         <View className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
+                            {/* PR Information */}
+                            <View className="flex-row justify-between items-center mb-4 border-b border-gray-100 pb-4">
+                                <View>
+                                    <Text className="text-[16px] font-bold text-gray-800 mt-1">{currentDetail?.code_pr}</Text>
+                                </View>
+                                <View className="bg-blue-100 px-2.5 py-1 rounded-md">
+                                    <Text className="text-[10px] font-bold uppercase text-blue-700">{currentDetail?.status_pr === 'PR' ? 'SUBMITTED' : (currentDetail?.status_pr)}</Text>
+                                </View>
+                            </View>
+
                             {/* Header Section */}
-                            <Text className="text-sm font-bold text-gray-700 mb-2">Responsible <Text className="text-red-500">*</Text></Text>
-                            <TextInput
-                                className={`px-4 py-3 rounded-xl border mb-4 ${!isEditMode ? 'bg-gray-100 border-gray-200 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
-                                value={formData.username}
-                                onChangeText={t => setFormData(prev => ({ ...prev, username: t }))}
-                                placeholder="Responsible User"
-                                editable={isEditMode}
-                            />
+                            <Text className="text-sm font-bold text-gray-700 mb-2 mt-2">Responsible <Text className="text-red-500">*</Text></Text>
+                            <View className={`border rounded-xl mb-4 ${!isEditMode ? 'bg-gray-100 border-gray-200' : 'bg-white border-gray-200'}`}>
+                                <Dropdown
+                                    style={{ height: 50, paddingHorizontal: 16 }}
+                                    data={users.map(u => ({ label: u.nm_users || u.username, value: u.username }))}
+                                    labelField="label"
+                                    valueField="value"
+                                    placeholder="Pilih Responsible"
+                                    search
+                                    searchPlaceholder="Cari User..."
+                                    value={formData.username}
+                                    onChange={opt => setFormData(prev => ({ ...prev, username: opt.value }))}
+                                    disable={!isEditMode}
+                                />
+                            </View>
 
                             <View className="flex-row justify-between mb-2">
                                 <View className="flex-1 mr-2">
@@ -320,7 +354,7 @@ export function PurchaseRequisitionEditScreen() {
                 onDismiss={() => setIsModalVisible(false)}
                 onSave={handleSaveProduct}
                 onDelete={editingIndex !== null ? () => handleRemoveProduct(editingIndex) : undefined}
-                productsList={DUMMY_PRODUCTS}
+                productsList={products}
                 initialData={editingIndex !== null ? details[editingIndex] : null}
                 isReadOnly={!isEditMode}
             />

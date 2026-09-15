@@ -141,7 +141,7 @@ export const ProductModal = ({ visible, onDismiss, onSave, onDelete, productsLis
                                 className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold"
                                 value={namaBarang}
                                 editable={false}
-                                placeholder="Otomatis terisi"
+                                placeholder="Silahkan Pilih Kode Barang"
                             />
                         </View>
 

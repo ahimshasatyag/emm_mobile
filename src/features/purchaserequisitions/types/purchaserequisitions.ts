@@ -18,5 +18,7 @@ export interface PurchaseRequisition {
     date_request: string; // e.g. YYYY-MM-DD
     date_deadline: string; // e.g. YYYY-MM-DD
     status_pr: string; // '' or 'PR'
+    code_po?: string;
+    status_po?: string;
     details?: PurchaseRequisitionDetail[];
 }

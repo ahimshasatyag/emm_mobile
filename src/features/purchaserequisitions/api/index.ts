@@ -1,81 +1,81 @@
 import { PurchaseRequisition } from '../types/purchaserequisitions';
-import { DUMMY_PR_LIST, DUMMY_PR_DETAILS } from '../data/purchaserequisitions.data';
+import { api } from '../../../services/api/api';
 
-// Dummy API
 export const purchaseRequisitionsApi = {
-    fetchList: async (): Promise<PurchaseRequisition[]> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve([...DUMMY_PR_LIST]);
-            }, 500);
-        });
+    fetchList: async (search?: string): Promise<PurchaseRequisition[]> => {
+        const response = await api.get('/purchaserequisitions', { params: { search, per_page: 1000 } });
+        return Array.isArray(response.data?.data) ? response.data.data : ((response.data?.data as any)?.data || []);
     },
 
     fetchDetail: async (id_pr: string): Promise<PurchaseRequisition> => {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                const pr = DUMMY_PR_LIST.find(p => p.id_pr === id_pr);
-                if (pr) {
-                    const details = DUMMY_PR_DETAILS[id_pr] || [];
-                    resolve({ ...pr, details });
-                } else {
-                    reject(new Error('Purchase Requisition not found'));
-                }
-            }, 500);
-        });
+        const response = await api.get(`/purchaserequisitions/${id_pr}`);
+        const { data, data_detail } = response.data;
+        return {
+            ...data,
+            details: data_detail || []
+        };
     },
 
-    create: async (data: Partial<PurchaseRequisition>): Promise<PurchaseRequisition> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                const newPr: PurchaseRequisition = {
-                    id_pr: `PR-${Date.now()}`,
-                    code_pr: `PR-${Date.now()}`,
-                    username: data.username || 'unknown',
-                    date_request: data.date_request || new Date().toISOString().split('T')[0],
-                    date_deadline: data.date_deadline || new Date().toISOString().split('T')[0],
-                    status_pr: '',
-                    ...data
-                };
-                
-                DUMMY_PR_LIST.push(newPr);
-                if (data.details) {
-                    DUMMY_PR_DETAILS[newPr.id_pr] = data.details;
-                }
-                resolve(newPr);
-            }, 500);
+    create: async (data: Partial<PurchaseRequisition>): Promise<any> => {
+        const payload: any = {
+            username: data.username,
+            date_request: data.date_request,
+            date_deadline: data.date_deadline,
+            jml: data.details?.length || 0,
+        };
+
+        data.details?.forEach((detail, index) => {
+            const i = index + 1;
+            payload[`id_product${i}`] = detail.id_product;
+            payload[`qty${i}`] = detail.qty;
+            payload[`note${i}`] = detail.note || '';
         });
+
+        const response = await api.post('/purchaserequisitions', payload);
+        return response.data;
     },
 
-    update: async (id_pr: string, data: Partial<PurchaseRequisition>): Promise<PurchaseRequisition> => {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                const index = DUMMY_PR_LIST.findIndex(p => p.id_pr === id_pr);
-                if (index !== -1) {
-                    const updatedPr = { ...DUMMY_PR_LIST[index], ...data };
-                    DUMMY_PR_LIST[index] = updatedPr;
-                    if (data.details) {
-                        DUMMY_PR_DETAILS[id_pr] = data.details;
-                    }
-                    resolve(updatedPr);
-                } else {
-                    reject(new Error('Purchase Requisition not found'));
-                }
-            }, 500);
+    update: async (id_pr: string, data: Partial<PurchaseRequisition>): Promise<any> => {
+        const payload: any = {
+            username: data.username,
+            date_request: data.date_request,
+            date_deadline: data.date_deadline,
+            jml: data.details?.length || 0,
+        };
+
+        data.details?.forEach((detail, index) => {
+            const i = index + 1;
+            payload[`id_product${i}`] = detail.id_product;
+            payload[`qty${i}`] = detail.qty;
+            payload[`note${i}`] = detail.note || '';
         });
+
+        const response = await api.put(`/purchaserequisitions/${id_pr}`, payload);
+        return response.data;
     },
-    
-    ajukan: async (id_pr: string): Promise<void> => {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                const index = DUMMY_PR_LIST.findIndex(p => p.id_pr === id_pr);
-                if (index !== -1) {
-                    DUMMY_PR_LIST[index].status_pr = 'PR';
-                    resolve();
-                } else {
-                    reject(new Error('Purchase Requisition not found'));
-                }
-            }, 500);
-        });
+
+    ajukan: async (id_pr: string): Promise<any> => {
+        const response = await api.post(`/purchaserequisitions/${id_pr}/ajukan`);
+        return response.data;
+    },
+
+    supportData: async (): Promise<any> => {
+        const response = await api.get('/purchaserequisitions/support-data');
+        return response.data;
+    },
+
+    detailBarang: async (id_product: string): Promise<any> => {
+        const response = await api.post('/purchaserequisitions/detail-barang', { id_product });
+        return response.data;
+    },
+
+    listPr: async (): Promise<any> => {
+        const response = await api.get('/purchaserequisitions/list-pr');
+        return response.data;
+    },
+
+    simpanPo: async (data_id_pr_dtl: any[]): Promise<any> => {
+        const response = await api.post('/purchaserequisitions/simpan-po', { data_id_pr_dtl });
+        return response.data;
     }
 };

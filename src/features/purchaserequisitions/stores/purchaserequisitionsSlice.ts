@@ -123,7 +123,6 @@ const purchaserequisitionsSlice = createSlice({
         });
         builder.addCase(createPR.fulfilled, (state, action) => {
             state.isSaving = false;
-            state.items.unshift(action.payload);
         });
         builder.addCase(createPR.rejected, (state, action) => {
             state.isSaving = false;
@@ -137,13 +136,6 @@ const purchaserequisitionsSlice = createSlice({
         });
         builder.addCase(updatePR.fulfilled, (state, action) => {
             state.isSaving = false;
-            const index = state.items.findIndex(item => item.id_pr === action.payload.id_pr);
-            if (index !== -1) {
-                state.items[index] = action.payload;
-            }
-            if (state.currentDetail?.id_pr === action.payload.id_pr) {
-                state.currentDetail = action.payload;
-            }
         });
         builder.addCase(updatePR.rejected, (state, action) => {
             state.isSaving = false;

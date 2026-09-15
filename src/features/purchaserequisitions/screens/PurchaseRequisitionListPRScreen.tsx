@@ -9,7 +9,7 @@ import { Button } from '../../../components/ui/button';
 import { PurchaseRequisitionListPRSkeleton } from '../skeleton/PurchaseRequisitionListPRSkeleton';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
-import { validateCreateQuotation } from '../hooks/usePurchaseRequisitions';
+import { usePurchaseRequisitions, validateCreateQuotation } from '../hooks/usePurchaseRequisitions';
 
 interface PRDetailItem {
     id_pr_dtl: string;
@@ -24,18 +24,13 @@ interface PRDetailItem {
     selected: boolean;
 }
 
-const DUMMY_LIST: PRDetailItem[] = [
-    { id_pr_dtl: 'PRD-001', id_pr: 'PR-202310-001', code_pr: 'PR-202310-001', id_product: 'PRD001', code_product: 'P001', nm_product: 'Laptop Dell XPS 13', nm_users: 'admin', qty: 2, qty_po: 2, selected: false },
-    { id_pr_dtl: 'PRD-002', id_pr: 'PR-202310-001', code_pr: 'PR-202310-001', id_product: 'PRD002', code_product: 'P002', nm_product: 'Mouse Wireless Logitech', nm_users: 'admin', qty: 5, qty_po: 5, selected: false },
-    { id_pr_dtl: 'PRD-003', id_pr: 'PR-202310-002', code_pr: 'PR-202310-002', id_product: 'PRD003', code_product: 'P003', nm_product: 'Kertas HVS A4', nm_users: 'john_doe', qty: 10, qty_po: 10, selected: false },
-];
-
 export function PurchaseRequisitionListPRScreen() {
     const navigation = useNavigation<any>();
+    const { listPr, simpanPo } = usePurchaseRequisitions();
     const [searchQuery, setSearchQuery] = useState('');
-    const [items, setItems] = useState<PRDetailItem[]>(DUMMY_LIST);
+    const [items, setItems] = useState<PRDetailItem[]>([]);
     const [isSaving, setIsSaving] = useState(false);
-    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(true);
     const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
     const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType; title?: string }>({
         visible: false,
@@ -43,10 +38,32 @@ export function PurchaseRequisitionListPRScreen() {
         type: 'success'
     });
 
-    const onRefresh = useCallback(() => {
+    const fetchList = useCallback(async () => {
         setIsRefreshing(true);
-        setTimeout(() => setIsRefreshing(false), 1000);
-    }, []);
+        try {
+            const res = await listPr();
+            if (res.status) {
+                const mapped = (res.data_pr || []).map((item: any) => ({
+                    ...item,
+                    qty_po: item.qty, // default to requested qty
+                    selected: false
+                }));
+                setItems(mapped);
+            }
+        } catch (err) {
+            console.log(err);
+        } finally {
+            setIsRefreshing(false);
+        }
+    }, [listPr]);
+
+    React.useEffect(() => {
+        fetchList();
+    }, [fetchList]);
+
+    const onRefresh = useCallback(() => {
+        fetchList();
+    }, [fetchList]);
 
     const filteredItems = useMemo(() => {
         if (!searchQuery.trim()) return items;
@@ -89,32 +106,45 @@ export function PurchaseRequisitionListPRScreen() {
         setIsConfirmModalVisible(true);
     };
 
-    const confirmCreateQuotation = () => {
+    const confirmCreateQuotation = async () => {
         setIsConfirmModalVisible(false);
         setIsSaving(true);
-        // Simulate API call
-        setTimeout(() => {
-            setIsSaving(false);
-            
-            // Navigate back to Drawer's QuotationsAPListScreen and clear stack
-            navigation.reset({
-                index: 0,
-                routes: [
-                    {
-                        name: 'Drawer',
-                        params: {
-                            screen: 'QuotationsAPListScreen',
+        try {
+            const selectedItems = items.filter(i => i.selected);
+            const data_id_pr_dtl = selectedItems.map(item => ({
+                id_product: item.id_product,
+                id_pr_dtl: item.id_pr_dtl,
+                qty_po: item.qty_po
+            }));
+
+            const res = await simpanPo(data_id_pr_dtl);
+            if (res.status) {
+                // Navigate back to Drawer's QuotationsAPListScreen and clear stack
+                navigation.reset({
+                    index: 0,
+                    routes: [
+                        {
+                            name: 'Drawer',
                             params: {
-                                timestamp: Date.now(),
-                                showToast: true,
-                                toastMessage: 'Berhasil Menyimpan Quotation\nCode PO: QO-202310-001',
-                                toastType: 'success'
+                                screen: 'QuotationsAPListScreen',
+                                params: {
+                                    timestamp: Date.now(),
+                                    showToast: true,
+                                    toastMessage: `Berhasil Menyimpan Quotation\nCode PO: ${res.code_po}`,
+                                    toastType: 'success'
+                                }
                             }
                         }
-                    }
-                ]
-            });
-        }, 1000);
+                    ]
+                });
+            } else {
+                setToast({ visible: true, type: 'error', message: res.message || 'Gagal menyimpan PO', title: 'Error' });
+            }
+        } catch (error: any) {
+            setToast({ visible: true, type: 'error', message: error.message || 'Gagal menyimpan PO', title: 'Error' });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const renderItem = ({ item, index }: { item: PRDetailItem, index: number }) => (
