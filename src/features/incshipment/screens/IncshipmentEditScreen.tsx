@@ -148,7 +148,7 @@ export function IncshipmentEditScreen() {
     const showAssignSNBtn = isReadyToReceive && selectedItem?.f_assign_barcode === 0;
     const showReceiveBtn = isReadyToReceive && selectedItem?.f_assign_barcode === 1 && selectedItem?.f_print_barcode === 1;
     const showFirstPrintBtn = isReadyToReceive && selectedItem?.f_assign_barcode === 1 && selectedItem?.f_print_barcode === 0;
-    const showPrintNavBtn = (selectedItem?.f_assign_barcode === 1) || isReceived;
+    const showPrintNavBtn = (selectedItem?.f_assign_barcode === 1) && !isReceived;
 
     return (
         <View className="flex-1 bg-gray-50">
