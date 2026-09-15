@@ -14,14 +14,20 @@ import { formatRp } from '../../../utils/helpers/money';
 import { PaymentFormSkeleton } from '../skeleton/PaymentFormSkeleton';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { usePayment } from '../hooks/usePayment';
+import { PaymentSupportData, InvoiceCustomer, Bank } from '../types/payment';
 
 export const PaymentFormScreen = () => {
-    const navigation = useNavigation();
-    const { validateForm } = usePayment();
+    const navigation = useNavigation<any>();
+    const { validateForm, loadSupportData, fetchCustomerDetailByInvoice, createNewPayment } = usePayment();
     const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'error' });
     const [customer, setCustomer] = useState('');
     const [invoice, setInvoice] = useState('');
     const [bankTujuan, setBankTujuan] = useState('');
+
+    const [supportData, setSupportData] = useState<PaymentSupportData | null>(null);
+    const [invoiceOptions, setInvoiceOptions] = useState<any[]>([]);
+    const [customerOptions, setCustomerOptions] = useState<any[]>([]);
+    const [bankOptions, setBankOptions] = useState<any[]>([]);
 
     // Read-only values from the image
     const [jumlahInvoice, setJumlahInvoice] = useState('0');
@@ -33,10 +39,42 @@ export const PaymentFormScreen = () => {
     const [editingDetail, setEditingDetail] = useState<any>(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
-    const onRefresh = useCallback(() => {
+    const loadData = useCallback(async () => {
         setIsRefreshing(true);
-        setTimeout(() => setIsRefreshing(false), 1000);
-    }, []);
+        try {
+            const data = await loadSupportData();
+            setSupportData(data);
+            setCustomerOptions(data.data_customers_invoice.map((c: any) => ({ label: c.nm_customers, value: c.id_customers })));
+            setInvoiceOptions(data.data_invoice.map((i: any) => ({ label: i.code_invoice, value: i.id_invoice })));
+            setBankOptions(data.data_bank.map((b: any) => ({ label: `${b.code_bank} | ${b.nm_bank}`, value: b.id_bank })));
+        } catch (error) {
+            setToast({ visible: true, message: 'Gagal memuat support data', type: 'error' });
+        } finally {
+            setIsRefreshing(false);
+        }
+    }, [loadSupportData]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    const onRefresh = useCallback(() => {
+        loadData();
+    }, [loadData]);
+
+    useEffect(() => {
+        if (invoice) {
+            fetchCustomerDetailByInvoice(invoice).then(res => {
+                if (res && res.length > 0) {
+                    const detail = res[0];
+                    setCustomer(detail.id_customers);
+                    setJumlahInvoice(detail.ntot_balance?.toString() || '0');
+                }
+            }).catch(e => console.error(e));
+        } else {
+            setJumlahInvoice('0');
+        }
+    }, [invoice]);
 
     // Menghitung otomatis total payment dan sisa tagihan
     const totalPayment = paymentDetails.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
@@ -77,9 +115,44 @@ export const PaymentFormScreen = () => {
         setIsConfirmModalVisible(false);
         setIsSaving(true);
         try {
-            navigation.replace('PaymentEdit', { id: 'NEW-PAYMENT-ID', successMessage: 'Payment berhasil dibuat!' });
-        } catch (error) {
-            setToast({ visible: true, message: 'Failed to save payment', type: 'error' });
+            // Map paymentDetails ke format payload yang diharapkan backend
+            const paymentsPayload = paymentDetails.map(d => {
+                // paymentMethod di modal saat ini string TUNAI/TRANSFER/GIRO. Di backend butuh ID.
+                // Idealnya modal pakai id_payment_method dari supportData, tapi untuk sekarang kita map manual
+                // atau asumsikan kita ubah dropdown modal nanti. Jika dropdown modal = 'TUNAI', id = 1, dsb.
+                let id_pm = d.paymentMethod;
+                if (id_pm === 'TUNAI') id_pm = '1';
+                else if (id_pm === 'GIRO') id_pm = '2';
+                else if (id_pm === 'TRANSFER') id_pm = '3';
+
+                return {
+                    id_payment_method: id_pm,
+                    date_payment: d.date,
+                    v_amount: d.amount,
+                    payment_ref: d.keterangan, // asumsikan keterangan = payment_ref
+                    no_giro: d.noGiro,
+                    bank_giro_id: null, // modal saat ini blm support pilih bank giro
+                    nkurs: 1, // default
+                    dp: d.dp ? '1' : '0'
+                };
+            });
+
+            await createNewPayment({
+                id_invoice: invoice,
+                id_customers: customer,
+                id_bank: bankTujuan,
+                payments: paymentsPayload,
+                date_payment: new Date().toISOString(), // tambahan required type lokal
+                v_amount: parseFloat(jumlahInvoice),
+                payment_ref: '',
+                no_giro: '',
+                bank_giro_id: '',
+                nkurs: 1,
+                f_dp: '0'
+            });
+            navigation.goBack();
+        } catch (error: any) {
+            setToast({ visible: true, message: error.message || 'Failed to save payment', type: 'error' });
             setIsSaving(false);
         }
     };
@@ -130,10 +203,7 @@ export const PaymentFormScreen = () => {
                             <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
                                 <Dropdown
                                     style={{ height: 48, paddingHorizontal: 16 }}
-                                    data={[
-                                        { label: 'Customer A', value: 'CUST-A' },
-                                        { label: 'Customer B', value: 'CUST-B' },
-                                    ]}
+                                    data={customerOptions}
                                     labelField="label"
                                     valueField="value"
                                     placeholder="Pilih Customer"
@@ -148,10 +218,7 @@ export const PaymentFormScreen = () => {
                             <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
                                 <Dropdown
                                     style={{ height: 48, paddingHorizontal: 16 }}
-                                    data={[
-                                        { label: 'INV-001', value: 'INV-001' },
-                                        { label: 'INV-002', value: 'INV-002' },
-                                    ]}
+                                    data={invoiceOptions}
                                     labelField="label"
                                     valueField="value"
                                     placeholder="Pilih Invoice"
@@ -185,10 +252,7 @@ export const PaymentFormScreen = () => {
                             <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
                                 <Dropdown
                                     style={{ height: 48, paddingHorizontal: 16 }}
-                                    data={[
-                                        { label: 'BCA | PT Eka Maju Mesinindo', value: 'BCA' },
-                                        { label: 'MANDIRI | PT Eka Maju Mesinindo', value: 'MANDIRI' },
-                                    ]}
+                                    data={bankOptions}
                                     labelField="label"
                                     valueField="value"
                                     placeholder="Pilih Bank Tujuan"

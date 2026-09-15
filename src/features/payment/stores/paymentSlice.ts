@@ -14,8 +14,8 @@ const initialState: PaymentState = {
     error: null,
 };
 
-export const fetchPayments = createAsyncThunk('payment/fetchPayments', async () => {
-    return await api.fetchPayments();
+export const fetchPayments = createAsyncThunk('payment/fetchPayments', async (search?: string) => {
+    return await api.fetchPayments(search);
 });
 
 const paymentSlice = createSlice({

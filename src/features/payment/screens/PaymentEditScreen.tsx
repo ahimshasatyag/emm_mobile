@@ -28,11 +28,16 @@ export const PaymentEditScreen = () => {
     const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
     const isReadOnly = !isEditMode;
 
-    const { updateExistingPayment, validateForm } = usePayment();
+    const { updateExistingPayment, cancelExistingPayment, splitExistingPayment, fetchPaymentDetail, loadSupportData, fetchCustomerDetailByInvoice } = usePayment();
     const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'error' });
     const [isLoading, setIsLoading] = useState(isEdit);
     const [isSaving, setIsSaving] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
+
+    // Support Data Options
+    const [invoiceOptions, setInvoiceOptions] = useState<any[]>([]);
+    const [customerOptions, setCustomerOptions] = useState<any[]>([]);
+    const [bankOptions, setBankOptions] = useState<any[]>([]);
 
     useEffect(() => {
         if (route.params?.successMessage) {
@@ -64,42 +69,57 @@ export const PaymentEditScreen = () => {
     const totalPayment = paymentDetails.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
     const sisaTagihan = (parseFloat(jumlahInvoice) || 0) - totalPayment;
 
-    useEffect(() => {
-        if (isEdit) {
-            loadPaymentDetail();
-        }
-    }, [id]);
-
-    const loadPaymentDetail = async () => {
+    const loadData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const payment = await api.fetchPaymentById(id);
-            if (payment) {
-                // Populate data based on mock structure or expected API structure
-                setCustomer(payment.id_customers || 'CUST-A');
-                setInvoice(payment.id_invoice || 'INV-001');
-                setBankTujuan(payment.id_bank || 'BCA');
-                setJumlahInvoice('1000000'); // Mocked invoice amount
+            const supportData = await loadSupportData();
+            setCustomerOptions(supportData.data_customers_invoice.map((c: any) => ({ label: c.nm_customers, value: c.id_customers })));
+            setInvoiceOptions(supportData.data_invoice.map((i: any) => ({ label: i.code_invoice, value: i.id_invoice })));
+            setBankOptions(supportData.data_bank.map((b: any) => ({ label: `${b.code_bank} | ${b.nm_bank}`, value: b.id_bank })));
 
-                // Mocking a payment detail from the single payment object since it's an edit
-                setPaymentDetails([{
-                    id: payment.id?.toString() || '1',
-                    paymentMethod: 'Transfer',
-                    noGiro: payment.no_giro || '',
-                    bankName: payment.id_bank || '',
-                    date: payment.date_payment || new Date().toISOString().slice(0, 10),
-                    amount: payment.v_amount?.toString() || '0',
-                    keterangan: payment.payment_ref || '',
-                    dp: payment.f_dp === '1'
-                }]);
+            if (isEdit && id) {
+                const payment = await fetchPaymentDetail(id);
+                if (payment) {
+                    setCustomer(payment.id_customers || '');
+                    setInvoice(payment.id_invoice || '');
+                    setBankTujuan(payment.id_bank || '');
+
+                    if (payment.id_invoice) {
+                        const invDetail = await fetchCustomerDetailByInvoice(payment.id_invoice);
+                        if (invDetail && invDetail.length > 0) {
+                            setJumlahInvoice(invDetail[0].ntot_balance?.toString() || '0');
+                        }
+                    }
+
+                    // Backend currently returns a single payment or list of payments under an ID?
+                    // According to our interface, Payment is one object
+                    let pmMethod = 'TUNAI';
+                    if (payment.id_payment_method === '2') pmMethod = 'GIRO';
+                    if (payment.id_payment_method === '3') pmMethod = 'TRANSFER';
+
+                    setPaymentDetails([{
+                        id: payment.id_payment_schdl?.toString() || '1',
+                        paymentMethod: pmMethod,
+                        noGiro: payment.no_giro || '',
+                        bankName: payment.id_bank || '',
+                        date: payment.date_payment || new Date().toISOString().slice(0, 10),
+                        amount: payment.v_amount?.toString() || '0',
+                        keterangan: payment.payment_ref || '',
+                        dp: payment.f_dp === '1'
+                    }]);
+                }
             }
         } catch (error) {
             console.error(error);
-            setToast({ visible: true, message: 'Failed to load payment detail', type: 'error' });
+            setToast({ visible: true, message: 'Failed to load data', type: 'error' });
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [id, isEdit, loadSupportData, fetchPaymentDetail, fetchCustomerDetailByInvoice]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     const handleAddDetail = (detail: any) => {
         if (editingDetail) {
@@ -124,9 +144,8 @@ export const PaymentEditScreen = () => {
     };
 
     const handleSave = async () => {
-        const errorMsg = validateForm({ customer, invoice, bankTujuan, paymentDetails });
-        if (errorMsg) {
-            setToast({ visible: true, message: errorMsg, type: 'error' });
+        if (!customer || !invoice || !bankTujuan || paymentDetails.length === 0) {
+            setToast({ visible: true, message: 'Semua field wajib diisi', type: 'error' });
             return;
         }
         setIsConfirmModalVisible(true);
@@ -136,17 +155,55 @@ export const PaymentEditScreen = () => {
         setIsConfirmModalVisible(false);
         setIsSaving(true);
         try {
-            // Adapt back to expected API format if needed, here just mocking success
-            if (isEdit) {
-                // await updateExistingPayment(id, { ... });
-                setToast({ visible: true, message: 'Payment berhasil diupdate!', type: 'success' });
-            } else {
-                // await createNewPayment({ ... });
-                setToast({ visible: true, message: 'Payment berhasil dibuat!', type: 'success' });
+            const paymentsPayload = paymentDetails.map(d => {
+                let id_pm = d.paymentMethod;
+                if (id_pm === 'TUNAI') id_pm = '1';
+                else if (id_pm === 'GIRO') id_pm = '2';
+                else if (id_pm === 'TRANSFER') id_pm = '3';
+
+                return {
+                    id_payment_method: id_pm,
+                    date_payment: d.date,
+                    v_amount: d.amount,
+                    payment_ref: d.keterangan,
+                    no_giro: d.noGiro,
+                    bank_giro_id: null,
+                    nkurs: 1,
+                    dp: d.dp ? '1' : '0'
+                };
+            });
+
+            if (isEdit && id) {
+                if (isSplitMode) {
+                    await splitExistingPayment(id, {
+                        id_invoice: invoice,
+                        id_customers: customer,
+                        id_bank: bankTujuan,
+                        payments: paymentsPayload,
+                    });
+                    setToast({ visible: true, message: 'Payment berhasil displit!', type: 'success' });
+                } else {
+                    await updateExistingPayment(id, {
+                        id_invoice: invoice,
+                        id_customers: customer,
+                        id_bank: bankTujuan,
+                        payments: paymentsPayload,
+                        // Assuming update uses same payload
+                        date_payment: new Date().toISOString(),
+                        v_amount: parseFloat(jumlahInvoice),
+                        payment_ref: '',
+                        no_giro: '',
+                        bank_giro_id: '',
+                        nkurs: 1,
+                        f_dp: '0'
+                    });
+                    setToast({ visible: true, message: 'Payment berhasil diupdate!', type: 'success' });
+                }
             }
             setIsEditMode(false);
-        } catch (error) {
-            setToast({ visible: true, message: 'Failed to save payment', type: 'error' });
+            setIsSplitMode(false);
+        } catch (error: any) {
+            setToast({ visible: true, message: error.message || 'Failed to save payment', type: 'error' });
         } finally {
             setIsSaving(false);
         }
@@ -171,9 +228,15 @@ export const PaymentEditScreen = () => {
                 title="Hapus Payment"
                 message="Apakah Anda yakin ingin menghapus payment ini? Tindakan ini tidak dapat dibatalkan."
                 onCancel={() => setIsCancelModalVisible(false)}
-                onConfirm={() => {
+                onConfirm={async () => {
                     setIsCancelModalVisible(false);
-                    navigation.goBack();
+                    try {
+                        await cancelExistingPayment(id);
+                        setToast({ visible: true, message: 'Payment berhasil dibatalkan', type: 'success' });
+                        navigation.goBack();
+                    } catch (error: any) {
+                        setToast({ visible: true, message: error.message || 'Gagal membatalkan payment', type: 'error' });
+                    }
                 }}
                 confirmText="Hapus"
                 cancelText="Batal"
@@ -284,10 +347,7 @@ export const PaymentEditScreen = () => {
                             <View className={`border border-gray-200 rounded-xl mb-4 ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50'}`}>
                                 <Dropdown
                                     style={{ height: 48, paddingHorizontal: 16 }}
-                                    data={[
-                                        { label: 'Customer A', value: 'CUST-A' },
-                                        { label: 'Customer B', value: 'CUST-B' },
-                                    ]}
+                                    data={customerOptions}
                                     labelField="label"
                                     valueField="value"
                                     placeholder="Pilih Customer"
@@ -303,10 +363,7 @@ export const PaymentEditScreen = () => {
                             <View className={`border border-gray-200 rounded-xl mb-4 ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50'}`}>
                                 <Dropdown
                                     style={{ height: 48, paddingHorizontal: 16 }}
-                                    data={[
-                                        { label: 'INV-001', value: 'INV-001' },
-                                        { label: 'INV-002', value: 'INV-002' },
-                                    ]}
+                                    data={invoiceOptions}
                                     labelField="label"
                                     valueField="value"
                                     placeholder="Pilih Invoice"
@@ -341,10 +398,7 @@ export const PaymentEditScreen = () => {
                             <View className={`border border-gray-200 rounded-xl mb-4 ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50'}`}>
                                 <Dropdown
                                     style={{ height: 48, paddingHorizontal: 16 }}
-                                    data={[
-                                        { label: 'BCA | PT Eka Maju Mesinindo', value: 'BCA' },
-                                        { label: 'MANDIRI | PT Eka Maju Mesinindo', value: 'MANDIRI' },
-                                    ]}
+                                    data={bankOptions}
                                     labelField="label"
                                     valueField="value"
                                     placeholder="Pilih Bank Tujuan"

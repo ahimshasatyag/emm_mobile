@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, RefreshControl, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, FlatList, RefreshControl, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Search, Plus, Calendar, Check, X } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeIn, FadeInDown, FadeOut, LinearTransition } from 'react-native-reanimated';
@@ -17,7 +17,7 @@ import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export const PaymentListScreen = () => {
     const navigation = useNavigation<any>();
-    const { payments, isLoading, loadPayments } = usePayment();
+    const { payments, isLoading, loadPayments, changePaymentStatus } = usePayment();
 
     const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'error' });
     const [isInitializing, setIsInitializing] = useState(true);
@@ -34,6 +34,9 @@ export const PaymentListScreen = () => {
 
     const [isNotifModalVisible, setIsNotifModalVisible] = useState(false);
     const [notifModalType, setNotifModalType] = useState<NotifModalType>('terima');
+
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
     const statusOptions = [
         { label: 'Semua Status', value: 'ALL STATUS' },
@@ -103,6 +106,20 @@ export const PaymentListScreen = () => {
         const matchSo = soFilter === 'ALL SO' || item.code_so === soFilter;
         return matchSearch && matchStatus && matchCustomer && matchSo;
     });
+
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, payments, statusFilter, customerFilter, soFilter]);
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < filteredPayments.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, filteredPayments.length, isLoadMore]);
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -277,9 +294,9 @@ export const PaymentListScreen = () => {
             </Animated.View>
 
             <View className="flex-1">
-                <Animated.FlatList
-                    entering={FadeInDown}
-                    data={isLoading || isInitializing || isRefreshing ? [] : filteredPayments}
+            <Animated.View entering={FadeInDown} className="flex-1">
+                <FlatList
+                    data={isLoading || isInitializing || isRefreshing ? [] : filteredPayments.slice(0, visibleCount)}
                     keyExtractor={(item) => item.id_payment_schdl}
                     contentContainerStyle={{ flexGrow: 1, paddingBottom: 20, paddingHorizontal: 16 }}
                     showsVerticalScrollIndicator={false}
@@ -290,9 +307,22 @@ export const PaymentListScreen = () => {
                             colors={[theme.colors.primary]}
                         />
                     }
-                    renderItem={({ item }) => (
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
+                    renderItem={({ item, index }) => (
                         <PaymentCard
                             payment={item}
+                            index={index}
                             isSelected={selectedIds.includes(item.id_payment_schdl)}
                             onPress={() => {
                                 if (selectedIds.length > 0) {
@@ -324,6 +354,7 @@ export const PaymentListScreen = () => {
                         );
                     }}
                 />
+            </Animated.View>
             </View>
 
             {/* Floating Action Button */}
@@ -333,12 +364,17 @@ export const PaymentListScreen = () => {
                 visible={isNotifModalVisible}
                 type={notifModalType}
                 onDismiss={() => setIsNotifModalVisible(false)}
-                onConfirm={(data) => {
-                    // console.log('Confirmed:', notifModalType, data, selectedIds);
-                    setIsNotifModalVisible(false);
-                    setSelectedIds([]);
-                    setToast({ visible: true, message: 'Status payment berhasil diperbarui', type: 'success' });
-                    // Reload payments if necessary after API call
+                onConfirm={async (data) => {
+                    try {
+                        const status = notifModalType === 'terima' ? 'TERIMA' : 'BATAL';
+                        await changePaymentStatus(selectedIds, status, data.date, data.reason);
+                        setIsNotifModalVisible(false);
+                        setSelectedIds([]);
+                        setToast({ visible: true, message: `Status payment berhasil diubah menjadi ${status}`, type: 'success' });
+                        loadPayments();
+                    } catch (err: any) {
+                        setToast({ visible: true, message: err.message || 'Gagal mengubah status', type: 'error' });
+                    }
                 }}
             />
         </View>
