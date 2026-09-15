@@ -10,10 +10,12 @@ import {
     clearSelectedIncshipment,
     clearIncshipmentError
 } from '../stores/incshipmentSlice';
+import { notificationService } from '../../../services/notification/notificationService';
 
 export function useIncshipment() {
     const dispatch = useDispatch<AppDispatch>();
     const { items, selectedItem, isLoadingList, isLoadingDetail, isSaving, error } = useSelector((state: RootState) => state.incshipment);
+    const authUser = useSelector((state: RootState) => state.auth.user);
     const [searchQuery, setSearchQuery] = useState('');
 
     const loadList = useCallback(async () => {
@@ -25,16 +27,43 @@ export function useIncshipment() {
     }, [dispatch]);
 
     const handleAssignSN = useCallback(async (id: string) => {
-        return await dispatch(assignSerialNumber(id)).unwrap();
-    }, [dispatch]);
+        const result = await dispatch(assignSerialNumber(id)).unwrap();
+        await notificationService.store({
+            user_id: authUser?.id_user ?? 1,
+            id_users_level: authUser?.id_users_level ?? 1,
+            kode_trans: id || 'INCOMING_SHIPMENT',
+            judul: 'Assign Serial Number',
+            pesan: `Serial Number berhasil di-assign pada Incoming Shipment ${id} oleh ${authUser?.nm_users}`,
+            action: 'Update'
+        }).catch(() => { });
+        return result;
+    }, [dispatch, authUser]);
 
     const handlePrintBarcode = useCallback(async (id: string) => {
-        return await dispatch(printBarcode(id)).unwrap();
-    }, [dispatch]);
+        const result = await dispatch(printBarcode(id)).unwrap();
+        await notificationService.store({
+            user_id: authUser?.id_user ?? 1,
+            id_users_level: authUser?.id_users_level ?? 1,
+            kode_trans: id || 'INCOMING_SHIPMENT',
+            judul: 'Print Barcode',
+            pesan: `Barcode berhasil di-print pada Incoming Shipment ${id} oleh ${authUser?.nm_users}`,
+            action: 'Update'
+        }).catch(() => { });
+        return result;
+    }, [dispatch, authUser]);
 
     const handleReceiveGoods = useCallback(async (id: string, data_barang: any[]) => {
-        return await dispatch(receiveGoods({ id, data_barang })).unwrap();
-    }, [dispatch]);
+        const result = await dispatch(receiveGoods({ id, data_barang })).unwrap();
+        await notificationService.store({
+            user_id: authUser?.id_user ?? 1,
+            id_users_level: authUser?.id_users_level ?? 1,
+            kode_trans: id || 'INCOMING_SHIPMENT',
+            judul: 'Receive Goods',
+            pesan: `Barang berhasil di-receive pada Incoming Shipment ${id} oleh ${authUser?.nm_users}`,
+            action: 'Update'
+        }).catch(() => { });
+        return result;
+    }, [dispatch, authUser]);
 
     const clearSelection = useCallback(() => {
         dispatch(clearSelectedIncshipment());
