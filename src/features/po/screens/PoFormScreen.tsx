@@ -4,24 +4,22 @@ import { Dropdown } from 'react-native-element-dropdown';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
-import { Save, Calendar } from 'lucide-react-native';
+import { Save, Calendar, Plus } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { theme } from '../../../theme/theme';
 import { PoFormSkeleton } from '../skeleton/PoFormSkeleton';
-import { PoTable } from '../components/PoTable';
-import { IncshipmentTab } from '../components/IncshipmentTab';
+import { PurchaseOrderTable } from '../components/PurchaseOrderTable';
+import { IncshipmentInvoiceTable } from '../components/IncshipmentInvoiceTable';
 import { usePo } from '../hooks/usePo';
 import { formatDate, formatDateServer } from '../../../utils/helpers/date';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
-
-// Reusing PurchaseOrderModal from quotationsap for product addition
-import { PurchaseOrderModal } from '../../quotationsap/components/PurchaseOrderModal';
+import { PurchaseOrderModal } from '../components/PurchaseOrderModal';
 
 export function PoFormScreen() {
     const navigation = useNavigation<any>();
     const { validateForm, supportData, getMataUangDefault, create, isSaving } = usePo();
-    
+
     const [poDetails, setPoDetails] = useState<any[]>([]);
 
     // Support Data states
@@ -45,6 +43,9 @@ export function PoFormScreen() {
     const [incDestination, setIncDestination] = useState<string | null>(null);
     const [expectedDate, setExpectedDate] = useState<Date>(new Date());
 
+    const [activeTab, setActiveTab] = useState<'po' | 'incoming'>('po');
+    const [selectedDetail, setSelectedDetail] = useState<any>(null);
+
     const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType; title?: string }>({
         visible: false,
         message: '',
@@ -64,7 +65,7 @@ export function PoFormScreen() {
                 setWarehouses(data.data_gudang?.map((g: any) => ({ label: g.nm_gudang, value: g.id_gudang })) || []);
                 setCurrencies(data.mata_uangs?.map((m: any) => ({ label: m.name, value: m.id_mata_uang })) || []);
                 setProducts(data.data_product || []);
-                
+
                 // Usually location is the same as warehouse or a specific table, 
                 // but PoController's supportData doesn't return m_product_lokasi, we will use warehouses as a fallback if locations are empty
                 if (data.data_lokasi) {
@@ -99,7 +100,7 @@ export function PoFormScreen() {
 
     const handleSaveConfirm = async () => {
         setIsConfirmModalVisible(false);
-        
+
         try {
             const formData = new FormData();
             formData.append('id_suppliers', supplier || '');
@@ -108,7 +109,7 @@ export function PoFormScreen() {
             formData.append('mata_uang', currency || '');
             formData.append('partner_ref', supplierRef);
             formData.append('notes', notes);
-            
+
             // Format dates for backend: YYYY-MM-DD
             if (orderDate) formData.append('date_po', formatDateServer(orderDate));
             if (expectedDate) formData.append('date_schdl', formatDateServer(expectedDate));
@@ -128,7 +129,7 @@ export function PoFormScreen() {
             });
 
             await create(formData);
-            
+
             setToast({
                 visible: true,
                 message: "PO Berhasil Dibuat",
@@ -164,9 +165,9 @@ export function PoFormScreen() {
         setIsConfirmModalVisible(true);
     };
 
-    const handleAddProduct = (product: any) => {
+    const handleSaveProduct = (product: any) => {
         const newDetail = {
-            id_po_dtl: `temp-${Date.now()}`,
+            id_po_dtl: selectedDetail?.id_po_dtl || `temp-${Date.now()}`,
             id_po: '',
             id_product: product.id_product,
             code_product: product.code_product,
@@ -177,14 +178,26 @@ export function PoFormScreen() {
             notes: product.notes || '',
             satuan: product.nm_product_satuan || ''
         };
-        setPoDetails([...poDetails, newDetail]);
+        
+        if (selectedDetail) {
+            const newDetails = [...poDetails];
+            const index = poDetails.findIndex(p => p.id_po_dtl === selectedDetail.id_po_dtl);
+            if (index >= 0) newDetails[index] = newDetail;
+            else newDetails.push(newDetail);
+            setPoDetails(newDetails);
+        } else {
+            setPoDetails([...poDetails, newDetail]);
+        }
         setIsProductModalVisible(false);
+        setSelectedDetail(null);
     };
 
-    const handleRemoveProduct = (index: number) => {
-        const newDetails = [...poDetails];
-        newDetails.splice(index, 1);
-        setPoDetails(newDetails);
+    const handleRemoveProduct = () => {
+        if (selectedDetail) {
+            setPoDetails(poDetails.filter(p => p.id_po_dtl !== selectedDetail.id_po_dtl));
+            setIsProductModalVisible(false);
+            setSelectedDetail(null);
+        }
     };
 
     if (isLoading) {
@@ -198,9 +211,9 @@ export function PoFormScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator 
-                title="TAMBAH PO" 
-                showBackButton 
+            <HeaderNavigator
+                title="TAMBAH PO"
+                showBackButton
                 onBackPress={() => navigation.goBack()}
             />
 
@@ -222,11 +235,17 @@ export function PoFormScreen() {
                 onCancel={() => !isSaving && setIsConfirmModalVisible(false)}
             />
 
-            <PurchaseOrderModal 
+            <PurchaseOrderModal
                 visible={isProductModalVisible}
-                onClose={() => setIsProductModalVisible(false)}
-                products={products}
-                onAddProduct={handleAddProduct}
+                onDismiss={() => {
+                    setIsProductModalVisible(false);
+                    setSelectedDetail(null);
+                }}
+                productsList={products}
+                onSave={handleSaveProduct}
+                onDelete={selectedDetail ? handleRemoveProduct : undefined}
+                initialData={selectedDetail}
+                isReadOnly={false}
             />
 
             <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
@@ -294,7 +313,7 @@ export function PoFormScreen() {
 
                             <View>
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Tanggal PO <Text className="text-red-500">*</Text></Text>
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     onPress={() => setShowOrderDatePicker(true)}
                                     className="border border-gray-200 rounded-xl bg-white mb-4 flex-row justify-between items-center"
                                     style={{ height: 48, paddingHorizontal: 16 }}
@@ -331,28 +350,64 @@ export function PoFormScreen() {
                     </View>
                 </Animated.View>
 
-                {/* Form Items Tab */}
-                <Animated.View entering={FadeIn.delay(300).duration(500)}>
-                    <PoTable 
-                        items={poDetails} 
-                        isReadOnly={false} 
-                        onAdd={() => setIsProductModalVisible(true)}
-                        onRemove={handleRemoveProduct}
-                    />
-                </Animated.View>
+                {/* TABS AND TAB CONTENT */}
+                <Animated.View entering={FadeIn.delay(300).duration(500)} className="mb-8">
+                    <View className="flex-row bg-white border-t border-gray-100 px-2 pt-2 rounded-t-2xl">
+                        <TouchableOpacity
+                            onPress={() => setActiveTab('po')}
+                            className={`flex-1 py-3 items-center border-b-2`}
+                            style={{ borderColor: activeTab === 'po' ? theme.colors.primary : 'transparent' }}
+                        >
+                            <Text className="font-bold" style={{ color: activeTab === 'po' ? theme.colors.primary : '#9ca3af' }}>Purchase Order</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => setActiveTab('incoming')}
+                            className={`flex-1 py-3 items-center border-b-2`}
+                            style={{ borderColor: activeTab === 'incoming' ? theme.colors.primary : 'transparent' }}
+                        >
+                            <Text className="font-bold text-center" style={{ color: activeTab === 'incoming' ? theme.colors.primary : '#9ca3af' }}>Incoming Shipment</Text>
+                        </TouchableOpacity>
+                    </View>
 
-                {/* Incoming Shipment Info */}
-                <Animated.View entering={FadeIn.delay(400).duration(500)}>
-                    <Text className="text-sm font-bold text-gray-800 mb-2">Informasi Pengiriman</Text>
-                    <View className="bg-white rounded-2xl border border-gray-200 mb-6">
-                        <IncshipmentTab 
-                            expectedDate={expectedDate}
-                            setExpectedDate={setExpectedDate}
-                            destination={incDestination}
-                            setDestination={setIncDestination}
-                            destinations={locations}
-                            isEditMode={true}
-                        />
+                    <View className="bg-white rounded-b-2xl min-h-[150px] pb-4">
+                        {activeTab === 'po' && (
+                            <View>
+                                <View className="px-4 py-3 flex-row justify-between items-center border-b border-gray-50 mb-2">
+                                    <Text className="font-bold text-gray-800">Daftar Barang</Text>
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            setSelectedDetail(null);
+                                            setIsProductModalVisible(true);
+                                        }}
+                                        className="px-3 py-1.5 rounded-lg flex-row items-center"
+                                        style={{ backgroundColor: theme.colors.primaryContainer }}
+                                    >
+                                        <Plus size={16} color={theme.colors.primary} className="mr-1" />
+                                        <Text className="text-xs font-bold" style={{ color: theme.colors.primary }}>Tambah Barang</Text>
+                                    </TouchableOpacity>
+                                </View>
+                                <PurchaseOrderTable
+                                    details={poDetails}
+                                    onEditProduct={(index) => {
+                                        setSelectedDetail(poDetails[index]);
+                                        setIsProductModalVisible(true);
+                                    }}
+                                />
+                            </View>
+                        )}
+
+                        {activeTab === 'incoming' && (
+                            <View>
+                                <IncshipmentInvoiceTable
+                                    details={locations}
+                                    destination={incDestination}
+                                    onDestinationChange={setIncDestination}
+                                    expectedDate={expectedDate}
+                                    onExpectedDateChange={setExpectedDate}
+                                    isEditMode={true}
+                                />
+                            </View>
+                        )}
                     </View>
                 </Animated.View>
             </ScrollView>

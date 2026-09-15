@@ -58,14 +58,6 @@ export function PoCard({ item, index, onPress }: PoCardProps) {
                     </View>
                 </View>
 
-                {/* Footer details */}
-                <View className="flex-row items-center pt-2 border-t border-gray-100">
-                    <Building2 size={14} color="#6B7280" />
-                    <Text className="text-xs text-gray-600 ml-2" numberOfLines={1}>
-                        {item.nm_suppliers}
-                    </Text>
-                </View>
-
             </TouchableOpacity>
         </Animated.View>
     );

@@ -11,14 +11,14 @@ import { theme } from '../../../theme/theme';
 import { usePo } from '../hooks/usePo';
 import { PoEditSkeleton } from '../skeleton/PoEditSkeleton';
 import { ErrorState } from '../../../components/shared/ErrorState';
-import { PoTable } from '../components/PoTable';
-import { IncshipmentTab } from '../components/IncshipmentTab';
+import { PurchaseOrderTable } from '../components/PurchaseOrderTable';
+import { IncshipmentInvoiceTable } from '../components/IncshipmentInvoiceTable';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ModalCancel } from '../../../components/ui/ModalCancel';
 import { parseISO } from 'date-fns';
 import { formatDate, formatDateServer } from '../../../utils/helpers/date';
-import { PurchaseOrderModal } from '../../quotationsap/components/PurchaseOrderModal';
+import { PurchaseOrderModal } from '../components/PurchaseOrderModal';
 
 export function PoEditScreen() {
     const navigation = useNavigation<any>();
@@ -30,12 +30,14 @@ export function PoEditScreen() {
         update, confirm, cancel, selectedItem, isLoadingDetail, error, loadDetail, clearSelection, isSaving
     } = usePo();
 
+    const [activeTab, setActiveTab] = useState<'po' | 'incoming'>('po');
     const [isEditMode, setIsEditMode] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
     const [isConfirmPOVisible, setIsConfirmPOVisible] = useState(false);
     const [isCancelPOVisible, setIsCancelPOVisible] = useState(false);
     const [isProductModalVisible, setIsProductModalVisible] = useState(false);
+    const [selectedDetail, setSelectedDetail] = useState<any>(null);
     const [isSaveChangesVisible, setIsSaveChangesVisible] = useState(false);
 
     const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType; title?: string }>({
@@ -139,9 +141,9 @@ export function PoEditScreen() {
         }
     };
 
-    const handleAddProduct = (product: any) => {
+    const handleSaveProduct = (product: any) => {
         const newDetail = {
-            id_po_dtl: `temp-${Date.now()}`,
+            id_po_dtl: selectedDetail?.id_po_dtl || `temp-${Date.now()}`,
             id_po: id,
             id_product: product.id_product,
             code_product: product.code_product,
@@ -152,14 +154,26 @@ export function PoEditScreen() {
             notes: product.notes || '',
             satuan: product.nm_product_satuan || ''
         };
-        setPoDetails([...poDetails, newDetail]);
+
+        if (selectedDetail) {
+            const newDetails = [...poDetails];
+            const index = poDetails.findIndex(p => p.id_po_dtl === selectedDetail.id_po_dtl);
+            if (index >= 0) newDetails[index] = newDetail;
+            else newDetails.push(newDetail);
+            setPoDetails(newDetails);
+        } else {
+            setPoDetails([...poDetails, newDetail]);
+        }
         setIsProductModalVisible(false);
+        setSelectedDetail(null);
     };
 
-    const handleRemoveProduct = (index: number) => {
-        const newDetails = [...poDetails];
-        newDetails.splice(index, 1);
-        setPoDetails(newDetails);
+    const handleRemoveProduct = () => {
+        if (selectedDetail) {
+            setPoDetails(poDetails.filter(p => p.id_po_dtl !== selectedDetail.id_po_dtl));
+            setIsProductModalVisible(false);
+            setSelectedDetail(null);
+        }
     };
 
     const saveChanges = async () => {
@@ -179,7 +193,7 @@ export function PoEditScreen() {
             formData.append('mata_uang', currency || '');
             formData.append('partner_ref', supplierRef);
             formData.append('notes', notes);
-            
+
             if (orderDate) formData.append('date_po', formatDateServer(orderDate));
             if (expectedDate) formData.append('date_schdl', formatDateServer(expectedDate));
             if (incDestination) formData.append('id_product_lokasi', incDestination);
@@ -198,7 +212,7 @@ export function PoEditScreen() {
             });
 
             await update(id, formData, selectedItem?.code_po);
-            
+
             setToast({
                 visible: true,
                 message: "PO berhasil diperbarui",
@@ -311,15 +325,21 @@ export function PoEditScreen() {
                 onCancel={() => !isSaving && setIsCancelPOVisible(false)}
             />
 
-            <PurchaseOrderModal 
+            <PurchaseOrderModal
                 visible={isProductModalVisible}
-                onClose={() => setIsProductModalVisible(false)}
-                products={products}
-                onAddProduct={handleAddProduct}
+                onDismiss={() => {
+                    setIsProductModalVisible(false);
+                    setSelectedDetail(null);
+                }}
+                productsList={products}
+                onSave={handleSaveProduct}
+                onDelete={selectedDetail ? handleRemoveProduct : undefined}
+                initialData={selectedDetail}
+                isReadOnly={!isEditMode}
             />
 
             <HeaderNavigator
-                title={isLoading ? "MEMUAT DATA..." : isEditMode ? `EDIT PO` : `DETAIL PO`}
+                title={isLoading ? "MEMUAT DATA..." : isEditMode ? `EDIT PURCHASE ORDER` : `DETAIL PURCHASE ORDER`}
                 showBackButton
                 onBackPress={() => navigation.goBack()}
             />
@@ -341,11 +361,9 @@ export function PoEditScreen() {
                             <View className="p-4 space-y-4">
                                 <View className="flex-row justify-between items-center mb-1 pb-3 border-b border-gray-100">
                                     <View>
-                                        <Text className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Nomor PO</Text>
-                                        <Text className="text-lg font-black text-gray-900">{selectedItem?.code_po || '-'}</Text>
+                                        <Text className="text-lg font-bold text-gray-900">{selectedItem?.code_po}</Text>
                                     </View>
                                     <View className="items-end">
-                                        <Text className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Status</Text>
                                         <View className={`px-3 py-1 rounded-full border ${selectedItem?.status_po === 'PO PURCHASE' ? 'bg-green-50 border-green-200' : selectedItem?.status_po === 'DRAFT PO' ? 'bg-yellow-50 border-yellow-200' : selectedItem?.status_po === 'CANCEL' ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
                                             <Text className={`text-xs font-bold ${selectedItem?.status_po === 'PO PURCHASE' ? 'text-green-700' : selectedItem?.status_po === 'DRAFT PO' ? 'text-yellow-700' : selectedItem?.status_po === 'CANCEL' ? 'text-red-700' : 'text-gray-700'}`}>
                                                 {selectedItem?.status_po || 'UNKNOWN'}
@@ -420,7 +438,7 @@ export function PoEditScreen() {
 
                                     <View>
                                         <Text className="text-sm font-bold text-gray-700 mb-2">Tanggal PO <Text className="text-red-500">*</Text></Text>
-                                        <TouchableOpacity 
+                                        <TouchableOpacity
                                             onPress={() => isEditMode && setShowOrderDatePicker(true)}
                                             className={`border rounded-xl mb-4 flex-row justify-between items-center ${isEditMode ? 'bg-white border-gray-200' : 'bg-gray-100 border-gray-200'}`}
                                             style={{ height: 48, paddingHorizontal: 16 }}
@@ -457,28 +475,65 @@ export function PoEditScreen() {
                                     </View>
                                 </View>
                             </View>
-                        </Animated.View>
+                            {/* TABS AND TAB CONTENT */}
+                            <View className="flex-row bg-white border-t border-gray-100 px-2 pt-2">
+                                <TouchableOpacity
+                                    onPress={() => setActiveTab('po')}
+                                    className={`flex-1 py-3 items-center border-b-2`}
+                                    style={{ borderColor: activeTab === 'po' ? theme.colors.primary : 'transparent' }}
+                                >
+                                    <Text className="font-bold" style={{ color: activeTab === 'po' ? theme.colors.primary : '#9ca3af' }}>Purchase Order</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={() => setActiveTab('incoming')}
+                                    className={`flex-1 py-3 items-center border-b-2`}
+                                    style={{ borderColor: activeTab === 'incoming' ? theme.colors.primary : 'transparent' }}
+                                >
+                                    <Text className="font-bold text-center" style={{ color: activeTab === 'incoming' ? theme.colors.primary : '#9ca3af' }}>Incoming Shipment</Text>
+                                </TouchableOpacity>
+                            </View>
 
-                        <Animated.View entering={FadeIn.delay(200).duration(500)}>
-                            <PoTable 
-                                items={poDetails} 
-                                isReadOnly={!isEditMode} 
-                                onAdd={() => setIsProductModalVisible(true)}
-                                onRemove={handleRemoveProduct}
-                            />
-                        </Animated.View>
+                            <View className="bg-white rounded-b-2xl min-h-[150px] pb-4">
+                                {activeTab === 'po' && (
+                                    <View>
+                                        <View className="px-4 py-3 flex-row justify-between items-center border-b border-gray-50 mb-2">
+                                            <Text className="font-bold text-gray-800">Daftar Barang</Text>
+                                            {isEditMode && (
+                                                <TouchableOpacity
+                                                    onPress={() => {
+                                                        setSelectedDetail(null);
+                                                        setIsProductModalVisible(true);
+                                                    }}
+                                                    className="px-3 py-1.5 rounded-lg flex-row items-center"
+                                                    style={{ backgroundColor: theme.colors.primaryContainer }}
+                                                >
+                                                    <Plus size={16} color={theme.colors.primary} className="mr-1" />
+                                                    <Text className="text-xs font-bold" style={{ color: theme.colors.primary }}>Tambah Barang</Text>
+                                                </TouchableOpacity>
+                                            )}
+                                        </View>
+                                        <PurchaseOrderTable
+                                            details={poDetails}
+                                            onEditProduct={(index) => {
+                                                setSelectedDetail(poDetails[index]);
+                                                setIsProductModalVisible(true);
+                                            }}
+                                        />
+                                    </View>
+                                )}
 
-                        <Animated.View entering={FadeIn.delay(300).duration(500)} className="mb-8">
-                            <Text className="text-sm font-bold text-gray-800 mb-2">Informasi Pengiriman</Text>
-                            <View className="bg-white rounded-2xl border border-gray-200">
-                                <IncshipmentTab 
-                                    expectedDate={expectedDate}
-                                    setExpectedDate={setExpectedDate}
-                                    destination={incDestination}
-                                    setDestination={setIncDestination}
-                                    destinations={locations}
-                                    isEditMode={isEditMode}
-                                />
+                                {activeTab === 'incoming' && (
+                                    <View>
+                                        <IncshipmentInvoiceTable
+                                            details={locations}
+                                            destination={incDestination}
+                                            onDestinationChange={setIncDestination}
+                                            expectedDate={expectedDate}
+                                            onExpectedDateChange={setExpectedDate}
+                                            isEditMode={isEditMode}
+                                        />
+                                    </View>
+                                )}
                             </View>
                         </Animated.View>
                     </Animated.View>
@@ -541,12 +596,6 @@ export function PoEditScreen() {
                                 >
                                     Cancel
                                 </Button>
-                            )}
-
-                            {!canEditOrConfirm && (
-                                <View className="flex-1 items-center justify-center py-2">
-                                    <Text className="text-gray-500 font-medium text-sm">Tidak ada aksi tersedia untuk status {selectedItem?.status_po}</Text>
-                                </View>
                             )}
                         </>
                     )}
