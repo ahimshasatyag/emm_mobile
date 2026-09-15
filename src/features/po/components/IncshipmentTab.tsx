@@ -3,19 +3,25 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Calendar } from 'lucide-react-native';
+import { formatDate } from '../../../utils/helpers/date';
 
 interface IncshipmentTabProps {
-    details?: any[];
+    expectedDate: Date;
+    setExpectedDate: (date: Date) => void;
+    destination: string | null;
+    setDestination: (dest: string | null) => void;
+    destinations: { label: string; value: string }[];
+    isEditMode: boolean;
 }
 
-const DUMMY_DESTINATIONS = [
-    { label: 'Destinasi 1', value: 'D001' },
-    { label: 'Destinasi 2', value: 'D002' },
-];
-
-export function IncshipmentTab({ details = [] }: IncshipmentTabProps) {
-    const [destination, setDestination] = useState<string | null>(null);
-    const [expectedDate, setExpectedDate] = useState<Date>(new Date());
+export function IncshipmentTab({ 
+    expectedDate, 
+    setExpectedDate, 
+    destination, 
+    setDestination, 
+    destinations,
+    isEditMode 
+}: IncshipmentTabProps) {
     const [showDatePicker, setShowDatePicker] = useState(false);
 
     return (
@@ -23,13 +29,14 @@ export function IncshipmentTab({ details = [] }: IncshipmentTabProps) {
             {/* Form Input Area */}
             <View className="mb-6">
                 <View>
-                    <Text className="text-sm font-bold text-gray-700 mb-2">Expected Date <Text className="text-red-500">*</Text></Text>
+                    <Text className="text-sm font-bold text-gray-700 mb-2">Expected Date</Text>
                     <TouchableOpacity 
-                        onPress={() => setShowDatePicker(true)}
-                        className="border border-gray-200 rounded-xl bg-gray-50 mb-4 flex-row justify-between items-center"
+                        onPress={() => isEditMode && setShowDatePicker(true)}
+                        className={`border rounded-xl mb-4 flex-row justify-between items-center ${isEditMode ? 'bg-white border-gray-200' : 'bg-gray-100 border-gray-200'}`}
                         style={{ height: 48, paddingHorizontal: 16 }}
+                        disabled={!isEditMode}
                     >
-                        <Text className="text-gray-700">{expectedDate.toISOString().split('T')[0]}</Text>
+                        <Text className="text-gray-700">{formatDate(expectedDate)}</Text>
                         <Calendar size={20} color="#9CA3AF" />
                     </TouchableOpacity>
                     {showDatePicker && (
@@ -48,19 +55,20 @@ export function IncshipmentTab({ details = [] }: IncshipmentTabProps) {
                 </View>
 
                 <View>
-                    <Text className="text-sm font-bold text-gray-700 mb-2">Destination <Text className="text-red-500">*</Text></Text>
-                    <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
+                    <Text className="text-sm font-bold text-gray-700 mb-2">Destination Warehouse</Text>
+                    <View className={`border rounded-xl mb-4 ${isEditMode ? 'bg-white border-gray-200' : 'bg-gray-100 border-gray-200'}`}>
                         <Dropdown
                             style={{ height: 48, paddingHorizontal: 16 }}
-                            data={DUMMY_DESTINATIONS}
+                            data={destinations}
                             labelField="label"
                             valueField="value"
                             search
-                            searchPlaceholder="Cari destination..."
-                            placeholder="Pilih Destination"
+                            searchPlaceholder="Cari warehouse..."
+                            placeholder="Pilih Destination Warehouse"
                             value={destination}
                             dropdownPosition="top"
                             onChange={item => setDestination(item.value)}
+                            disable={!isEditMode}
                         />
                     </View>
                 </View>

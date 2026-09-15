@@ -5,9 +5,12 @@ import { PoOptionTable } from './PoOptionTable';
 
 interface PoTableProps {
     items: PoDetail[];
+    onAdd?: () => void;
+    onRemove?: (index: number) => void;
+    isReadOnly?: boolean;
 }
 
-export function PoTable({ items }: PoTableProps) {
+export function PoTable({ items, onAdd, onRemove, isReadOnly = true }: PoTableProps) {
     const formatCurrency = (val: number) => {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(val);
     };
@@ -16,6 +19,11 @@ export function PoTable({ items }: PoTableProps) {
         <View className="mt-4 mb-6">
             <View className="flex-row justify-between items-center mb-3 px-1">
                 <Text className="text-sm font-bold text-gray-800">Detail Produk</Text>
+                {!isReadOnly && onAdd && (
+                    <TouchableOpacity onPress={onAdd} className="bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 flex-row items-center">
+                        <Text className="text-xs font-bold text-blue-700 ml-1">Tambah Produk</Text>
+                    </TouchableOpacity>
+                )}
             </View>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -29,6 +37,7 @@ export function PoTable({ items }: PoTableProps) {
                         <Text className="text-xs font-bold text-gray-600 w-32 text-right">Price</Text>
                         <Text className="text-xs font-bold text-gray-600 w-24 text-center">Qty</Text>
                         <Text className="text-xs font-bold text-gray-600 w-40 text-right">Subtotal</Text>
+                        {!isReadOnly && <Text className="text-xs font-bold text-gray-600 w-16 text-center">Aksi</Text>}
                     </View>
 
                     {/* Rows */}
@@ -56,6 +65,11 @@ export function PoTable({ items }: PoTableProps) {
                                     <Text className="text-sm font-bold text-gray-900 w-40 text-right">
                                         {formatCurrency(item.qty * item.product_price)}
                                     </Text>
+                                    {!isReadOnly && onRemove && (
+                                        <TouchableOpacity onPress={() => onRemove(index)} className="w-16 items-center justify-center">
+                                            <Text className="text-red-500 font-bold text-xs">Hapus</Text>
+                                        </TouchableOpacity>
+                                    )}
                                 </View>
 
                                 {item.options && item.options.length > 0 && (

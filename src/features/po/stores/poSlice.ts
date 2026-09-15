@@ -22,9 +22,9 @@ const initialState: PoState = {
 
 export const fetchPoList = createAsyncThunk(
     'po/fetchAll',
-    async (_, { rejectWithValue }) => {
+    async (search: string | undefined, { rejectWithValue }) => {
         try {
-            return await poAPI.fetchPoList();
+            return await poAPI.fetchList(search);
         } catch (error: any) {
             return rejectWithValue(error.message);
         }
@@ -35,18 +35,51 @@ export const fetchPoById = createAsyncThunk(
     'po/fetchById',
     async (id: string, { rejectWithValue }) => {
         try {
-            return await poAPI.fetchPoDetail(id);
+            return await poAPI.fetchDetail(id);
         } catch (error: any) {
             return rejectWithValue(error.message);
         }
     }
 );
 
-export const savePo = createAsyncThunk(
-    'po/save',
-    async (data: any, { rejectWithValue }) => {
+export const createPo = createAsyncThunk(
+    'po/create',
+    async (data: FormData, { rejectWithValue }) => {
         try {
-            return await poAPI.savePo(data);
+            return await poAPI.create(data);
+        } catch (error: any) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+export const updatePo = createAsyncThunk(
+    'po/update',
+    async ({ id, data }: { id: string, data: FormData }, { rejectWithValue }) => {
+        try {
+            return await poAPI.update(id, data);
+        } catch (error: any) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+export const confirmPo = createAsyncThunk(
+    'po/confirm',
+    async (id: string, { rejectWithValue }) => {
+        try {
+            return await poAPI.confirm(id);
+        } catch (error: any) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+export const cancelPo = createAsyncThunk(
+    'po/cancel',
+    async (id: string, { rejectWithValue }) => {
+        try {
+            return await poAPI.cancel(id);
         } catch (error: any) {
             return rejectWithValue(error.message);
         }
@@ -91,18 +124,28 @@ const poSlice = createSlice({
             state.error = action.payload as string;
         });
 
-        builder.addCase(savePo.pending, (state) => {
-            state.isSaving = true;
-            state.error = null;
-        });
-        builder.addCase(savePo.fulfilled, (state, action) => {
-            state.isSaving = false;
-        });
-        builder.addCase(savePo.rejected, (state, action) => {
-            state.isSaving = false;
-            state.error = action.payload as string;
-        });
-    }
+        // Saving states
+        builder.addMatcher(
+            (action) => action.type.startsWith('po/') && action.type.endsWith('/pending') && !['po/fetchAll/pending', 'po/fetchById/pending'].includes(action.type),
+            (state) => {
+                state.isSaving = true;
+                state.error = null;
+            }
+        );
+        builder.addMatcher(
+            (action) => action.type.startsWith('po/') && action.type.endsWith('/fulfilled') && !['po/fetchAll/fulfilled', 'po/fetchById/fulfilled'].includes(action.type),
+            (state) => {
+                state.isSaving = false;
+            }
+        );
+        builder.addMatcher(
+            (action) => action.type.startsWith('po/') && action.type.endsWith('/rejected') && !['po/fetchAll/rejected', 'po/fetchById/rejected'].includes(action.type),
+            (state, action) => {
+                state.isSaving = false;
+                state.error = action.payload as string;
+            }
+        );
+    },
 });
 
 export const { clearSelectedItem, clearError } = poSlice.actions;

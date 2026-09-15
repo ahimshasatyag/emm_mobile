@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { View, FlatList, RefreshControl, TextInput } from 'react-native';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { View, FlatList, RefreshControl, TextInput, ActivityIndicator } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
@@ -20,12 +20,20 @@ export function PoListScreen() {
     const [isInitializing, setIsInitializing] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [statusFilter, setStatusFilter] = useState('ALL STATUS');
+    
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
+    const flatListRef = useRef<FlatList>(null);
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (route.params?.timestamp) {
             setStatusFilter('ALL STATUS');
         }
     }, [route.params?.timestamp]);
+
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, items, statusFilter]);
 
     const statusOptions = [
         { label: 'ALL STATUS', value: 'ALL STATUS' },
@@ -35,8 +43,9 @@ export function PoListScreen() {
     ];
 
     const displayItems = useMemo(() => {
-        if (statusFilter === 'ALL STATUS') return items;
-        return items.filter((item: any) => item.status_po?.toUpperCase() === statusFilter);
+        const safeItems = Array.isArray(items) ? items : [];
+        if (statusFilter === 'ALL STATUS') return safeItems;
+        return safeItems.filter((item: any) => item?.status_po?.toUpperCase() === statusFilter);
     }, [items, statusFilter]);
 
     useFocusEffect(
@@ -77,6 +86,16 @@ export function PoListScreen() {
         }
     }, [loadList]);
 
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < displayItems.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, displayItems.length, isLoadMore]);
+
     const handleDetail = (id: string) => {
         navigation.navigate('PoEditScreen', { id });
     };
@@ -107,16 +126,19 @@ export function PoListScreen() {
                             valueField="value"
                             placeholder="Status"
                             value={statusFilter}
-                            onChange={(item) => setStatusFilter(item.value)}
+                            onChange={(item) => {
+                                setStatusFilter(item.value);
+                                flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+                            }}
                         />
                     </View>
                 </View>
             </Animated.View>
 
             <View className="flex-1">
-                <Animated.FlatList
-                    entering={FadeInDown}
-                    data={(isLoadingList || isInitializing) ? [] : displayItems}
+                <FlatList
+                    ref={flatListRef}
+                    data={(isLoadingList || isInitializing) ? [] : (displayItems || []).slice(0, visibleCount)}
                     keyExtractor={(item) => item.id_po}
                     contentContainerStyle={{
                         flexGrow: 1,
@@ -157,6 +179,18 @@ export function PoListScreen() {
                             );
                         }
                         return <EmptyState title="Tidak ada data" message="Belum ada data purchase order." />;
+                    }}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
                     }}
                 />
             </View>

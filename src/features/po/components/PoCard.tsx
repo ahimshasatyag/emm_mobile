@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { FileText, Calendar, Building2, ChevronRight } from 'lucide-react-native';
-import { theme } from '../../../theme/theme';
+import { Calendar, FileText, CheckCircle2, Clock, XCircle, Building2 } from 'lucide-react-native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { PoHeader } from '../types/po.types';
+import { formatDate } from '../../../utils/helpers/date';
 
 interface PoCardProps {
     item: PoHeader;
@@ -13,54 +14,59 @@ interface PoCardProps {
 export function PoCard({ item, index, onPress }: PoCardProps) {
     const getStatusColor = (status: string) => {
         switch (status?.toUpperCase()) {
-            case 'PO PURCHASE': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-            case 'DRAFT PO': return 'bg-orange-100 text-orange-700 border-orange-200';
-            case 'CANCEL': return 'bg-red-100 text-red-700 border-red-200';
-            default: return 'bg-gray-100 text-gray-700 border-gray-200';
+            case 'PO PURCHASE':
+                return { bg: 'bg-green-100', text: 'text-green-700', icon: CheckCircle2, color: '#15803d' };
+            case 'DRAFT PO':
+                return { bg: 'bg-yellow-100', text: 'text-yellow-700', icon: Clock, color: '#a16207' };
+            case 'CANCEL':
+                return { bg: 'bg-red-100', text: 'text-red-700', icon: XCircle, color: '#b91c1c' };
+            default:
+                return { bg: 'bg-gray-100', text: 'text-gray-700', icon: FileText, color: '#374151' };
         }
     };
 
-    const statusStyle = getStatusColor(item.status_po);
+    const StatusIcon = getStatusColor(item.status_po).icon;
 
     return (
-        <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={onPress}
-            className="bg-white rounded-2xl p-4 mb-4 border border-gray-100 shadow-sm"
-            style={{ elevation: 2 }}
+        <Animated.View
+            entering={FadeInUp.delay((index % 10) * 100).duration(400)}
+            className="mb-4"
         >
-            <View className="flex-row justify-between items-start mb-3">
-                <View className="flex-row items-center flex-1 mr-2">
-                    <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-2">
-                        <FileText size={16} color={theme.colors.primary} />
+            <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={onPress}
+                className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
+            >
+                {/* Header */}
+                <View className="flex-row justify-between items-start mb-3">
+                    <View className="flex-1 mr-3">
+                        <Text className="text-sm font-bold text-gray-900 mb-1">
+                            {item.code_po}
+                        </Text>
+                        <View className="flex-row items-center">
+                            <Calendar size={14} color="#6b7280" className="mr-1" />
+                            <Text className="text-xs text-gray-500">
+                                {item.date_po ? formatDate(new Date(item.date_po)) : '-'}
+                            </Text>
+                        </View>
                     </View>
-                    <Text className="text-[15px] font-bold text-gray-900" numberOfLines={1}>
-                        {item.code_po}
-                    </Text>
+                    <View className={`px-3 py-1.5 rounded-full flex-row items-center ${getStatusColor(item.status_po).bg}`}>
+                        <StatusIcon size={12} color={getStatusColor(item.status_po).color} className="mr-1" />
+                        <Text className={`text-xs font-bold ${getStatusColor(item.status_po).text}`}>
+                            {item.status_po}
+                        </Text>
+                    </View>
                 </View>
-                <View className={`px-2.5 py-1 rounded-md border ${statusStyle}`}>
-                    <Text className="text-[11px] font-bold" style={{ color: statusStyle.match(/text-(\w+)-700/)?.[0]?.replace('text-', '') }}>
-                        {item.status_po}
-                    </Text>
-                </View>
-            </View>
 
-            <View className="space-y-2.5 pl-10">
-                <View className="flex-row items-center">
-                    <Calendar size={14} color="#6B7280" />
-                    <Text className="text-xs text-gray-600 ml-2">
-                        {item.date_po}
-                    </Text>
-                </View>
-                
-                <View className="flex-row items-center pr-4">
+                {/* Footer details */}
+                <View className="flex-row items-center pt-2 border-t border-gray-100">
                     <Building2 size={14} color="#6B7280" />
                     <Text className="text-xs text-gray-600 ml-2" numberOfLines={1}>
                         {item.nm_suppliers}
                     </Text>
                 </View>
-            </View>
 
-        </TouchableOpacity>
+            </TouchableOpacity>
+        </Animated.View>
     );
 }
