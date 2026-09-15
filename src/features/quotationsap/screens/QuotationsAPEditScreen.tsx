@@ -315,6 +315,18 @@ export function QuotationsAPEditScreen() {
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
                         <Animated.View entering={FadeInUp.duration(400)} className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
                             <View className="p-4 space-y-4">
+                                <View className="flex-row justify-between items-center mb-1 pb-3 border-b border-gray-100">
+                                    <View>
+                                        <Text className="text-lg font-bold text-gray-900">{displayItem?.code_po}</Text>
+                                    </View>
+                                    <View className="items-end">
+                                        <View className={`px-3 py-1 rounded-full border ${displayItem?.status_po === 'QUOTATION' ? 'bg-green-50 border-green-200' : displayItem?.status_po === 'DRAFT' ? 'bg-yellow-50 border-yellow-200' : displayItem?.status_po === 'CANCEL' ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
+                                            <Text className={`text-xs font-bold ${displayItem?.status_po === 'QUOTATION' ? 'text-green-700' : displayItem?.status_po === 'DRAFT' ? 'text-yellow-700' : displayItem?.status_po === 'CANCEL' ? 'text-red-700' : 'text-gray-700'}`}>
+                                                {displayItem?.status_po}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </View>
                                 <View className="space-y-4">
                                     <View>
                                         <Text className="text-sm font-bold text-gray-700 mb-2">Supplier <Text className="text-red-500">*</Text></Text>
