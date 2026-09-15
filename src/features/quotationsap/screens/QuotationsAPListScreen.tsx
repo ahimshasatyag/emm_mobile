@@ -142,8 +142,7 @@ export function QuotationsAPListScreen() {
             </Animated.View>
 
             <View className="flex-1">
-                <Animated.FlatList
-                    entering={FadeInDown}
+                <FlatList
                     data={(isLoadingList || isInitializing) ? [] : displayItems}
                     keyExtractor={(item) => item.id_po}
                     contentContainerStyle={{

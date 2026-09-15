@@ -12,3 +12,6 @@ export const formatTime = (date: Date) =>
 
 export const formatDateTime = (date: Date) =>
     format(toZonedTime(date, timeZone), 'dd MMMM yyyy HH:mm', { locale: id });
+
+export const formatDateServer = (date: Date) =>
+    format(toZonedTime(date, timeZone), 'yyyy-MM-dd');

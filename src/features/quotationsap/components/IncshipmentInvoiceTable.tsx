@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Package, Calendar, ChevronDown } from 'lucide-react-native';
+import { Calendar } from 'lucide-react-native';
+import { formatDate } from '../../../utils/helpers/date';
 
 interface IncshipmentInvoiceTableProps {
     details?: any[];
@@ -11,11 +12,6 @@ interface IncshipmentInvoiceTableProps {
     expectedDate: Date;
     onExpectedDateChange: (date: Date) => void;
 }
-
-const DUMMY_DESTINATIONS = [
-    { label: 'Destinasi 1', value: 'D001' },
-    { label: 'Destinasi 2', value: 'D002' },
-];
 
 export function IncshipmentInvoiceTable({ details = [], destination, onDestinationChange, expectedDate, onExpectedDateChange }: IncshipmentInvoiceTableProps) {
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -26,12 +22,12 @@ export function IncshipmentInvoiceTable({ details = [], destination, onDestinati
             <View className="mb-6">
                 <View>
                     <Text className="text-sm font-bold text-gray-700 mb-2">Expected Date <Text className="text-red-500">*</Text></Text>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => setShowDatePicker(true)}
                         className="border border-gray-200 rounded-xl bg-gray-50 mb-4 flex-row justify-between items-center"
                         style={{ height: 48, paddingHorizontal: 16 }}
                     >
-                        <Text className="text-gray-700">{expectedDate.toISOString().split('T')[0]}</Text>
+                        <Text className="text-gray-700">{formatDate(expectedDate)}</Text>
                         <Calendar size={20} color="#9CA3AF" />
                     </TouchableOpacity>
                     {showDatePicker && (
@@ -54,7 +50,7 @@ export function IncshipmentInvoiceTable({ details = [], destination, onDestinati
                     <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
                         <Dropdown
                             style={{ height: 48, paddingHorizontal: 16 }}
-                            data={DUMMY_DESTINATIONS}
+                            data={details}
                             labelField="label"
                             valueField="value"
                             search

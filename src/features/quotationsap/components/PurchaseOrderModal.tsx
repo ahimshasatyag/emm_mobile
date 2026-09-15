@@ -5,6 +5,7 @@ import { theme } from '../../../theme/theme';
 import { X, Save, Trash2 } from 'lucide-react-native';
 import { formatRp, formatInputNumber, parseInputNumber } from '../../../utils/helpers/money';
 import { PurchaseOrderOptionTable } from './PurchaseOrderOptionTable';
+import { quotationsapApi } from '../api/quotationsapApi';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 interface Product {
@@ -29,10 +30,11 @@ interface PurchaseOrderModalProps {
 export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, productsList, initialData, isReadOnly = false }: PurchaseOrderModalProps) => {
     // States
     const [idProduct, setIdProduct] = useState('');
+    const [codeProduct, setCodeProduct] = useState('');
     const [namaBarang, setNamaBarang] = useState('');
     const [deskripsi, setDeskripsi] = useState('');
     const [note, setNote] = useState('');
-    const [satuan, setSatuan] = useState('Unit');
+    const [satuan, setSatuan] = useState('');
     const [price, setPrice] = useState(0);
     const [qty, setQty] = useState(1);
 
@@ -49,10 +51,11 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
         if (visible) {
             if (initialData) {
                 setIdProduct(initialData.id_product);
+                setCodeProduct(initialData.code_product || '');
                 setNamaBarang(initialData.nm_product);
                 setDeskripsi(initialData.deskripsi || '');
                 setNote(initialData.note || '');
-                setSatuan(initialData.satuan || 'Unit');
+                setSatuan(initialData.satuan || '');
                 setPrice(initialData.price || 0);
                 setQty(initialData.qty || 1);
 
@@ -63,10 +66,11 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
                 ]);
             } else {
                 setIdProduct('');
+                setCodeProduct('');
                 setNamaBarang('');
                 setDeskripsi('');
                 setNote('');
-                setSatuan('Unit');
+                setSatuan('');
                 setPrice(0);
                 setQty(1);
                 setOptions([]);
@@ -74,21 +78,36 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
         }
     }, [visible, initialData]);
 
-    const handleProductSelect = (selectedId: string) => {
+    const handleProductSelect = async (selectedId: string) => {
         setIdProduct(selectedId);
         const product = productsList.find(p => p.id_product === selectedId);
         if (product) {
+            setCodeProduct(product.code_product || '');
             setNamaBarang(product.nm_product);
-            setDeskripsi(product.deskripsi || 'Deskripsi Produk Dummy');
+            setDeskripsi(product.deskripsi || '-');
             if (product.satuan) setSatuan(product.satuan);
             if (product.price) setPrice(product.price);
 
-            // Generate dummy options when product is selected
-            setOptions([
-                { nm_product_opt: `Opsi Khusus ${product.code_product} A`, harga: 5000, selected: false },
-                { nm_product_opt: `Opsi Khusus ${product.code_product} B`, harga: 10000, selected: false },
-            ]);
+            // Fetch real options from backend
+            try {
+                const res = await quotationsapApi.getProductDetail(selectedId);
+                if (res.status && res.data && res.data.options) {
+                    const mappedOptions = res.data.options.map((o: any) => ({
+                        id_product_price_opt: o.id_product_price_opt,
+                        nm_product_opt: o.nm_product_opt,
+                        harga: parseFloat(o.amount) || 0,
+                        selected: false
+                    }));
+                    setOptions(mappedOptions);
+                } else {
+                    setOptions([]);
+                }
+            } catch (error) {
+                console.error("Failed to fetch product options", error);
+                setOptions([]);
+            }
         } else {
+            setCodeProduct('');
             setNamaBarang('');
             setDeskripsi('');
             setOptions([]);
@@ -114,9 +133,8 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
     };
 
     const subtotal = useMemo(() => {
-        const optionTotal = options.filter(o => o.selected).reduce((acc, curr) => acc + (curr.harga || 0), 0);
-        return qty * (price + optionTotal);
-    }, [qty, price, options]);
+        return qty * price;
+    }, [qty, price]);
 
     const handleSave = () => {
         if (!idProduct) {
@@ -134,6 +152,7 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
 
         onSave({
             id_product: idProduct,
+            code_product: codeProduct,
             nm_product: namaBarang,
             deskripsi,
             note,
@@ -141,7 +160,7 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
             price,
             qty,
             subtotal,
-            options: options
+            options: options.filter(o => o.selected)
         });
         onDismiss();
     };
@@ -232,23 +251,25 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
                             />
                         </View>
 
-                        {/* Price & Satuan */}
+                        {/* Price */}
+                        <View className="mb-4">
+                            <Text className="text-sm font-bold text-gray-700 mb-2">Price <Text className="text-red-500">*</Text></Text>
+                            <TextInput
+                                className="bg-white px-4 py-3 rounded-xl border border-gray-200 text-gray-900"
+                                value={price === 0 ? '' : formatInputNumber(price.toString())}
+                                onChangeText={t => {
+                                    const parsed = parseInputNumber(t);
+                                    setPrice(parseInt(parsed, 10) || 0);
+                                }}
+                                keyboardType="numeric"
+                                editable={!isReadOnly}
+                                placeholder="0"
+                            />
+                        </View>
+
+                        {/* Satuan & Qty */}
                         <View className="flex-row gap-4 mb-4">
                             <View className="flex-1">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Price <Text className="text-red-500">*</Text></Text>
-                                <TextInput
-                                    className="bg-white px-4 py-3 rounded-xl border border-gray-200 text-gray-900"
-                                    value={price === 0 ? '' : formatInputNumber(price.toString())}
-                                    onChangeText={t => {
-                                        const parsed = parseInputNumber(t);
-                                        setPrice(parseInt(parsed, 10) || 0);
-                                    }}
-                                    keyboardType="numeric"
-                                    editable={!isReadOnly}
-                                    placeholder="0"
-                                />
-                            </View>
-                            <View className="flex-[0.7]">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Satuan</Text>
                                 <TextInput
                                     className="bg-white px-4 py-3 rounded-xl border border-gray-200 text-gray-900"
@@ -257,10 +278,6 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
                                     editable={!isReadOnly}
                                 />
                             </View>
-                        </View>
-
-                        {/* Qty & Subtotal */}
-                        <View className="flex-row gap-4 mb-6">
                             <View className="flex-1">
                                 <Text className="text-sm font-bold text-gray-700 mb-2">Qty <Text className="text-red-500">*</Text></Text>
                                 <TextInput
@@ -271,14 +288,16 @@ export const PurchaseOrderModal = ({ visible, onDismiss, onSave, onDelete, produ
                                     editable={!isReadOnly}
                                 />
                             </View>
-                            <View className="flex-1">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Subtotal</Text>
-                                <TextInput
-                                    className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold"
-                                    value={formatRp(subtotal)}
-                                    editable={false}
-                                />
-                            </View>
+                        </View>
+
+                        {/* Subtotal */}
+                        <View className="mb-6">
+                            <Text className="text-sm font-bold text-gray-700 mb-2">Subtotal</Text>
+                            <TextInput
+                                className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold"
+                                value={formatRp(subtotal)}
+                                editable={false}
+                            />
                         </View>
 
                         {/* Options Table */}

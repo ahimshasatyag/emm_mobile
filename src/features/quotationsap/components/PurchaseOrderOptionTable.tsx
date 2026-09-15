@@ -24,7 +24,7 @@ export function PurchaseOrderOptionTable({ options, onToggleOption, onPriceChang
                 <Text className="w-24 text-xs font-bold text-gray-500 text-right pr-4">Harga</Text>
                 <Text className="w-10 text-xs font-bold text-gray-500 text-center">Pilih</Text>
             </View>
-            
+
             {options.map((item, index) => (
                 <View
                     key={index}
@@ -48,7 +48,7 @@ export function PurchaseOrderOptionTable({ options, onToggleOption, onPriceChang
                             placeholder="0"
                         />
                     </View>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         className="w-10 items-center justify-center py-2"
                         onPress={() => onToggleOption && onToggleOption(index)}
                         disabled={!onToggleOption}
@@ -61,11 +61,21 @@ export function PurchaseOrderOptionTable({ options, onToggleOption, onPriceChang
                     </TouchableOpacity>
                 </View>
             ))}
-            
+
             {options.length === 0 && (
                 <View className="py-8 items-center border-b border-gray-50 bg-white">
                     <Package color="#9ca3af" size={32} className="mb-2" />
                     <Text className="text-gray-400 text-xs font-medium">Belum ada option</Text>
+                </View>
+            )}
+
+            {options.length > 0 && (
+                <View className="flex-row bg-gray-50 p-3 items-center">
+                    <Text className="flex-1 text-xs font-bold text-gray-700 text-right pr-4">Subtotal Options:</Text>
+                    <Text className="w-24 text-xs font-bold text-gray-900 text-right pr-2">
+                        {formatRp(options.filter(o => o.selected).reduce((acc, curr) => acc + (curr.harga || 0), 0))}
+                    </Text>
+                    <View className="w-10" />
                 </View>
             )}
         </View>

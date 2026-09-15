@@ -1,10 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Building2, Calendar, FileText, CheckCircle2, Clock, XCircle } from 'lucide-react-native';
+import { Calendar, FileText, CheckCircle2, Clock, XCircle } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
-import { theme } from '../../../theme/theme';
 import { QuotationAP } from '../types/quotationsap.types';
-import { formatRp } from '../../../utils/helpers/money';
+import { formatDate } from '../../../utils/helpers/date';
 
 interface QuotationsAPCardProps {
     item: QuotationAP;
@@ -47,7 +46,7 @@ export function QuotationsAPCard({ item, index, onPress }: QuotationsAPCardProps
                         <View className="flex-row items-center">
                             <Calendar size={14} color="#6b7280" className="mr-1" />
                             <Text className="text-xs text-gray-500">
-                                {item.date_po}
+                                {item.date_po ? formatDate(new Date(item.date_po)) : '-'}
                             </Text>
                         </View>
                     </View>
@@ -59,44 +58,6 @@ export function QuotationsAPCard({ item, index, onPress }: QuotationsAPCardProps
                     </View>
                 </View>
 
-                {/* Divider */}
-                <View className="h-[1px] bg-gray-100 w-full mb-3" />
-
-                {/* Content */}
-                <View className="space-y-2">
-                    <View className="flex-row items-start">
-                        <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-3 mt-1">
-                            <Building2 size={16} color={theme.colors.primary} />
-                        </View>
-                        <View className="flex-1">
-                            <Text className="text-xs text-gray-500 mb-0.5">Supplier</Text>
-                            <Text className="text-sm font-semibold text-gray-900">
-                                {item.nm_suppliers}
-                            </Text>
-                        </View>
-                    </View>
-
-                    <View className="flex-row items-start pt-2">
-                        <View className="w-8 h-8 rounded-full bg-orange-50 items-center justify-center mr-3 mt-1">
-                            <FileText size={16} color="#f97316" />
-                        </View>
-                        <View className="flex-1">
-                            <Text className="text-xs text-gray-500 mb-0.5">Notes</Text>
-                            <Text className="text-sm text-gray-700" numberOfLines={2}>
-                                {item.notes || '-'}
-                            </Text>
-                        </View>
-                    </View>
-                    
-                    <View className="flex-row items-start pt-2">
-                        <View className="flex-1">
-                            <Text className="text-xs text-gray-500 mb-0.5">Total Amount</Text>
-                            <Text className="text-sm font-bold text-gray-900">
-                                {formatRp(item.amount_total)}
-                            </Text>
-                        </View>
-                    </View>
-                </View>
             </TouchableOpacity>
         </Animated.View>
     );

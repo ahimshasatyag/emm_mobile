@@ -60,6 +60,12 @@ export function PurchaseOrderTable({ details, onEditProduct }: PurchaseOrderTabl
                                             <Text className="text-xs font-medium text-gray-700">{formatRp(opt.harga || 0)}</Text>
                                         </View>
                                     ))}
+                                    <View className="flex-row items-center justify-between py-2 mt-1 border-t border-gray-200/50">
+                                        <Text className="text-xs font-bold text-gray-600">Subtotal Options</Text>
+                                        <Text className="text-xs font-bold text-gray-900">
+                                            {formatRp(item.options.filter((opt: any) => opt.selected).reduce((acc: number, curr: any) => acc + (curr.harga || 0), 0))}
+                                        </Text>
+                                    </View>
                                 </View>
                             </View>
                         )}

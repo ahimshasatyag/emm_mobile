@@ -35,5 +35,11 @@ export interface QuotationAP {
     amount_total: number;
     id_product_lokasi: string;
     date_create: string;
+    link_file?: string;
+    code_quotation?: string;
+    nm_gudang?: string;
+    mata_uang?: string;
+    nm_product_lokasi?: string;
+    complete_name?: string;
     details?: QuotationAPDetail[];
 }

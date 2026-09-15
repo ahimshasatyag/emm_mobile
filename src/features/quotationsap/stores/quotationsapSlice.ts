@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { QuotationAP } from '../types/quotationsap.types';
 import { quotationsapApi } from '../api/quotationsapApi';
 
@@ -22,9 +22,9 @@ const initialState: QuotationsAPState = {
 
 export const fetchQuotationsAP = createAsyncThunk(
     'quotationsap/fetchAll',
-    async (_, { rejectWithValue }) => {
+    async (search: string | undefined, { rejectWithValue }) => {
         try {
-            return await quotationsapApi.getQuotations();
+            return await quotationsapApi.fetchList(search);
         } catch (error: any) {
             return rejectWithValue(error.message);
         }
@@ -35,18 +35,51 @@ export const fetchQuotationAPById = createAsyncThunk(
     'quotationsap/fetchById',
     async (id: string, { rejectWithValue }) => {
         try {
-            return await quotationsapApi.getQuotationById(id);
+            return await quotationsapApi.fetchDetail(id);
         } catch (error: any) {
             return rejectWithValue(error.message);
         }
     }
 );
 
-export const saveQuotationAP = createAsyncThunk(
-    'quotationsap/save',
-    async (data: QuotationAP, { rejectWithValue }) => {
+export const createQuotationAP = createAsyncThunk(
+    'quotationsap/create',
+    async (data: FormData, { rejectWithValue }) => {
         try {
-            return await quotationsapApi.saveQuotation(data);
+            return await quotationsapApi.create(data);
+        } catch (error: any) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+export const updateQuotationAP = createAsyncThunk(
+    'quotationsap/update',
+    async ({ id, data }: { id: string, data: FormData }, { rejectWithValue }) => {
+        try {
+            return await quotationsapApi.update(id, data);
+        } catch (error: any) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+export const confirmQuotationAP = createAsyncThunk(
+    'quotationsap/confirm',
+    async (id: string, { rejectWithValue }) => {
+        try {
+            return await quotationsapApi.confirm(id);
+        } catch (error: any) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+export const cancelQuotationAP = createAsyncThunk(
+    'quotationsap/cancel',
+    async (id: string, { rejectWithValue }) => {
+        try {
+            return await quotationsapApi.cancel(id);
         } catch (error: any) {
             return rejectWithValue(error.message);
         }
@@ -93,22 +126,28 @@ const quotationsapSlice = createSlice({
             state.error = action.payload as string;
         });
 
-        // Save
-        builder.addCase(saveQuotationAP.pending, (state) => {
+        // Create
+        builder.addCase(createQuotationAP.pending, (state) => {
             state.isSaving = true;
             state.error = null;
         });
-        builder.addCase(saveQuotationAP.fulfilled, (state, action) => {
+        builder.addCase(createQuotationAP.fulfilled, (state) => {
             state.isSaving = false;
-            // Optionally update the list if needed, or rely on a re-fetch
-            const index = state.items.findIndex(item => item.id_po === action.payload.id_po);
-            if (index !== -1) {
-                state.items[index] = action.payload;
-            } else {
-                state.items.unshift(action.payload);
-            }
         });
-        builder.addCase(saveQuotationAP.rejected, (state, action) => {
+        builder.addCase(createQuotationAP.rejected, (state, action) => {
+            state.isSaving = false;
+            state.error = action.payload as string;
+        });
+
+        // Update
+        builder.addCase(updateQuotationAP.pending, (state) => {
+            state.isSaving = true;
+            state.error = null;
+        });
+        builder.addCase(updateQuotationAP.fulfilled, (state) => {
+            state.isSaving = false;
+        });
+        builder.addCase(updateQuotationAP.rejected, (state, action) => {
             state.isSaving = false;
             state.error = action.payload as string;
         });

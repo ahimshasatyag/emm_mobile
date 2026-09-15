@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -17,48 +17,43 @@ import { PurchaseOrderModal } from '../components/PurchaseOrderModal';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ModalCancel } from '../../../components/ui/ModalCancel';
-
-const DUMMY_PRODUCTS = [
-    { id_product: 'P001', code_product: 'BRG-001', nm_product: 'Laptop Asus ROG', deskripsi: 'Laptop Gaming Asus ROG Strix', satuan: 'Unit', price: 15000000 },
-    { id_product: 'P002', code_product: 'BRG-002', nm_product: 'Mouse Logitech MX Master', deskripsi: 'Mouse Wireless Premium', satuan: 'Pcs', price: 1500000 },
-    { id_product: 'P003', code_product: 'BRG-003', nm_product: 'Keyboard Keychron K2', deskripsi: 'Mechanical Keyboard 84 keys', satuan: 'Pcs', price: 1200000 },
-];
-
-const DUMMY_SUPPLIERS = [
-    { label: 'PT Supplier A', value: 'S001' },
-    { label: 'CV Supplier B', value: 'S002' },
-];
-
-const DUMMY_CURRENCIES = [
-    { label: 'IDR - Rupiah', value: 'IDR' },
-    { label: 'USD - US Dollar', value: 'USD' },
-];
-
-const DUMMY_WAREHOUSES = [
-    { label: 'Gudang Utama', value: 'W001' },
-    { label: 'Gudang Cabang', value: 'W002' },
-];
+import { parseISO } from 'date-fns';
+import { formatDate, formatDateServer } from '../../../utils/helpers/date';
 
 export function QuotationsAPEditScreen() {
     const navigation = useNavigation<any>();
-    const { validateForm } = useQuotationsAP();
     const route = useRoute<any>();
     const { id } = route.params;
+
+    const { 
+        validateForm, supportData, getMataUangDefault, 
+        update, confirm, cancel, selectedItem, isLoadingDetail, error, loadDetail, clearSelection, isSaving 
+    } = useQuotationsAP();
+
     const [activeTab, setActiveTab] = useState<'po' | 'incoming'>('po');
+
+    // Support Data states
+    const [suppliers, setSuppliers] = useState<any[]>([]);
+    const [warehouses, setWarehouses] = useState<any[]>([]);
+    const [currencies, setCurrencies] = useState<any[]>([]);
+    const [locations, setLocations] = useState<any[]>([]);
+    const [products, setProducts] = useState<any[]>([]);
 
     // Form states
     const [supplier, setSupplier] = useState<string | null>(null);
+    const [supplierName, setSupplierName] = useState<string>('');
     const [supplierRef, setSupplierRef] = useState('');
     const [currency, setCurrency] = useState<string | null>(null);
     const [warehouse, setWarehouse] = useState<string | null>(null);
     const [orderDate, setOrderDate] = useState<Date>(new Date());
     const [showOrderDatePicker, setShowOrderDatePicker] = useState(false);
+    const [notes, setNotes] = useState('');
 
     // Incoming Shipment states
     const [incDestination, setIncDestination] = useState<string | null>(null);
     const [expectedDate, setExpectedDate] = useState<Date>(new Date());
 
-    // Modal state for Confirm PO
+    // Modal state for Confirm/Cancel PO
     const [isConfirmPOVisible, setIsConfirmPOVisible] = useState(false);
     const [isCancelPOVisible, setIsCancelPOVisible] = useState(false);
 
@@ -74,6 +69,83 @@ export function QuotationsAPEditScreen() {
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedDetail, setSelectedDetail] = useState<any>(null);
     const [poDetails, setPoDetails] = useState<any[]>([]);
+
+    const loadSupport = useCallback(async () => {
+        try {
+            const res = await supportData();
+            if (res?.status) {
+                setSuppliers(res.data_supplier?.map((s: any) => ({ label: s.nm_suppliers, value: s.id_suppliers, data: s })) || []);
+                setWarehouses(res.data_gudang?.map((g: any) => ({ label: g.nm_gudang, value: g.id_gudang })) || []);
+                setCurrencies(res.mata_uangs?.map((m: any) => ({ label: m.name, value: m.id_mata_uang })) || []);
+                setLocations(res.data_lokasi?.map((l: any) => ({ label: l.complete_name || l.nm_product_lokasi, value: l.id_product_lokasi })) || []);
+                setProducts(res.data_product || []);
+            }
+        } catch (error: any) {
+            setToast({ visible: true, type: 'error', message: 'Gagal memuat data pendukung' });
+        }
+    }, [supportData]);
+
+    useEffect(() => {
+        loadSupport();
+    }, [loadSupport]);
+
+    useEffect(() => {
+        if (id) {
+            loadDetail(id);
+        }
+        return () => {
+            clearSelection();
+        };
+    }, [id, loadDetail, clearSelection]);
+
+    useEffect(() => {
+        if (route.params?.toast) {
+            setToast(route.params.toast);
+            navigation.setParams({ toast: undefined });
+        }
+    }, [route.params?.toast, navigation]);
+
+    const displayItem = useMemo(() => selectedItem, [selectedItem]);
+    const isLoading = isLoadingDetail || !displayItem;
+
+    // Load initial details when displayItem is loaded
+    useEffect(() => {
+        if (displayItem) {
+            setSupplier(displayItem.id_suppliers || null);
+            setSupplierName(displayItem.nm_suppliers || '');
+            setSupplierRef(displayItem.partner_ref || '');
+            setCurrency(displayItem.mata_uang || null);
+            setWarehouse(displayItem.id_gudang || null);
+            setNotes(displayItem.notes || '');
+            setIncDestination(displayItem.id_product_lokasi || null);
+            
+            if (displayItem.date_po) {
+                const parsedDate = parseISO(displayItem.date_po);
+                if (!isNaN(parsedDate.getTime())) setOrderDate(parsedDate);
+            }
+            if (displayItem.date_schdl) {
+                const parsedDate = parseISO(displayItem.date_schdl);
+                if (!isNaN(parsedDate.getTime())) setExpectedDate(parsedDate);
+            }
+            if (displayItem.details) {
+                setPoDetails(displayItem.details.map((d: any) => ({
+                    ...d,
+                    qty: d.nqty,
+                })));
+            }
+        }
+    }, [displayItem]);
+
+    const handleSupplierChange = async (item: any) => {
+        setSupplier(item.value);
+        setSupplierName(item.label);
+        try {
+            const res = await getMataUangDefault(item.value);
+            if (res?.status && res.data?.id_mata_uang) {
+                setCurrency(res.data.id_mata_uang);
+            }
+        } catch (e) { }
+    };
 
     const handleAddProduct = () => {
         setSelectedDetail(null);
@@ -105,86 +177,80 @@ export function QuotationsAPEditScreen() {
         }
     };
 
-    const {
-        selectedItem,
-        isLoadingDetail,
-        error,
-        loadDetail,
-        clearSelection
-    } = useQuotationsAP();
-
-    useEffect(() => {
-        if (id !== 'NEW-QAP-001') {
-            loadDetail(id);
-        }
-        return () => {
-            clearSelection();
-        };
-    }, [id, loadDetail, clearSelection]);
-
-    useEffect(() => {
-        if (route.params?.toast) {
-            setToast(route.params.toast);
-        }
-    }, [route.params?.toast]);
-
-    const isDummy = id === 'NEW-QAP-001';
-    const displayItem = React.useMemo(() => {
-        return isDummy ? {
-            id_po: 'NEW-QAP-001',
-            code_po: 'QAP-NEW',
-            nm_supplier: 'Data Baru (Draft)',
-            status: 'Draft',
-            date_po: new Date().toISOString(),
-            details: []
-        } as any : selectedItem;
-    }, [isDummy, selectedItem]);
-
-    const isLoading = isLoadingDetail || (!displayItem && !isDummy);
-
-    // Load initial details when displayItem is loaded
-    useEffect(() => {
-        if (displayItem?.details) {
-            setPoDetails(displayItem.details);
-        }
-        if (displayItem?.date_po) {
-            // attempt to parse if valid, else keep current
-            const parsedDate = new Date(displayItem.date_po);
-            if (!isNaN(parsedDate.getTime())) {
-                setOrderDate(parsedDate);
-            }
-        }
-    }, [displayItem]);
-
-    const handleSave = () => {
+    const handleSave = async () => {
         const errorMsg = validateForm({
-            supplier, supplierRef, currency, warehouse, orderDate, expectedDate, incDestination
-        });
+            id_suppliers: supplier,
+            id_gudang: warehouse,
+            date_po: orderDate
+        }, poDetails.length);
 
         if (errorMsg) {
             setToast({ visible: true, type: 'error', message: errorMsg });
             return;
         }
 
-        navigation.goBack();
-    };
+        const formData = new FormData();
+        formData.append('_method', 'PUT'); // For Laravel
+        formData.append('date_po', formatDateServer(orderDate));
+        formData.append('date_schdl', formatDateServer(expectedDate));
+        formData.append('id_suppliers', supplier || '');
+        formData.append('nm_suppliers', supplierName);
+        formData.append('id_gudang', warehouse || '');
+        formData.append('mata_uang', currency || '');
+        formData.append('partner_ref', supplierRef);
+        formData.append('notes', notes);
+        formData.append('id_product_lokasi', incDestination || '');
+        formData.append('jml', poDetails.length.toString());
 
-    const confirmPO = () => {
-        setIsConfirmPOVisible(false);
-        navigation.replace('PoEditScreen', {
-            id: 'NEW-PO-001',
-            toast: {
-                visible: true,
-                type: 'success',
-                message: 'PO berhasil dikonfirmasi!'
+        poDetails.forEach((detail, index) => {
+            const i = index + 1;
+            formData.append(`id_product${i}`, detail.id_product);
+            formData.append(`code_product${i}`, detail.code_product || '');
+            formData.append(`nm_product${i}`, detail.nm_product || '');
+            formData.append(`product_deskripsi${i}`, detail.product_deskripsi || '');
+            formData.append(`notes${i}`, detail.notes || '');
+            formData.append(`product_price${i}`, detail.product_price?.toString() || '0');
+            formData.append(`nqty${i}`, detail.qty?.toString() || '1');
+
+            if (detail.options && Array.isArray(detail.options)) {
+                detail.options.filter((o: any) => o.selected !== false).forEach((opt: any) => {
+                    formData.append(`options${i}[]`, detail.id_product);
+                    formData.append(`nm_product_opt${i}[]`, opt.nm_product_opt);
+                    formData.append(`harga${i}[]`, opt.harga);
+                });
             }
         });
+
+        try {
+            const res = await update(id, formData, displayItem?.code_po);
+            setIsEditMode(false);
+            setToast({ visible: true, type: 'success', message: res?.message || 'Quotation AP berhasil diperbarui' });
+            loadDetail(id); // Reload to get fresh data
+        } catch (error: any) {
+            setToast({ visible: true, type: 'error', message: error || 'Gagal memperbarui Quotation AP' });
+        }
     };
 
-    const cancelPO = () => {
+    const confirmPO = async () => {
+        setIsConfirmPOVisible(false);
+        try {
+            const res = await confirm(id, displayItem?.code_po);
+            setToast({ visible: true, type: 'success', message: res?.message || 'PO berhasil dikonfirmasi!' });
+            loadDetail(id);
+        } catch (error: any) {
+            setToast({ visible: true, type: 'error', message: error || 'Gagal mengkonfirmasi PO' });
+        }
+    };
+
+    const cancelPO = async () => {
         setIsCancelPOVisible(false);
-        setIsEditMode(false);
-        setToast({ visible: true, type: 'success', message: 'PO telah dibatalkan!' });
+        try {
+            const res = await cancel(id, displayItem?.code_po);
+            setToast({ visible: true, type: 'success', message: res?.message || 'PO telah dibatalkan!' });
+            loadDetail(id);
+        } catch (error: any) {
+            setToast({ visible: true, type: 'error', message: error || 'Gagal membatalkan PO' });
+        }
     };
 
     if (error && !isLoadingDetail) {
@@ -214,20 +280,20 @@ export function QuotationsAPEditScreen() {
                 visible={isConfirmPOVisible}
                 title="Konfirmasi"
                 message="Apakah Anda yakin ingin mengkonfirmasi PO ini?"
-                confirmText="Ya, Confirm"
+                confirmText={isSaving ? "Memproses..." : "Ya, Confirm"}
                 cancelText="Batal"
                 onConfirm={confirmPO}
-                onCancel={() => setIsConfirmPOVisible(false)}
+                onCancel={() => !isSaving && setIsConfirmPOVisible(false)}
             />
 
             <ModalCancel
                 visible={isCancelPOVisible}
                 title="Batalkan PO"
                 message="Apakah Anda yakin ingin membatalkan PO ini?"
-                confirmText="Ya, Batalkan!"
+                confirmText={isSaving ? "Memproses..." : "Ya, Batalkan!"}
                 cancelText="Kembali"
                 onConfirm={cancelPO}
-                onCancel={() => setIsCancelPOVisible(false)}
+                onCancel={() => !isSaving && setIsCancelPOVisible(false)}
             />
             <HeaderNavigator
                 title={isLoading ? "MEMUAT DATA..." : isEditMode ? `EDIT ${displayItem?.code_po}` : `DETAIL ${displayItem?.code_po}`}
@@ -238,7 +304,7 @@ export function QuotationsAPEditScreen() {
             <ScrollView
                 className="flex-1 px-4 pt-4"
                 refreshControl={
-                    <RefreshControl refreshing={isLoadingDetail} onRefresh={() => id && !isDummy && loadDetail(id)} colors={[theme.colors.primary]} />
+                    <RefreshControl refreshing={isLoadingDetail} onRefresh={() => id && loadDetail(id)} colors={[theme.colors.primary]} />
                 }
             >
                 {isLoading ? (
@@ -252,27 +318,27 @@ export function QuotationsAPEditScreen() {
                                 <View className="space-y-4">
                                     <View>
                                         <Text className="text-sm font-bold text-gray-700 mb-2">Supplier <Text className="text-red-500">*</Text></Text>
-                                        <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
+                                        <View className={`border rounded-xl mb-4 ${isEditMode ? 'bg-white border-gray-200' : 'bg-gray-100 border-gray-200'}`}>
                                             <Dropdown
                                                 style={{ height: 48, paddingHorizontal: 16 }}
-                                                data={DUMMY_SUPPLIERS}
+                                                data={suppliers}
                                                 labelField="label"
                                                 valueField="value"
                                                 search
                                                 searchPlaceholder="Cari supplier..."
-                                                placeholder={displayItem.nm_suppliers || "Pilih Supplier"}
+                                                placeholder={displayItem?.nm_suppliers || "Pilih Supplier"}
                                                 value={supplier}
-                                                onChange={item => setSupplier(item.value)}
+                                                onChange={handleSupplierChange}
                                                 disable={!isEditMode}
                                             />
                                         </View>
                                     </View>
 
                                     <View>
-                                        <Text className="text-sm font-bold text-gray-700 mb-2">Supplier Reference <Text className="text-red-500">*</Text></Text>
+                                        <Text className="text-sm font-bold text-gray-700 mb-2">Supplier Reference</Text>
                                         <TextInput
                                             className={`px-4 py-3 rounded-xl border mb-4 ${isEditMode ? 'bg-white border-gray-200 text-gray-900' : 'bg-gray-100 border-gray-200 text-gray-500'}`}
-                                            value={isEditMode ? supplierRef : "REF-12345"}
+                                            value={supplierRef}
                                             onChangeText={setSupplierRef}
                                             editable={isEditMode}
                                             placeholder="Masukkan referensi supplier..."
@@ -281,15 +347,15 @@ export function QuotationsAPEditScreen() {
 
                                     <View>
                                         <Text className="text-sm font-bold text-gray-700 mb-2">Mata Uang <Text className="text-red-500">*</Text></Text>
-                                        <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
+                                        <View className={`border rounded-xl mb-4 ${isEditMode ? 'bg-white border-gray-200' : 'bg-gray-100 border-gray-200'}`}>
                                             <Dropdown
                                                 style={{ height: 48, paddingHorizontal: 16 }}
-                                                data={DUMMY_CURRENCIES}
+                                                data={currencies}
                                                 labelField="label"
                                                 valueField="value"
                                                 search
                                                 searchPlaceholder="Cari mata uang..."
-                                                placeholder="IDR"
+                                                placeholder="Pilih Mata Uang"
                                                 value={currency}
                                                 onChange={item => setCurrency(item.value)}
                                                 disable={!isEditMode}
@@ -301,12 +367,14 @@ export function QuotationsAPEditScreen() {
                                         <Text className="text-sm font-bold text-gray-700 mb-2">Order Date <Text className="text-red-500">*</Text></Text>
                                         <TouchableOpacity
                                             onPress={() => isEditMode && setShowOrderDatePicker(true)}
-                                            className={`px-4 py-3 rounded-xl border border-gray-200 mb-4 flex-row justify-between items-center ${isEditMode ? 'bg-gray-50' : 'bg-gray-100'}`}
+                                            className={`px-4 py-3 rounded-xl border border-gray-200 mb-4 flex-row justify-between items-center ${isEditMode ? 'bg-white' : 'bg-gray-100'}`}
                                         >
-                                            <Text className="text-gray-900">
-                                                {orderDate.toISOString().split('T')[0]}
-                                            </Text>
-                                            <Calendar size={20} color="#9CA3AF" />
+                                            <View className="flex-row items-center">
+                                                <Calendar size={16} color="#9ca3af" className="mr-2" />
+                                                <Text className={isEditMode ? 'text-gray-900' : 'text-gray-500'}>
+                                                    {formatDate(orderDate)}
+                                                </Text>
+                                            </View>
                                         </TouchableOpacity>
                                         {showOrderDatePicker && (
                                             <DateTimePicker
@@ -315,9 +383,7 @@ export function QuotationsAPEditScreen() {
                                                 display="default"
                                                 onChange={(event, selectedDate) => {
                                                     setShowOrderDatePicker(false);
-                                                    if (selectedDate) {
-                                                        setOrderDate(selectedDate);
-                                                    }
+                                                    if (selectedDate) setOrderDate(selectedDate);
                                                 }}
                                             />
                                         )}
@@ -325,15 +391,15 @@ export function QuotationsAPEditScreen() {
 
                                     <View>
                                         <Text className="text-sm font-bold text-gray-700 mb-2">Destination Warehouse <Text className="text-red-500">*</Text></Text>
-                                        <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
+                                        <View className={`border rounded-xl mb-4 ${isEditMode ? 'bg-white border-gray-200' : 'bg-gray-100 border-gray-200'}`}>
                                             <Dropdown
                                                 style={{ height: 48, paddingHorizontal: 16 }}
-                                                data={DUMMY_WAREHOUSES}
+                                                data={warehouses}
                                                 labelField="label"
                                                 valueField="value"
                                                 search
                                                 searchPlaceholder="Cari destination warehouse..."
-                                                placeholder="Gudang Utama"
+                                                placeholder="Pilih Gudang"
                                                 value={warehouse}
                                                 onChange={item => setWarehouse(item.value)}
                                                 disable={!isEditMode}
@@ -344,11 +410,13 @@ export function QuotationsAPEditScreen() {
                                     <View>
                                         <Text className="text-sm font-bold text-gray-700 mb-2">Notes</Text>
                                         <TextInput
-                                            className={`p-4 rounded-xl border h-24 mb-4 ${isEditMode ? 'bg-gray-50 border-gray-200 text-gray-900' : 'bg-gray-100 border-gray-200 text-gray-500'}`}
-                                            value={displayItem.notes || '-'}
+                                            className={`p-4 rounded-xl border h-24 mb-4 ${isEditMode ? 'bg-white border-gray-200 text-gray-900' : 'bg-gray-100 border-gray-200 text-gray-500'}`}
+                                            value={notes}
+                                            onChangeText={setNotes}
                                             editable={isEditMode}
                                             multiline
                                             textAlignVertical="top"
+                                            placeholder={isEditMode ? "Masukkan catatan..." : "-"}
                                         />
                                     </View>
                                 </View>
@@ -398,11 +466,12 @@ export function QuotationsAPEditScreen() {
                                 {activeTab === 'incoming' && (
                                     <View>
                                         <IncshipmentInvoiceTable
-                                            details={[]}
+                                            details={locations}
                                             destination={incDestination}
                                             onDestinationChange={setIncDestination}
                                             expectedDate={expectedDate}
                                             onExpectedDateChange={setExpectedDate}
+                                            isEditMode={isEditMode}
                                         />
                                     </View>
                                 )}
@@ -415,6 +484,7 @@ export function QuotationsAPEditScreen() {
                                     <Button
                                         variant="outline"
                                         onPress={() => setIsEditMode(false)}
+                                        disabled={isSaving}
                                         className="flex-1 h-14 rounded-xl flex-row items-center justify-center"
                                     >
                                         <X color={theme.colors.primary} size={20} className="mr-2" />
@@ -422,42 +492,47 @@ export function QuotationsAPEditScreen() {
                                     </Button>
                                     <Button
                                         onPress={handleSave}
-                                        className="flex-1 h-14 rounded-2xl flex-row items-center justify-center"
+                                        disabled={isSaving}
+                                        className={`flex-1 h-14 rounded-2xl flex-row items-center justify-center ${isSaving ? 'opacity-50' : ''}`}
                                         style={{ elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
                                     >
                                         <Save color="white" size={20} className="mr-2" />
-                                        <Text className="text-white font-bold text-lg">Simpan</Text>
+                                        <Text className="text-white font-bold text-lg">{isSaving ? 'Menyimpan...' : 'Simpan'}</Text>
                                     </Button>
                                 </View>
                             ) : (
                                 <View className="mt-2 space-y-3">
-                                    <Button
-                                        onPress={() => setIsEditMode(true)}
-                                        className="w-full h-14 rounded-2xl flex-row items-center justify-center bg-[#9e0b0f]"
-                                        style={{ elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
-                                    >
-                                        <Pencil color="white" size={20} className="mr-2" />
-                                        <Text className="text-white font-bold text-lg">Edit Data</Text>
-                                    </Button>
+                                    {displayItem?.status_po !== 'CONFIRM' && displayItem?.status_po !== 'CANCEL' && (
+                                        <Button
+                                            onPress={() => setIsEditMode(true)}
+                                            className="w-full h-14 rounded-2xl flex-row items-center justify-center bg-[#9e0b0f]"
+                                            style={{ elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
+                                        >
+                                            <Pencil color="white" size={20} className="mr-2" />
+                                            <Text className="text-white font-bold text-lg">Edit Data</Text>
+                                        </Button>
+                                    )}
 
-                                    <View className="flex-row space-x-3 mt-1">
-                                        <TouchableOpacity
-                                            className="bg-gray-800 flex-1 flex-row justify-center items-center py-3.5 rounded-xl shadow-sm"
-                                            activeOpacity={0.8}
-                                            onPress={() => setIsConfirmPOVisible(true)}
-                                        >
-                                            <CheckCircle color="#fff" size={20} />
-                                            <Text className="text-white font-bold ml-2 text-sm">Confirm PO</Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            className="bg-red-500 flex-1 flex-row justify-center items-center py-3.5 rounded-xl shadow-sm"
-                                            activeOpacity={0.8}
-                                            onPress={() => setIsCancelPOVisible(true)}
-                                        >
-                                            <XCircle color="#fff" size={20} />
-                                            <Text className="text-white font-bold ml-2 text-sm">Cancel PO</Text>
-                                        </TouchableOpacity>
-                                    </View>
+                                    {displayItem?.status_po === 'DRAFT' && (
+                                        <View className="flex-row space-x-3 mt-1">
+                                            <TouchableOpacity
+                                                className="bg-gray-800 flex-1 flex-row justify-center items-center py-3.5 rounded-xl shadow-sm"
+                                                activeOpacity={0.8}
+                                                onPress={() => setIsConfirmPOVisible(true)}
+                                            >
+                                                <CheckCircle color="#fff" size={20} />
+                                                <Text className="text-white font-bold ml-2 text-sm">Confirm PO</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                className="bg-red-500 flex-1 flex-row justify-center items-center py-3.5 rounded-xl shadow-sm"
+                                                activeOpacity={0.8}
+                                                onPress={() => setIsCancelPOVisible(true)}
+                                            >
+                                                <XCircle color="#fff" size={20} />
+                                                <Text className="text-white font-bold ml-2 text-sm">Cancel PO</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    )}
                                 </View>
                             )}
                         </Animated.View>
@@ -470,7 +545,7 @@ export function QuotationsAPEditScreen() {
                 onDismiss={() => setModalVisible(false)}
                 onSave={handleSaveProduct}
                 onDelete={selectedDetail ? handleDeleteProduct : undefined}
-                productsList={DUMMY_PRODUCTS}
+                productsList={products}
                 initialData={selectedDetail}
                 isReadOnly={!isEditMode}
             />

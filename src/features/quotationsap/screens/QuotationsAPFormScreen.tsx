@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -15,42 +15,31 @@ import { PurchaseOrderModal } from '../components/PurchaseOrderModal';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { useQuotationsAP } from '../hooks/useQuotationsAP';
-
-// Dummy data for products
-const DUMMY_PRODUCTS = [
-    { id_product: 'P001', code_product: 'BRG-001', nm_product: 'Laptop Asus ROG', deskripsi: 'Laptop Gaming Asus ROG Strix', satuan: 'Unit', price: 15000000 },
-    { id_product: 'P002', code_product: 'BRG-002', nm_product: 'Mouse Logitech MX Master', deskripsi: 'Mouse Wireless Premium', satuan: 'Pcs', price: 1500000 },
-    { id_product: 'P003', code_product: 'BRG-003', nm_product: 'Keyboard Keychron K2', deskripsi: 'Mechanical Keyboard 84 keys', satuan: 'Pcs', price: 1200000 },
-];
-
-const DUMMY_SUPPLIERS = [
-    { label: 'PT Supplier A', value: 'S001' },
-    { label: 'CV Supplier B', value: 'S002' },
-];
-
-const DUMMY_CURRENCIES = [
-    { label: 'IDR - Rupiah', value: 'IDR' },
-    { label: 'USD - US Dollar', value: 'USD' },
-];
-
-const DUMMY_WAREHOUSES = [
-    { label: 'Gudang Utama', value: 'W001' },
-    { label: 'Gudang Cabang', value: 'W002' },
-];
+import { formatDate, formatDateServer } from '../../../utils/helpers/date';
 
 export function QuotationsAPFormScreen() {
     const navigation = useNavigation<any>();
-    const { validateForm } = useQuotationsAP();
+    const { validateForm, supportData, getMataUangDefault, create, isSaving } = useQuotationsAP();
+    
     const [activeTab, setActiveTab] = useState<'po' | 'incoming'>('po');
     const [poDetails, setPoDetails] = useState<any[]>([]);
 
+    // Support Data states
+    const [suppliers, setSuppliers] = useState<any[]>([]);
+    const [warehouses, setWarehouses] = useState<any[]>([]);
+    const [currencies, setCurrencies] = useState<any[]>([]);
+    const [locations, setLocations] = useState<any[]>([]);
+    const [products, setProducts] = useState<any[]>([]);
+
     // Form states
     const [supplier, setSupplier] = useState<string | null>(null);
+    const [supplierName, setSupplierName] = useState<string>('');
     const [supplierRef, setSupplierRef] = useState('');
     const [currency, setCurrency] = useState<string | null>(null);
     const [warehouse, setWarehouse] = useState<string | null>(null);
     const [orderDate, setOrderDate] = useState<Date>(new Date());
     const [showOrderDatePicker, setShowOrderDatePicker] = useState(false);
+    const [notes, setNotes] = useState('');
 
     // Incoming Shipment states
     const [incDestination, setIncDestination] = useState<string | null>(null);
@@ -62,15 +51,43 @@ export function QuotationsAPFormScreen() {
         type: 'error'
     });
 
-    // Modal Confirm
     const [isConfirmVisible, setIsConfirmVisible] = useState(false);
-
-    // Loading state for refresh control and skeleton
-    const [isLoading, setIsLoading] = useState(false);
-
-    // Modal states
+    const [isLoading, setIsLoading] = useState(true);
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedDetail, setSelectedDetail] = useState<any>(null);
+
+    const loadSupportData = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const res = await supportData();
+            if (res?.status) {
+                setSuppliers(res.data_supplier?.map((s: any) => ({ label: s.nm_suppliers, value: s.id_suppliers, data: s })) || []);
+                setWarehouses(res.data_gudang?.map((g: any) => ({ label: g.nm_gudang, value: g.id_gudang })) || []);
+                setCurrencies(res.mata_uangs?.map((m: any) => ({ label: m.name, value: m.id_mata_uang })) || []);
+                setLocations(res.data_lokasi?.map((l: any) => ({ label: l.complete_name || l.nm_product_lokasi, value: l.id_product_lokasi })) || []);
+                setProducts(res.data_product || []);
+            }
+        } catch (error: any) {
+            setToast({ visible: true, type: 'error', message: 'Gagal memuat data pendukung' });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [supportData]);
+
+    useEffect(() => {
+        loadSupportData();
+    }, [loadSupportData]);
+
+    const handleSupplierChange = async (item: any) => {
+        setSupplier(item.value);
+        setSupplierName(item.label);
+        try {
+            const res = await getMataUangDefault(item.value);
+            if (res?.status && res.data?.id_mata_uang) {
+                setCurrency(res.data.id_mata_uang);
+            }
+        } catch (e) { }
+    };
 
     const handleAddProduct = () => {
         setSelectedDetail(null);
@@ -98,15 +115,16 @@ export function QuotationsAPFormScreen() {
             else newDetails.push(product);
             setPoDetails(newDetails);
         } else {
-            // Add mode
             setPoDetails([...poDetails, product]);
         }
     };
 
     const handleSave = () => {
         const errorMsg = validateForm({
-            supplier, supplierRef, currency, warehouse, orderDate, expectedDate, incDestination
-        });
+            id_suppliers: supplier,
+            id_gudang: warehouse,
+            date_po: orderDate
+        }, poDetails.length);
 
         if (errorMsg) {
             setToast({ visible: true, type: 'error', message: errorMsg });
@@ -116,33 +134,52 @@ export function QuotationsAPFormScreen() {
         setIsConfirmVisible(true);
     };
 
-    const confirmSave = () => {
+    const confirmSave = async () => {
         setIsConfirmVisible(false);
-        navigation.replace('QuotationsAPEditScreen', {
-            id: 'NEW-QAP-001',
-            toast: {
-                visible: true,
-                type: 'success',
-                message: 'Quotation berhasil dibuat!'
+        
+        const formData = new FormData();
+        formData.append('date_po', formatDateServer(orderDate));
+        formData.append('date_schdl', formatDateServer(expectedDate));
+        formData.append('id_suppliers', supplier || '');
+        formData.append('nm_suppliers', supplierName);
+        formData.append('id_gudang', warehouse || '');
+        formData.append('mata_uang', currency || '');
+        formData.append('partner_ref', supplierRef);
+        formData.append('notes', notes);
+        formData.append('id_product_lokasi', incDestination || '');
+        formData.append('jml', poDetails.length.toString());
+
+        poDetails.forEach((detail, index) => {
+            const i = index + 1;
+            formData.append(`id_product${i}`, detail.id_product);
+            formData.append(`code_product${i}`, detail.code_product || '');
+            formData.append(`nm_product${i}`, detail.nm_product || '');
+            formData.append(`product_deskripsi${i}`, detail.product_deskripsi || '');
+            formData.append(`notes${i}`, detail.notes || '');
+            formData.append(`product_price${i}`, detail.product_price?.toString() || '0');
+            formData.append(`nqty${i}`, detail.qty?.toString() || '1');
+
+            if (detail.options && Array.isArray(detail.options)) {
+                detail.options.filter((o: any) => o.selected !== false).forEach((opt: any) => {
+                    formData.append(`options${i}[]`, detail.id_product);
+                    formData.append(`nm_product_opt${i}[]`, opt.nm_product_opt);
+                    formData.append(`harga${i}[]`, opt.harga);
+                });
             }
         });
-    };
 
-    const handleCancel = () => {
-        navigation.goBack();
+        try {
+            const res = await create(formData);
+            navigation.replace('QuotationsAPListScreen', {
+                timestamp: Date.now(),
+                showToast: true,
+                toastMessage: res?.message || 'Quotation AP berhasil dibuat!',
+                toastType: 'success'
+            });
+        } catch (error: any) {
+            setToast({ visible: true, type: 'error', message: error || 'Gagal menyimpan Quotation AP' });
+        }
     };
-
-    const handleRefresh = () => {
-        setIsLoading(true);
-        // Simulate network request
-        setTimeout(() => {
-            setIsLoading(false);
-        }, 1500);
-    };
-
-    useEffect(() => {
-        handleRefresh();
-    }, []);
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -155,12 +192,12 @@ export function QuotationsAPFormScreen() {
             />
             <ModalConfirm
                 visible={isConfirmVisible}
-                title="Konfirmasi"
-                message="Apakah Anda yakin ingin menyimpan Quotation ini?"
-                confirmText="Ya, Simpan"
+                title="Konfirmasi Simpan"
+                message="Apakah Anda yakin ingin menyimpan Quotation AP ini?"
+                confirmText={isSaving ? "Menyimpan..." : "Ya, Simpan"}
                 cancelText="Batal"
                 onConfirm={confirmSave}
-                onCancel={() => setIsConfirmVisible(false)}
+                onCancel={() => !isSaving && setIsConfirmVisible(false)}
             />
             <HeaderNavigator
                 title={isLoading ? "MEMUAT DATA..." : "TAMBAH QUOTATION AP"}
@@ -170,9 +207,7 @@ export function QuotationsAPFormScreen() {
 
             <ScrollView
                 className="flex-1 px-4 pt-4"
-                refreshControl={
-                    <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
-                }
+                refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadSupportData} colors={[theme.colors.primary]} />}
             >
                 {isLoading ? (
                     <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
@@ -187,20 +222,20 @@ export function QuotationsAPFormScreen() {
                                     <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
                                         <Dropdown
                                             style={{ height: 48, paddingHorizontal: 16 }}
-                                            data={DUMMY_SUPPLIERS}
+                                            data={suppliers}
                                             labelField="label"
                                             valueField="value"
                                             search
                                             searchPlaceholder="Cari supplier..."
                                             placeholder="Pilih Supplier"
                                             value={supplier}
-                                            onChange={item => setSupplier(item.value)}
+                                            onChange={handleSupplierChange}
                                         />
                                     </View>
                                 </View>
 
                                 <View>
-                                    <Text className="text-sm font-bold text-gray-700 mb-2">Supplier Reference <Text className="text-red-500">*</Text></Text>
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Supplier Reference</Text>
                                     <TextInput
                                         className="bg-white px-4 py-3 rounded-xl border border-gray-200 text-gray-900 mb-4"
                                         placeholder="Masukkan referensi supplier..."
@@ -215,7 +250,7 @@ export function QuotationsAPFormScreen() {
                                     <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
                                         <Dropdown
                                             style={{ height: 48, paddingHorizontal: 16 }}
-                                            data={DUMMY_CURRENCIES}
+                                            data={currencies}
                                             labelField="label"
                                             valueField="value"
                                             search
@@ -233,7 +268,7 @@ export function QuotationsAPFormScreen() {
                                         onPress={() => setShowOrderDatePicker(true)}
                                         className="bg-gray-100 px-4 py-3 rounded-xl border border-gray-200 mb-4 flex-row justify-between items-center"
                                     >
-                                        <Text className="text-gray-700">{orderDate.toISOString().split('T')[0]}</Text>
+                                        <Text className="text-gray-700">{formatDate(orderDate)}</Text>
                                         <Calendar size={20} color="#9CA3AF" />
                                     </TouchableOpacity>
                                     {showOrderDatePicker && (
@@ -243,9 +278,7 @@ export function QuotationsAPFormScreen() {
                                             display="default"
                                             onChange={(event, selectedDate) => {
                                                 setShowOrderDatePicker(false);
-                                                if (selectedDate) {
-                                                    setOrderDate(selectedDate);
-                                                }
+                                                if (selectedDate) setOrderDate(selectedDate);
                                             }}
                                         />
                                     )}
@@ -256,7 +289,7 @@ export function QuotationsAPFormScreen() {
                                     <View className="border border-gray-200 rounded-xl bg-gray-50 mb-4">
                                         <Dropdown
                                             style={{ height: 48, paddingHorizontal: 16 }}
-                                            data={DUMMY_WAREHOUSES}
+                                            data={warehouses}
                                             labelField="label"
                                             valueField="value"
                                             search
@@ -276,6 +309,8 @@ export function QuotationsAPFormScreen() {
                                         placeholderTextColor="#9CA3AF"
                                         multiline
                                         textAlignVertical="top"
+                                        value={notes}
+                                        onChangeText={setNotes}
                                     />
                                 </View>
                             </View>
@@ -320,7 +355,7 @@ export function QuotationsAPFormScreen() {
                                 )}
                                 {activeTab === 'incoming' && (
                                     <IncshipmentInvoiceTable
-                                        details={[]}
+                                        details={locations}
                                         destination={incDestination}
                                         onDestinationChange={setIncDestination}
                                         expectedDate={expectedDate}
@@ -333,11 +368,12 @@ export function QuotationsAPFormScreen() {
                         <Animated.View entering={FadeInUp.delay(100)} className="mb-8">
                             <Button
                                 onPress={handleSave}
-                                className="w-full h-14 rounded-2xl flex-row items-center justify-center"
+                                disabled={isSaving}
+                                className={`w-full h-14 rounded-2xl flex-row items-center justify-center ${isSaving ? 'opacity-50' : ''}`}
                                 style={{ elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
                             >
                                 <Save color="white" size={20} className="mr-2" />
-                                <Text className="text-white font-bold text-lg">Simpan</Text>
+                                <Text className="text-white font-bold text-lg">{isSaving ? 'Menyimpan...' : 'Simpan'}</Text>
                             </Button>
                         </Animated.View>
                     </Animated.View>
@@ -349,10 +385,9 @@ export function QuotationsAPFormScreen() {
                 onDismiss={() => setModalVisible(false)}
                 onSave={handleSaveProduct}
                 onDelete={selectedDetail ? handleDeleteProduct : undefined}
-                productsList={DUMMY_PRODUCTS}
+                productsList={products}
                 initialData={selectedDetail}
             />
-
         </View>
     );
 }
