@@ -25,9 +25,9 @@ export function QuotationsAPEditScreen() {
     const route = useRoute<any>();
     const { id } = route.params;
 
-    const { 
-        validateForm, supportData, getMataUangDefault, 
-        update, confirm, cancel, selectedItem, isLoadingDetail, error, loadDetail, clearSelection, isSaving 
+    const {
+        validateForm, supportData, getMataUangDefault,
+        update, confirm, cancel, selectedItem, isLoadingDetail, error, loadDetail, clearSelection, isSaving
     } = useQuotationsAP();
 
     const [activeTab, setActiveTab] = useState<'po' | 'incoming'>('po');
@@ -118,7 +118,7 @@ export function QuotationsAPEditScreen() {
             setWarehouse(displayItem.id_gudang || null);
             setNotes(displayItem.notes || '');
             setIncDestination(displayItem.id_product_lokasi || null);
-            
+
             if (displayItem.date_po) {
                 const parsedDate = parseISO(displayItem.date_po);
                 if (!isNaN(parsedDate.getTime())) setOrderDate(parsedDate);
@@ -296,7 +296,7 @@ export function QuotationsAPEditScreen() {
                 onCancel={() => !isSaving && setIsCancelPOVisible(false)}
             />
             <HeaderNavigator
-                title={isLoading ? "MEMUAT DATA..." : isEditMode ? `EDIT ${displayItem?.code_po}` : `DETAIL ${displayItem?.code_po}`}
+                title={isLoading ? "MEMUAT DATA..." : isEditMode ? `EDIT QUOTATION AP` : `DETAIL QUOTATION AP`}
                 showBackButton
                 onBackPress={() => navigation.goBack()}
             />
