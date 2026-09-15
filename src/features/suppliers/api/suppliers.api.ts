@@ -24,7 +24,6 @@ export const createSupplier = async (formData: FormData): Promise<any> => {
 };
 
 export const updateSupplier = async (id: string, formData: FormData): Promise<any> => {
-    formData.append('_method', 'PUT'); // Laravel requirement for form-data PUT
     const response = await api.post(`/suppliers/${id}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
     });

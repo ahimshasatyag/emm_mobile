@@ -14,7 +14,7 @@ import { Dropdown } from 'react-native-element-dropdown';
 import * as DocumentPicker from 'expo-document-picker';
 import { Plus, UploadCloud, X, Save, Pencil } from 'lucide-react-native';
 import { getSupplierById } from '../api/suppliers.api';
-import { validateForm } from '../hooks/useSuppliers';
+import { useSuppliers, validateForm } from '../hooks/useSuppliers';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 
@@ -224,7 +224,7 @@ export function SuppliersEditScreen() {
             });
 
             await submitSupplier(formPayload, true, id);
-            
+
             setToast({ visible: true, type: 'success', message: 'Perubahan berhasil disimpan' });
             setIsEditMode(false);
             loadDetail(id, 'silent');
@@ -262,7 +262,7 @@ export function SuppliersEditScreen() {
             />
 
             <HeaderNavigator
-                title={isLoadingDetail ? 'MEMUAT DATA...' : isEditMode ? `EDIT ${formData.nm_suppliers}` : `DETAIL ${formData.nm_suppliers}`}
+                title={isLoadingDetail ? 'MEMUAT DATA...' : isEditMode ? 'EDIT DATA SUPPLIER' : 'DETAIL DATA SUPPLIER'}
                 showBackButton={true}
             />
 
@@ -287,7 +287,7 @@ export function SuppliersEditScreen() {
                                 className={`px-4 py-3 rounded-xl border mb-4 ${!isEditMode ? 'bg-gray-100 border-gray-200 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
                                 value={formData.nm_suppliers}
                                 onChangeText={t => setFormData(prev => ({ ...prev, nm_suppliers: t }))}
-                                placeholder="Contoh: PT. Maju Bersama"
+                                placeholder="Masukkan Nama Supplier"
                                 editable={isEditMode}
                             />
 
@@ -296,7 +296,7 @@ export function SuppliersEditScreen() {
                                 className={`px-4 py-3 rounded-xl border mb-4 ${!isEditMode ? 'bg-gray-100 border-gray-200 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
                                 value={formData.suppliers_address}
                                 onChangeText={t => setFormData(prev => ({ ...prev, suppliers_address: t }))}
-                                placeholder="Alamat Perusahaan"
+                                placeholder="Masukkan Alamat"
                                 multiline={true}
                                 numberOfLines={4}
                                 textAlignVertical="top"
@@ -358,7 +358,7 @@ export function SuppliersEditScreen() {
                                     <View className={`border rounded-xl ${!isEditMode ? 'bg-gray-100 border-gray-200' : 'bg-gray-50 border-gray-200'}`}>
                                         <Dropdown
                                             style={{ height: 48, paddingHorizontal: 16 }}
-                                            data={mataUangs.map(mu => ({ label: mu.mata_uang, value: mu.id_mata_uang.toString() }))}
+                                            data={mataUangs.map(mu => ({ label: mu.name, value: mu.id_mata_uang.toString() }))}
                                             labelField="label"
                                             valueField="value"
                                             placeholder="Mata Uang"

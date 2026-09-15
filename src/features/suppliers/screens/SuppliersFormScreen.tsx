@@ -298,7 +298,7 @@ export function SuppliersFormScreen() {
                                     <View className="border border-gray-200 rounded-xl bg-gray-50">
                                         <Dropdown
                                             style={{ height: 48, paddingHorizontal: 16 }}
-                                            data={mataUangs.map(mu => ({ label: mu.mata_uang, value: mu.id_mata_uang.toString() }))}
+                                            data={mataUangs.map(mu => ({ label: mu.name, value: mu.id_mata_uang.toString() }))}
                                             labelField="label"
                                             valueField="value"
                                             placeholder="Mata Uang"
