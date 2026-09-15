@@ -1,32 +1,35 @@
 export interface IncshipmentDetail {
-    id_dtl: string;
+    id: string; // From backend 'id'
+    incoming_hdr_id: string;
+    id_product: string;
+    qty: number;
+    qty_terima: number;
+    sn: string | null;
+    status: string;
+    id_product_lokasi_source: string | null;
+    id_product_lokasi_destination: string | null;
     code_product: string;
     nm_product: string;
-    qty: number;
     nm_product_satuan: string;
-    sn: string;
-    lokasi_source: string;
-    lokasi_destination: string;
-    options?: {
-        id_opt_dtl?: string;
-        nm_product_opt: string;
-        harga: number;
-        selected?: boolean;
-    }[];
+    lokasi_source: string | null;
+    lokasi_destination: string | null;
 }
 
 export interface IncshipmentHeader {
     id: string;
     code: string;
+    id_suppliers?: string;
+    id_po?: string;
     nm_suppliers: string;
     code_po: string;
     date_create: string;
+    date_receive: string | null;
     status_incoming: string;
     f_assign_barcode: number;
     f_print_barcode: number;
     f_ok_receive: number;
-    nm_gudang: string;
-    date_receive: string | null;
+    id_gudang?: string;
+    nm_gudang?: string;
     details?: IncshipmentDetail[];
 }
 

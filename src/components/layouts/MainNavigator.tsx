@@ -55,6 +55,7 @@ import { PoEditScreen } from '../../features/po/screens/PoEditScreen';
 import { IncshipmentListScreen } from '../../features/incshipment/screens/IncshipmentListScreen';
 import { IncshipmentFormScreen } from '../../features/incshipment/screens/IncshipmentFormScreen';
 import { IncshipmentEditScreen } from '../../features/incshipment/screens/IncshipmentEditScreen';
+import { IncshipmentPrintScreen } from '../../features/incshipment/screens/IncshipmentPrintScreen';
 import { ApproveListScreen } from '../../features/approve/screens/ApproveListScreen';
 import { ApprovebaruListScreen } from '../../features/approvebaru/screens/ApprovebaruListScreen';
 import { DoListScreen } from '../../features/do/screens/DoListScreen';
@@ -131,6 +132,7 @@ export function MainNavigator() {
             <Stack.Screen name="IncshipmentListScreen" component={IncshipmentListScreen} />
             <Stack.Screen name="IncshipmentFormScreen" component={IncshipmentFormScreen} />
             <Stack.Screen name="IncshipmentEditScreen" component={IncshipmentEditScreen} />
+            <Stack.Screen name="IncshipmentPrintScreen" component={IncshipmentPrintScreen} />
             <Stack.Screen name="ApproveListScreen" component={ApproveListScreen} />
             <Stack.Screen name="ApprovebaruListScreen" component={ApprovebaruListScreen} />
             <Stack.Screen name="DoListScreen" component={DoListScreen} />

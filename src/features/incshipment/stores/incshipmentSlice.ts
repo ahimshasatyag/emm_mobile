@@ -13,11 +13,11 @@ const initialState: IncshipmentState = {
 
 export const fetchIncshipments = createAsyncThunk(
     'incshipment/fetchList',
-    async (_, { rejectWithValue }) => {
+    async (search: string | undefined, { rejectWithValue }) => {
         try {
-            return await incshipmentAPI.fetchList();
+            return await incshipmentAPI.fetchList(search);
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Gagal memuat data');
+            return rejectWithValue(error.response?.data?.message || error.message || 'Gagal memuat data');
         }
     }
 );
@@ -28,7 +28,7 @@ export const fetchIncshipmentDetail = createAsyncThunk(
         try {
             return await incshipmentAPI.fetchDetail(id);
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Gagal memuat detail data');
+            return rejectWithValue(error.response?.data?.message || error.message || 'Gagal memuat detail data');
         }
     }
 );
@@ -39,7 +39,7 @@ export const assignSerialNumber = createAsyncThunk(
         try {
             return await incshipmentAPI.assignSerialNumber(id);
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Gagal assign SN');
+            return rejectWithValue(error.response?.data?.message || error.message || 'Gagal assign SN');
         }
     }
 );
@@ -50,18 +50,18 @@ export const printBarcode = createAsyncThunk(
         try {
             return await incshipmentAPI.printBarcode(id);
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Gagal print barcode');
+            return rejectWithValue(error.response?.data?.message || error.message || 'Gagal print barcode');
         }
     }
 );
 
 export const receiveGoods = createAsyncThunk(
     'incshipment/receiveGoods',
-    async ({ id, selectedItemIds }: { id: string; selectedItemIds: string[] }, { rejectWithValue }) => {
+    async ({ id, data_barang }: { id: string; data_barang: any[] }, { rejectWithValue }) => {
         try {
-            return await incshipmentAPI.receiveGoods(id, selectedItemIds);
+            return await incshipmentAPI.receiveGoods(id, data_barang);
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Gagal receive goods');
+            return rejectWithValue(error.response?.data?.message || error.message || 'Gagal receive goods');
         }
     }
 );
@@ -114,9 +114,10 @@ const incshipmentSlice = createSlice({
                 state.isSaving = true;
                 state.error = null;
             })
-            .addCase(assignSerialNumber.fulfilled, (state, action: PayloadAction<IncshipmentHeader>) => {
+            .addCase(assignSerialNumber.fulfilled, (state) => {
                 state.isSaving = false;
-                state.selectedItem = action.payload; // Update view
+                // Note: The API returns a status response, not the updated header.
+                // We will rely on UI to trigger fetchDetail again.
             })
             .addCase(assignSerialNumber.rejected, (state, action) => {
                 state.isSaving = false;
@@ -126,9 +127,8 @@ const incshipmentSlice = createSlice({
                 state.isSaving = true;
                 state.error = null;
             })
-            .addCase(printBarcode.fulfilled, (state, action: PayloadAction<IncshipmentHeader>) => {
+            .addCase(printBarcode.fulfilled, (state) => {
                 state.isSaving = false;
-                state.selectedItem = action.payload;
             })
             .addCase(printBarcode.rejected, (state, action) => {
                 state.isSaving = false;
@@ -138,9 +138,8 @@ const incshipmentSlice = createSlice({
                 state.isSaving = true;
                 state.error = null;
             })
-            .addCase(receiveGoods.fulfilled, (state, action: PayloadAction<IncshipmentHeader>) => {
+            .addCase(receiveGoods.fulfilled, (state) => {
                 state.isSaving = false;
-                state.selectedItem = action.payload;
             })
             .addCase(receiveGoods.rejected, (state, action) => {
                 state.isSaving = false;

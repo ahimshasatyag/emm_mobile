@@ -6,9 +6,9 @@ export function IncshipmentFormScreen() {
     return (
         <View className="flex-1 bg-gray-50">
             <HeaderNavigator title="TAMBAH INCOMING SHIPMENT" />
-            <View className="flex-1 items-center justify-center">
-                <Text className="text-gray-500">
-                    Form Incoming Shipment (Placeholder)
+            <View className="flex-1 items-center justify-center p-8">
+                <Text className="text-gray-500 text-center font-medium leading-6">
+                    Incoming Shipment tidak dapat dibuat secara manual. Data ini akan otomatis dibuat ("Generate IS") ketika Purchase Order disetujui atau diterima.
                 </Text>
             </View>
         </View>

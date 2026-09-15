@@ -56,9 +56,9 @@ export function IncshipmentTable({ details, showCheckbox, selectedIds, onToggleS
 
                 {/* Body Table */}
                 {details.map((item, index) => {
-                    const isSelected = selectedIds.includes(item.id_dtl);
+                    const isSelected = selectedIds.includes(item.id);
                     return (
-                        <View key={item.id_dtl} className={`flex-col ${index !== details.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                        <View key={item.id} className={`flex-col ${index !== details.length - 1 ? 'border-b border-gray-100' : ''}`}>
                             <View className="flex-row">
                                 <View className="w-24 p-3 border-r border-gray-100 justify-center">
                                     <Text className="text-[13px] text-gray-700 font-medium" numberOfLines={2}>
@@ -99,7 +99,7 @@ export function IncshipmentTable({ details, showCheckbox, selectedIds, onToggleS
                                     <View className="w-16 p-3 justify-center items-center">
                                         <TouchableOpacity
                                             activeOpacity={0.7}
-                                            onPress={() => onToggleSelect(item.id_dtl)}
+                                            onPress={() => onToggleSelect(item.id)}
                                             className={`w-6 h-6 rounded-md border items-center justify-center ${isSelected ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300'}`}
                                         >
                                             {isSelected && <Check size={14} color="#FFF" />}

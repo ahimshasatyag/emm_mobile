@@ -11,15 +11,23 @@ interface IncshipmentCardProps {
 }
 
 export function IncshipmentCard({ item, index, onPress }: IncshipmentCardProps) {
-    const getStatusColor = (status: string) => {
-        switch (status?.toUpperCase()) {
-            case 'RECEIVED': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-            case 'READY TO RECEIVE': return 'bg-orange-100 text-orange-700 border-orange-200';
-            default: return 'bg-gray-100 text-gray-700 border-gray-200';
+    const getStatusStyle = (item: IncshipmentHeader) => {
+        const status = item.status_incoming?.toUpperCase();
+        if (status === 'RECEIVED') {
+            return { view: 'bg-emerald-100 border-emerald-200', text: 'text-emerald-700' };
         }
+        if (status === 'READY TO RECEIVE') {
+            // Jika belum assign barcode, warna merah
+            if (item.f_assign_barcode === 0) {
+                return { view: 'bg-red-50 border-red-200', text: 'text-red-600' };
+            }
+            // Jika sudah assign barcode, warna normal (item/hitam)
+            return { view: 'bg-gray-100 border-gray-300', text: 'text-gray-800' };
+        }
+        return { view: 'bg-gray-100 border-gray-200', text: 'text-gray-700' };
     };
 
-    const statusStyle = getStatusColor(item.status_incoming);
+    const statusStyle = getStatusStyle(item);
 
     return (
         <TouchableOpacity
@@ -37,8 +45,8 @@ export function IncshipmentCard({ item, index, onPress }: IncshipmentCardProps) 
                         {item.code}
                     </Text>
                 </View>
-                <View className={`px-2.5 py-1 rounded-md border ${statusStyle}`}>
-                    <Text className="text-[11px] font-bold" style={{ color: statusStyle.match(/text-(\w+)-700/)?.[0]?.replace('text-', '') }}>
+                <View className={`px-2.5 py-1 rounded-md border ${statusStyle.view}`}>
+                    <Text className={`text-[11px] font-bold ${statusStyle.text}`}>
                         {item.status_incoming}
                     </Text>
                 </View>

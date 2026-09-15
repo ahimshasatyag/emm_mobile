@@ -27,7 +27,7 @@ export function IncshipmentListScreen() {
     ];
 
     const displayItems = useMemo(() => {
-        let filtered = items;
+        let filtered = items || [];
         if (statusFilter !== 'ALL STATUS') {
             filtered = filtered.filter(item => item.status_incoming?.toUpperCase() === statusFilter);
         }
@@ -35,9 +35,9 @@ export function IncshipmentListScreen() {
             const query = searchQuery.toLowerCase();
             filtered = filtered.filter(
                 item =>
-                    item.code.toLowerCase().includes(query) ||
-                    item.code_po.toLowerCase().includes(query) ||
-                    item.nm_suppliers.toLowerCase().includes(query)
+                    item.code?.toLowerCase().includes(query) ||
+                    item.code_po?.toLowerCase().includes(query) ||
+                    item.nm_suppliers?.toLowerCase().includes(query)
             );
         }
         return filtered;
@@ -112,8 +112,7 @@ export function IncshipmentListScreen() {
             </Animated.View>
 
             <View className="flex-1">
-                <Animated.FlatList
-                    entering={FadeInDown}
+                <FlatList
                     data={(isLoadingList || isInitializing) ? [] : displayItems}
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={{

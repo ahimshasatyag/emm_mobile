@@ -17,8 +17,8 @@ export function useIncshipment() {
     const [searchQuery, setSearchQuery] = useState('');
 
     const loadList = useCallback(async () => {
-        return await dispatch(fetchIncshipments()).unwrap();
-    }, [dispatch]);
+        return await dispatch(fetchIncshipments(searchQuery)).unwrap();
+    }, [dispatch, searchQuery]);
 
     const loadDetail = useCallback(async (id: string) => {
         return await dispatch(fetchIncshipmentDetail(id)).unwrap();
@@ -32,16 +32,16 @@ export function useIncshipment() {
         return await dispatch(printBarcode(id)).unwrap();
     }, [dispatch]);
 
-    const handleReceiveGoods = useCallback(async (id: string, selectedItemIds: string[]) => {
-        return await dispatch(receiveGoods({ id, selectedItemIds })).unwrap();
+    const handleReceiveGoods = useCallback(async (id: string, data_barang: any[]) => {
+        return await dispatch(receiveGoods({ id, data_barang })).unwrap();
     }, [dispatch]);
 
     const clearSelection = useCallback(() => {
         dispatch(clearSelectedIncshipment());
     }, [dispatch]);
 
-    const validateReceive = (selectedItemIds: string[]): string | null => {
-        if (selectedItemIds.length === 0) {
+    const validateReceive = (data_barang: any[]): string | null => {
+        if (data_barang.length === 0) {
             return 'Pilih barang minimal 1';
         }
         return null;
