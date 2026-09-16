@@ -1,14 +1,8 @@
 import { CekSerialNumberResponse } from '../types/cekserialnumber.types';
-import { dummyCekSerialNumberData, dummyHistoryServices } from '../data/dummyCekSerialNumber';
+import api from '../../../services/api/api';
 
 class CekSerialNumberApi {
     async searchSerialNumber(barcode: string): Promise<CekSerialNumberResponse> {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        // In a real app, this would be an axios/fetch call to: 
-        // /cform/detail_serial with payload { barcode }
-        
         if (!barcode || barcode.trim() === '') {
             return {
                 status: false,
@@ -17,12 +11,12 @@ class CekSerialNumberApi {
             };
         }
 
-        // Return dummy data on any non-empty search
-        return {
-            status: true,
-            data: [dummyCekSerialNumberData],
-            history: dummyHistoryServices
-        };
+        try {
+            const response = await api.post('/cekserialnumber/detail', { barcode });
+            return response.data;
+        } catch (error: any) {
+            throw new Error(error.response?.data?.message || 'Terjadi kesalahan saat menghubungi server');
+        }
     }
 }
 
