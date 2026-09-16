@@ -8,9 +8,11 @@ import {
     submitRejectAction, 
     clearDetail 
 } from '../stores/approvebaruSlice';
+import { notificationService } from '../../../services/notification/notificationService';
 
 export const useApprovebaru = () => {
     const dispatch = useAppDispatch();
+    const authUser = useAppSelector((state: any) => state.auth.user);
     const { 
         approvals, 
         currentDetail, 
@@ -29,13 +31,35 @@ export const useApprovebaru = () => {
 
     const submitApprove = useCallback(async (id: number) => {
         const resultAction = await dispatch(submitApproveAction(id));
+        if (resultAction.meta.requestStatus === 'fulfilled') {
+            const item = approvals.find(a => a.id === id);
+            await notificationService.store({
+                user_id: authUser?.id_user ?? 1,
+                id_users_level: authUser?.id_users_level ?? 1,
+                kode_trans: 'APPROVE',
+                judul: 'Approval Disetujui',
+                pesan: `Approval dari ${item?.requester_name || 'User'} berhasil disetujui oleh ${authUser?.nm_users}`,
+                action: 'Update'
+            }).catch(() => {});
+        }
         return resultAction;
-    }, [dispatch]);
+    }, [dispatch, approvals, authUser]);
 
     const submitReject = useCallback(async (id: number, reason: string) => {
         const resultAction = await dispatch(submitRejectAction({ id, reason }));
+        if (resultAction.meta.requestStatus === 'fulfilled') {
+            const item = approvals.find(a => a.id === id);
+            await notificationService.store({
+                user_id: authUser?.id_user ?? 1,
+                id_users_level: authUser?.id_users_level ?? 1,
+                kode_trans: 'APPROVE',
+                judul: 'Approval Ditolak',
+                pesan: `Approval dari ${item?.requester_name || 'User'} berhasil ditolak oleh ${authUser?.nm_users}`,
+                action: 'Update'
+            }).catch(() => {});
+        }
         return resultAction;
-    }, [dispatch]);
+    }, [dispatch, approvals, authUser]);
 
     const resetDetail = useCallback(() => {
         dispatch(clearDetail());

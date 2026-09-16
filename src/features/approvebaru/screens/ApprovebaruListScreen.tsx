@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, ScrollView, RefreshControl, Text, Alert } from 'react-native';
+import { View, ScrollView, RefreshControl, Text, Alert, FlatList, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { EmptyState } from '../../../components/shared/EmptyState';
@@ -31,12 +31,16 @@ export const ApprovebaruListScreen = () => {
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'success' });
 
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
+
     useFocusEffect(
         useCallback(() => {
             let isActive = true;
 
             const initialize = async () => {
                 setIsInitializing(true);
+                setVisibleCount(10);
                 try {
                     await Promise.all([
                         getApprovals(),
@@ -62,12 +66,23 @@ export const ApprovebaruListScreen = () => {
 
     const onRefresh = useCallback(async () => {
         setIsRefreshing(true);
+        setVisibleCount(10);
         try {
             await getApprovals();
         } finally {
             setIsRefreshing(false);
         }
     }, [getApprovals]);
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < approvals.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, approvals.length, isLoadMore]);
 
     const handleView = (id: number) => {
         setSelectedId(id);
@@ -122,7 +137,6 @@ export const ApprovebaruListScreen = () => {
             );
         }
 
-        // Tampilkan skeleton saat inisialisasi awal atau saat loading (termasuk saat refresh)
         const isLoadingState = isInitializing || loading;
 
         if (isLoadingState) {
@@ -153,24 +167,37 @@ export const ApprovebaruListScreen = () => {
         }
 
         return (
-            <ScrollView
-                className="flex-1 p-4"
-                showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={['#2563eb']} />
-                }
-            >
-                {approvals.map((item) => (
+            <FlatList
+                className="flex-1"
+                data={approvals.slice(0, visibleCount)}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item, index }) => (
                     <ApprovebaruCard
-                        key={item.id}
                         item={item}
+                        index={index}
                         onView={handleView}
                         onApprove={handleApprove}
                         onReject={handleReject}
                     />
-                ))}
-                <View className="h-20" />
-            </ScrollView>
+                )}
+                contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 100 }}
+                showsVerticalScrollIndicator={false}
+                onEndReached={handleLoadMore}
+                onEndReachedThreshold={0.5}
+                refreshControl={
+                    <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={['#2563eb']} />
+                }
+                ListFooterComponent={() => {
+                    if (isLoadMore) {
+                        return (
+                            <View className="py-4 items-center justify-center">
+                                <ActivityIndicator size="small" color="#2563eb" />
+                            </View>
+                        );
+                    }
+                    return null;
+                }}
+            />
         );
     };
 

@@ -1,33 +1,30 @@
 import { ApprovebaruItem, ApprovebaruDetail } from '../types/approvebaru.types';
-import { mockPendingApprovals, mockApprovalDetail } from '../data/approvebaruMockData';
-
-// Simulated API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import api from '../../../services/api/api';
 
 export const approvebaruApi = {
     getPendingApprovals: async (): Promise<ApprovebaruItem[]> => {
-        await delay(800); // Simulate network request
-        return [...mockPendingApprovals];
+        const response = await api.get('/approvebaru');
+        return response.data.data_approval || [];
     },
 
-    getApprovalDetail: async (id: number): Promise<ApprovebaruDetail> => {
-        await delay(600); // Simulate network request
-        const detail = mockApprovalDetail[id];
-        if (!detail) {
-            throw new Error('Approval not found');
+    getApprovalDetail: async (id_approval: number): Promise<ApprovebaruDetail> => {
+        const response = await api.post('/approvebaru/get-approval-details', { id_approval });
+        if (response.data.status === 'error') {
+            throw new Error(response.data.message || 'Approval not found');
         }
-        return { ...detail };
+        return response.data.data;
     },
 
-    submitApprove: async (id: number): Promise<{ status: string, message: string }> => {
-        await delay(1000); // Simulate network request
-        // In a real app, this would be a POST request to Cform/approval_approve
-        return { status: 'success', message: 'Approval berhasil disetujui' };
+    submitApprove: async (id_approval: number): Promise<{ status: string, message: string }> => {
+        const response = await api.post('/approvebaru/approval-approve', { id_approval });
+        return response.data;
     },
 
-    submitReject: async (id: number, reason: string): Promise<{ status: string, message: string }> => {
-        await delay(1000); // Simulate network request
-        // In a real app, this would be a POST request to Cform/approval_reject
-        return { status: 'success', message: 'Approval berhasil ditolak' };
+    submitReject: async (id_approval: number, rejection_reason: string): Promise<{ status: string, message: string }> => {
+        const response = await api.post('/approvebaru/approval-reject', { 
+            id_approval,
+            rejection_reason
+        });
+        return response.data;
     }
 };
