@@ -14,7 +14,7 @@ import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { theme } from '../../../theme/theme';
-import { formatRp } from '../../../utils/helpers/money';
+import { formatInputNumber } from '../../../utils/helpers/money';
 import { formatDate } from '../../../utils/helpers/date';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
@@ -121,7 +121,7 @@ export const KasBankInFormScreen = () => {
         setIsConfirmVisible(false);
         try {
             await submitKasBankIn({ header: headerData, details: detailData });
-            
+
             DeviceEventEmitter.emit('kasBankInSaved', 'Data Kas/Bank Masuk berhasil disimpan!');
             navigation.goBack();
         } catch (error: any) {
@@ -187,7 +187,10 @@ export const KasBankInFormScreen = () => {
         { label: 'Bank', value: 'b' },
     ];
 
-    const bankOptions = banks.map(b => ({ label: b.nm_bank, value: b.id_bank }));
+    const bankOptions = banks.map(b => ({
+        label: b.nm_rekening ? `${b.nm_bank} | ${b.nm_rekening}` : b.nm_bank,
+        value: b.id_bank
+    }));
     const soOptions = sos.map(s => ({ label: `${s.code_so} - ${s.nm_customers}`, value: s.id_so }));
 
     return (
@@ -288,7 +291,7 @@ export const KasBankInFormScreen = () => {
                             {/* SO Dropdown (if DP is true) */}
                             {headerData.f_dp && (
                                 <View className="mb-4">
-                                    <Text className="text-xs text-gray-500 mb-1">Referensi Sales Order</Text>
+                                    <Text className="text-xs text-gray-500 mb-1">No Sales Order</Text>
                                     <View className="border border-gray-200 rounded-xl bg-gray-50 h-12 justify-center">
                                         <Dropdown
                                             style={{ height: 48, paddingHorizontal: 16 }}
@@ -301,7 +304,15 @@ export const KasBankInFormScreen = () => {
                                             searchPlaceholder="Cari SO..."
                                             placeholder="Pilih SO"
                                             value={headerData.id_so}
-                                            onChange={(selected) => setHeaderData({ ...headerData, id_so: selected.value })}
+                                            onChange={(selected) => {
+                                                const selectedSo = sos.find(s => s.id_so === selected.value);
+                                                setHeaderData({
+                                                    ...headerData,
+                                                    id_so: selected.value,
+                                                    v_amount: selectedSo ? Number(selectedSo.ndp_amount || 0) : headerData.v_amount,
+                                                    deskripsi: selectedSo ? `Uang Muka ${selectedSo.code_so} untuk ${selectedSo.nm_customers}` : headerData.deskripsi
+                                                });
+                                            }}
                                         />
                                     </View>
                                 </View>
@@ -337,10 +348,19 @@ export const KasBankInFormScreen = () => {
                             {/* Total Amount */}
                             <View className="mb-4">
                                 <Text className="text-xs text-gray-500 mb-1">Total Amount</Text>
-                                <View className="bg-gray-100 flex-row items-center px-4 h-12 rounded-xl border border-gray-200">
-                                    <Text className="flex-1 text-gray-800 font-bold">
-                                        {formatRp(headerData.v_amount || 0)}
-                                    </Text>
+                                <View className="bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200">
+                                    <Text className="text-gray-800 font-bold mr-1">Rp</Text>
+                                    <TextInput
+                                        className="flex-1 text-gray-800 font-bold p-0"
+                                        keyboardType="numeric"
+                                        value={headerData.v_amount ? formatInputNumber(headerData.v_amount.toString()) : ''}
+                                        onChangeText={(text) => {
+                                            const numericValue = text.replace(/[^0-9]/g, '');
+                                            setHeaderData({ ...headerData, v_amount: numericValue ? parseInt(numericValue, 10) : 0 });
+                                        }}
+                                        placeholder="0"
+                                        placeholderTextColor="#9CA3AF"
+                                    />
                                 </View>
                             </View>
 

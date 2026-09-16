@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, FlatList, RefreshControl, TextInput, DeviceEventEmitter } from 'react-native';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { View, FlatList, RefreshControl, TextInput, DeviceEventEmitter, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -21,6 +21,10 @@ export const KasBankInListScreen = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'error' });
+
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
+    const flatListRef = useRef<FlatList>(null);
 
     useEffect(() => {
         const subscription = DeviceEventEmitter.addListener('kasBankInSaved', (message) => {
@@ -75,11 +79,46 @@ export const KasBankInListScreen = () => {
         }
     };
 
-    const filteredList = kasBankIns.filter(item => {
-        const matchSearch = item.code_kb_masuk?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.deskripsi?.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchSearch;
-    });
+    const filteredList = useMemo(() => {
+        let result = [...(kasBankIns || [])];
+        
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            result = result.filter(item => 
+                (item.code_kb_masuk && item.code_kb_masuk.toLowerCase().includes(query)) ||
+                (item.deskripsi && item.deskripsi.toLowerCase().includes(query))
+            );
+        }
+
+        result.sort((a, b) => {
+            const dateA = new Date(a.d_bank || 0).getTime();
+            const dateB = new Date(b.d_bank || 0).getTime();
+            
+            if (dateB !== dateA) {
+                return dateB - dateA;
+            }
+            
+            const idA = parseInt(a.id_kb_masuk || '0');
+            const idB = parseInt(b.id_kb_masuk || '0');
+            return idB - idA;
+        });
+
+        return result;
+    }, [kasBankIns, searchQuery]);
+
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, kasBankIns]);
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < filteredList.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, filteredList.length, isLoadMore]);
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -108,12 +147,14 @@ export const KasBankInListScreen = () => {
             </Animated.View>
 
             <View className="flex-1">
-                <Animated.FlatList
-                    entering={FadeInDown}
-                    data={isLoading || isInitializing || isRefreshing ? [] : filteredList}
+                <FlatList
+                    ref={flatListRef}
+                    data={isLoading || isInitializing || isRefreshing ? [] : filteredList.slice(0, visibleCount)}
                     keyExtractor={(item) => item.id_kb_masuk}
-                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 20, paddingHorizontal: 16 }}
+                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 100, paddingHorizontal: 16 }}
                     showsVerticalScrollIndicator={false}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
                     refreshControl={
                         <RefreshControl
                             refreshing={isRefreshing}
@@ -121,17 +162,32 @@ export const KasBankInListScreen = () => {
                             colors={[theme.colors.primary]}
                         />
                     }
-                    renderItem={({ item }) => (
+                    renderItem={({ item, index }) => (
                         <KasBankInCard
                             item={item}
+                            index={index}
                             onPress={() => {
-
+                                // Add navigation if needed
                             }}
                         />
                     )}
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
                     ListEmptyComponent={() => {
                         if (isLoading || isInitializing || isRefreshing) {
-                            return <KasBankInListSkeleton />;
+                            return (
+                                <View style={{ marginHorizontal: -16 }}>
+                                    <KasBankInListSkeleton />
+                                </View>
+                            );
                         }
                         return (
                             <EmptyState

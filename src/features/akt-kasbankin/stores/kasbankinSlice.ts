@@ -33,12 +33,7 @@ export const fetchKasBankIns = createAsyncThunk('kasbankin/fetchKasBankIns', asy
 });
 
 export const fetchMasterData = createAsyncThunk('kasbankin/fetchMasterData', async () => {
-    const [banks, coas, sos] = await Promise.all([
-        kasbankinApi.fetchBanks(),
-        kasbankinApi.fetchCoas(),
-        kasbankinApi.fetchSalesOrders(),
-    ]);
-    return { banks, coas, sos };
+    return await kasbankinApi.fetchSupportData();
 });
 
 export const fetchKasBankInById = createAsyncThunk('kasbankin/fetchKasBankInById', async (id: string) => {

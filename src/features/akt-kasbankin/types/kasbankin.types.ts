@@ -28,6 +28,7 @@ export interface KasBankInDetail {
 export interface Bank {
     id_bank: string;
     nm_bank: string;
+    nm_rekening?: string;
 }
 
 export interface Coa {

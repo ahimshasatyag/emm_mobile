@@ -1,21 +1,27 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { KasBankInHeader } from '../types/kasbankin.types';
 import { formatRp } from '../../../utils/helpers/money';
 import { formatDate } from '../../../utils/helpers/date';
 
 interface KasBankInCardProps {
     item: KasBankInHeader;
+    index: number;
     onPress: () => void;
 }
 
-export const KasBankInCard: React.FC<KasBankInCardProps> = ({ item, onPress }) => {
+export const KasBankInCard: React.FC<KasBankInCardProps> = ({ item, index, onPress }) => {
     return (
-        <TouchableOpacity
-            onPress={onPress}
-            activeOpacity={0.7}
-            className="bg-white rounded-xl p-4 mb-3 border border-gray-100 shadow-sm"
+        <Animated.View
+            entering={FadeInUp.delay((index % 10) * 100).duration(400)}
+            className="bg-white rounded-xl mb-3 shadow-sm border border-gray-100 overflow-hidden"
         >
+            <TouchableOpacity
+                onPress={onPress}
+                activeOpacity={0.7}
+                className="p-4"
+            >
             <View className="flex-row justify-between items-start mb-2">
                 <View>
                     <Text className="text-gray-900 font-bold text-base">{item.code_kb_masuk}</Text>
@@ -33,6 +39,7 @@ export const KasBankInCard: React.FC<KasBankInCardProps> = ({ item, onPress }) =
                     <Text className="text-gray-900 font-bold">{formatRp(item.v_amount)}</Text>
                 </View>
             </View>
-        </TouchableOpacity>
+            </TouchableOpacity>
+        </Animated.View>
     );
 };

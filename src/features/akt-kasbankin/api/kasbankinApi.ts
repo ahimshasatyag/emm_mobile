@@ -1,93 +1,72 @@
+import api from '../../../services/api/api';
 import { KasBankInHeader, KasBankInDetail, Bank, Coa, SalesOrder } from '../types/kasbankin.types';
-import { mockKasBankIns, mockKasBankInDetails, mockBanks, mockCoas, mockSalesOrders } from '../data/mockData';
 
 export const kasbankinApi = {
     fetchKasBankInList: async (): Promise<KasBankInHeader[]> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve([...mockKasBankIns]);
-            }, 500);
-        });
+        const response = await api.get('/akt-kasbankin');
+        if (response.data?.status) {
+            // Laravel paginator returns data inside data.data
+            const resultData = response.data.data;
+            return (resultData?.data !== undefined ? resultData.data : resultData) || [];
+        }
+        throw new Error(response.data?.message || 'Failed to fetch Kas Bank In list');
     },
 
     fetchKasBankInById: async (id: string): Promise<{ header: KasBankInHeader, details: KasBankInDetail[] }> => {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                const header = mockKasBankIns.find(k => k.id_kb_masuk === id);
-                if (header) {
-                    const details = mockKasBankInDetails.filter(d => d.id_kb_masuk === id);
-                    resolve({ header, details });
-                } else {
-                    reject(new Error('Kas Bank In not found'));
-                }
-            }, 500);
-        });
+        const response = await api.get(`/akt-kasbankin/${id}`);
+        if (response.data?.status) {
+            return response.data.data;
+        }
+        throw new Error(response.data?.message || 'Kas Bank In not found');
     },
 
     saveKasBankIn: async (data: { header: Partial<KasBankInHeader>, details: Partial<KasBankInDetail>[] }): Promise<KasBankInHeader> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                const newId = `KB${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-                
-                // Get relations for mock list display
-                const bank = mockBanks.find(b => b.id_bank === data.header.id_bank);
-                const so = mockSalesOrders.find(s => s.id_so === data.header.id_so);
+        const { header, details } = data;
+        
+        // Map to what backend store expects
+        const payload = {
+            id_bank: header.id_bank,
+            f_dp: header.f_dp ? 1 : 0,
+            type_kb: header.type_kb,
+            v_desc: header.deskripsi,
+            id_so: header.id_so,
+            d_bank: header.d_bank,
+            v_amount: header.v_amount,
+            
+            // Array mappings for details
+            id_coa: details.map(d => d.id_coa),
+            amount: details.map(d => d.v_amount),
+            deskripsi: details.map(d => d.deskripsi || ''),
+        };
 
-                const newHeader: KasBankInHeader = {
-                    ...data.header,
-                    id_kb_masuk: newId,
-                    code_kb_masuk: data.header.code_kb_masuk || `MOCK-${newId}`,
-                    type_kb: data.header.type_kb || 'k',
-                    id_bank: data.header.id_bank || '',
-                    d_bank: data.header.d_bank || new Date().toISOString().split('T')[0],
-                    v_amount: data.header.v_amount || 0,
-                    v_balance: data.header.v_amount || 0,
-                    f_dp: data.header.f_dp || false,
-                    id_so: data.header.id_so || null,
-                    deskripsi: data.header.deskripsi || '',
-                    date_create: new Date().toISOString(),
-                    nm_bank: bank?.nm_bank,
-                    code_so: so?.code_so,
-                    nm_customers: so?.nm_customers,
-                };
-                
-                mockKasBankIns.push(newHeader);
-
-                data.details.forEach((d, index) => {
-                    const coa = mockCoas.find(c => c.id_coa === d.id_coa);
-                    mockKasBankInDetails.push({
-                        id_kb_masuk_dtl: `KBD${newId}-${index}`,
-                        id_kb_masuk: newId,
-                        id_coa: d.id_coa || '',
-                        v_amount: d.v_amount || 0,
-                        deskripsi: d.deskripsi || '',
-                        coa_name: coa?.coa_name || '',
-                    });
-                });
-
-                resolve(newHeader);
-            }, 800);
-        });
+        const response = await api.post('/akt-kasbankin', payload);
+        if (response.data?.status) {
+            return {
+                ...header,
+                code_kb_masuk: response.data.kode,
+            } as KasBankInHeader;
+        }
+        throw new Error(response.data?.message || 'Failed to save kas bank in');
     },
 
-    fetchBanks: async (): Promise<Bank[]> => {
-        return new Promise((resolve) => setTimeout(() => resolve(mockBanks), 300));
-    },
-
-    fetchCoas: async (): Promise<Coa[]> => {
-        return new Promise((resolve) => setTimeout(() => resolve(mockCoas), 300));
-    },
-
-    fetchSalesOrders: async (): Promise<SalesOrder[]> => {
-        return new Promise((resolve) => setTimeout(() => resolve(mockSalesOrders), 300));
+    fetchSupportData: async (): Promise<{ banks: Bank[], coas: Coa[], sos: SalesOrder[] }> => {
+        const response = await api.get('/akt-kasbankin/support-data');
+        if (response.data?.status) {
+            return {
+                banks: response.data.data_bank || [],
+                coas: response.data.data_coa || [],
+                sos: response.data.data_so || [],
+            };
+        }
+        throw new Error(response.data?.message || 'Failed to fetch support data');
     },
 
     fetchSoDetail: async (id_so: string): Promise<SalesOrder | undefined> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                const so = mockSalesOrders.find(s => s.id_so === id_so);
-                resolve(so);
-            }, 300);
-        });
+        const response = await api.get(`/akt-kasbankin/so-detail/${id_so}`);
+        if (response.data?.status) {
+            return response.data.data;
+        }
+        return undefined;
     }
 };
+
