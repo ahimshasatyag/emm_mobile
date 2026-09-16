@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
-import { addSop, updateSop, fetchSopById, clearCurrentSop, confirmSop, revisiSop } from '../stores/sopSlice';
-import { SopItem } from '../types/sop.types';
+import { addSop, updateSop, fetchSopById, clearCurrentSop, confirmSop } from '../stores/sopSlice';
+import { getLegacyDivisiCode } from '../api/sopApi';
 
 interface SopFormData {
     divisi: string;
     code_sop: string;
     nm_sop: string;
-    file_pdf: string | null;
+    file_pdf: any;
 }
 
 export const useSopForm = (sopId?: string, defaultDivisi?: string) => {
@@ -50,12 +50,12 @@ export const useSopForm = (sopId?: string, defaultDivisi?: string) => {
     }, [sopId]);
 
     useEffect(() => {
-        if (currentSop && sopId) {
+        if (currentSop?.header && sopId) {
             setFormData({
-                divisi: currentSop.divisi,
-                code_sop: currentSop.code_sop,
-                nm_sop: currentSop.nm_sop,
-                file_pdf: currentSop.file_pdf,
+                divisi: currentSop.header.divisi.toString(),
+                code_sop: currentSop.header.code_sop,
+                nm_sop: currentSop.header.nm_sop,
+                file_pdf: currentSop.header.file_pdf,
             });
         }
     }, [currentSop, sopId]);
@@ -83,15 +83,40 @@ export const useSopForm = (sopId?: string, defaultDivisi?: string) => {
     const handleSave = async (onSuccess?: (id: string) => void) => {
         setIsSaving(true);
         try {
-            if (sopId) {
-                if (currentSop?.status === 'FINALIZE') {
-                    await dispatch(revisiSop(sopId)).unwrap();
+            const formDataToSubmit = new FormData();
+            
+            // Map the numeric ID back to legacy string for backend compatibility
+            const legacyDivisi = getLegacyDivisiCode(formData.divisi);
+            formDataToSubmit.append('divisi', legacyDivisi);
+            
+            formDataToSubmit.append('code_sop', formData.code_sop);
+            formDataToSubmit.append('nm_sop', formData.nm_sop);
+            
+            if (formData.file_pdf && typeof formData.file_pdf === 'object' && formData.file_pdf.uri) {
+                if (formData.file_pdf.file) {
+                    // Web platform: append the actual File object
+                    formDataToSubmit.append('file_pdf', formData.file_pdf.file);
+                } else {
+                    // Mobile platform: append the { uri, name, type } structure
+                    formDataToSubmit.append('file_pdf', {
+                        uri: formData.file_pdf.uri,
+                        type: formData.file_pdf.mimeType || 'application/pdf',
+                        name: formData.file_pdf.name || 'document.pdf'
+                    } as any);
                 }
-                await dispatch(updateSop({ id: sopId, payload: formData })).unwrap();
+            }
+
+            if (sopId) {
+                formDataToSubmit.append('id_sop', sopId);
+                if (currentSop?.header.status === 'FINALIZE') {
+                    formDataToSubmit.append('f_revisi', 't');
+                }
+                const response = await dispatch(updateSop(formDataToSubmit)).unwrap();
+                await dispatch(fetchSopById(sopId)).unwrap(); // Reload updated data
                 if (onSuccess) onSuccess(sopId);
             } else {
-                const newSop = await dispatch(addSop(formData)).unwrap();
-                if (onSuccess) onSuccess(newSop.id_sop);
+                const response = await dispatch(addSop(formDataToSubmit)).unwrap();
+                if (response?.status && onSuccess) onSuccess(response.kode);
             }
         } catch (error: any) {
             throw error;
@@ -105,19 +130,7 @@ export const useSopForm = (sopId?: string, defaultDivisi?: string) => {
         setIsSaving(true);
         try {
             await dispatch(confirmSop(sopId)).unwrap();
-            if (onSuccess) onSuccess();
-        } catch (error: any) {
-            throw error;
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    const handleRevisi = async (onSuccess?: () => void) => {
-        if (!sopId) return;
-        setIsSaving(true);
-        try {
-            await dispatch(revisiSop(sopId)).unwrap();
+            await dispatch(fetchSopById(sopId)).unwrap(); // Reload data to get FINALIZE status
             if (onSuccess) onSuccess();
         } catch (error: any) {
             throw error;
@@ -131,7 +144,6 @@ export const useSopForm = (sopId?: string, defaultDivisi?: string) => {
         handleChange,
         handleSave,
         handleConfirm,
-        handleRevisi,
         validateForm,
         isSaving,
         loading,

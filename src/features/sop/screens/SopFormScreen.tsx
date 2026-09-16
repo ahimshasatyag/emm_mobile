@@ -5,6 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useSopForm } from '../hooks/useSopForm';
 import { Save, Upload } from 'lucide-react-native';
+import * as DocumentPicker from 'expo-document-picker';
 import { SopFormSkeleton } from '../skeleton/SopFormSkeleton';
 import { ToastMessages } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
@@ -12,8 +13,8 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { theme } from '../../../theme/theme';
 
 type RootStackParamList = {
-    SopFormScreen: { divisi: string };
-    SopListScreen: { divisi: string };
+    SopFormScreen: { divisiId: string, divisiName: string };
+    SopListScreen: { divisiId: string, divisiName: string };
 };
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type SopFormRouteProp = RouteProp<RootStackParamList, 'SopFormScreen'>;
@@ -21,9 +22,9 @@ type SopFormRouteProp = RouteProp<RootStackParamList, 'SopFormScreen'>;
 export const SopFormScreen = () => {
     const navigation = useNavigation<NavigationProp>();
     const route = useRoute<SopFormRouteProp>();
-    const { divisi } = route.params;
+    const { divisiId, divisiName } = route.params;
 
-    const { formData, handleChange, handleSave, validateForm, isSaving, loading, isRefreshing, onRefresh } = useSopForm(undefined, divisi);
+    const { formData, handleChange, handleSave, validateForm, isSaving, loading, isRefreshing, onRefresh } = useSopForm(undefined, divisiId);
 
     const [toastVisible, setToastVisible] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
@@ -73,10 +74,9 @@ export const SopFormScreen = () => {
                 confirmText="Simpan!"
                 onCancel={() => setIsModalConfirmVisible(false)}
                 onConfirm={handleConfirmSave}
-                isLoading={isSaving}
             />
 
-            <HeaderNavigator title={isRefreshing ? "MEMUAT DATA..." : `TAMBAH DAFTAR INDUK DOCUMENT ${divisi}`} showBackButton={true} />
+            <HeaderNavigator title={isRefreshing ? "MEMUAT DATA..." : `TAMBAH DAFTAR INDUK DOCUMENT ${divisiName}`} showBackButton={true} />
             <ScrollView
                 className="flex-1 px-4 pt-4"
                 showsVerticalScrollIndicator={false}
@@ -94,7 +94,7 @@ export const SopFormScreen = () => {
                                 <Text className="text-gray-700 text-sm mb-1">Divisi <Text className="text-red-500">*</Text></Text>
                                 <TextInput
                                     className="border border-gray-200 rounded-lg p-3 text-gray-500 bg-gray-100"
-                                    value={formData.divisi}
+                                    value={divisiName}
                                     editable={false}
                                 />
                             </View>
@@ -121,23 +121,37 @@ export const SopFormScreen = () => {
                                 />
                             </View>
 
-                            {/* Mock PDF Upload */}
+                            {/* PDF Upload */}
                             <View className="mb-4">
                                 <Text className="text-gray-700 text-sm mb-1">File PDF <Text className="text-red-500">*</Text></Text>
                                 <TouchableOpacity
                                     className="border-2 border-dashed border-gray-300 rounded-lg h-32 items-center justify-center bg-gray-50"
-                                    onPress={() => handleChange('file_pdf', 'dummy_uploaded_file.pdf')}
+                                    onPress={async () => {
+                                        try {
+                                            const result = await DocumentPicker.getDocumentAsync({
+                                                type: 'application/pdf',
+                                                copyToCacheDirectory: true
+                                            });
+                                            if (result.assets && result.assets.length > 0) {
+                                                handleChange('file_pdf', result.assets[0]);
+                                            }
+                                        } catch (e) {
+                                            console.log(e);
+                                        }
+                                    }}
                                 >
                                     {formData.file_pdf ? (
                                         <>
-                                            <Text className="text-gray-700 font-bold mb-1">{formData.file_pdf}</Text>
+                                            <Text className="text-gray-700 font-bold mb-1">
+                                                {typeof formData.file_pdf === 'string' ? formData.file_pdf : formData.file_pdf.name || 'Dokumen PDF'}
+                                            </Text>
                                             <Text className="text-gray-500 text-xs">Tap to change file</Text>
                                         </>
                                     ) : (
                                         <>
                                             <Upload color="#9ca3af" size={32} className="mb-2" />
                                             <Text className="text-gray-500 font-medium">Upload File PDF</Text>
-                                            <Text className="text-gray-400 text-xs mt-1">Max size 1MB</Text>
+                                            <Text className="text-gray-400 text-xs mt-1">Hanya format PDF</Text>
                                         </>
                                     )}
                                 </TouchableOpacity>

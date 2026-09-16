@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, ScrollView, RefreshControl, Text } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
@@ -12,7 +12,7 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { theme } from '../../../theme/theme';
 
 type RootStackParamList = {
-    SopListScreen: { divisi: string };
+    SopListScreen: { divisiId: string, divisiName: string };
 };
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -28,11 +28,11 @@ export const SopDivisionScreen = () => {
         if (showRefresh) setIsRefreshing(false);
     };
 
-    useEffect(() => {
-        loadData();
-    }, [dispatch]);
-
-    const totalSop = divisions.reduce((acc, curr) => acc + curr.total, 0);
+    useFocusEffect(
+        useCallback(() => {
+            loadData();
+        }, [dispatch])
+    );
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -47,19 +47,23 @@ export const SopDivisionScreen = () => {
                 {(loading || isRefreshing) ? (
                     <SopDivisionSkeleton />
                 ) : (
-                    <Animated.View entering={FadeIn} exiting={FadeOut} className="flex-1">
-                        <View className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4 items-center justify-center">
-                            <Text className="text-gray-500 font-bold mb-1">Total Dokumen SOP</Text>
-                            <Text className="text-3xl font-extrabold" style={{ color: theme.colors.primary }}>
-                                {totalSop}
-                            </Text>
+                    <Animated.View entering={FadeIn} exiting={FadeOut} className="flex-1 pt-2">
+                        <View className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4 flex-row items-center justify-between">
+                            <Text className="text-gray-600 font-medium">Total Keseluruhan SOP</Text>
+                            <View className="bg-blue-50 px-3 py-1 rounded-full">
+                                <Text className="text-blue-600 font-bold">
+                                    {divisions.reduce((sum, div) => sum + (div.total || 0), 0)} Dokumen
+                                </Text>
+                            </View>
                         </View>
-
                         {divisions.map((item) => (
                             <SopDivisionCard
-                                key={item.divisi}
+                                key={item.id_karyawan_divisi}
                                 data={item}
-                                onPress={() => navigation.navigate('SopListScreen', { divisi: item.divisi })}
+                                onPress={() => navigation.navigate('SopListScreen', { 
+                                    divisiId: item.id_karyawan_divisi.toString(),
+                                    divisiName: item.nm_karyawan_divisi 
+                                })}
                             />
                         ))}
                         <View className="h-20" />

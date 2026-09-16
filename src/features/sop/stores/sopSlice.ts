@@ -1,11 +1,11 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { DivisionSopSummary, SopItem } from '../types/sop.types';
+import { DivisionSopSummary, SopItem, SopDetail } from '../types/sop.types';
 import { sopApi } from '../api/sopApi';
 
 interface SopState {
     divisions: DivisionSopSummary[];
     sops: SopItem[];
-    currentSop: SopItem | null;
+    currentSop: SopDetail | null;
     loading: boolean;
     error: string | null;
 }
@@ -30,20 +30,16 @@ export const fetchSopById = createAsyncThunk('sop/fetchSopById', async (id: stri
     return await sopApi.fetchSopById(id);
 });
 
-export const addSop = createAsyncThunk('sop/addSop', async (payload: Omit<SopItem, 'id_sop' | 'status' | 'history' | 'date_create'>) => {
+export const addSop = createAsyncThunk('sop/addSop', async (payload: FormData) => {
     return await sopApi.addSop(payload);
 });
 
-export const updateSop = createAsyncThunk('sop/updateSop', async ({ id, payload }: { id: string, payload: Partial<SopItem> }) => {
-    return await sopApi.updateSop(id, payload);
+export const updateSop = createAsyncThunk('sop/updateSop', async (payload: FormData) => {
+    return await sopApi.updateSop(payload);
 });
 
 export const confirmSop = createAsyncThunk('sop/confirmSop', async (id: string) => {
     return await sopApi.confirmSop(id);
-});
-
-export const revisiSop = createAsyncThunk('sop/revisiSop', async (id: string) => {
-    return await sopApi.revisiSop(id);
 });
 
 const sopSlice = createSlice({
@@ -89,7 +85,7 @@ const sopSlice = createSlice({
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(fetchSopById.fulfilled, (state, action: PayloadAction<SopItem | undefined>) => {
+            .addCase(fetchSopById.fulfilled, (state, action: PayloadAction<SopDetail | undefined>) => {
                 state.loading = false;
                 if (action.payload) {
                     state.currentSop = action.payload;
@@ -98,52 +94,6 @@ const sopSlice = createSlice({
             .addCase(fetchSopById.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.error.message || 'Failed to fetch SOP';
-            })
-
-            // Add SOP
-            .addCase(addSop.fulfilled, (state, action: PayloadAction<SopItem>) => {
-                state.sops.push(action.payload);
-                // Also update division count locally
-                const index = state.divisions.findIndex(d => d.divisi === action.payload.divisi);
-                if (index !== -1) {
-                    state.divisions[index] = {
-                        ...state.divisions[index],
-                        total: state.divisions[index].total + 1
-                    };
-                }
-            })
-
-            // Update SOP
-            .addCase(updateSop.fulfilled, (state, action: PayloadAction<SopItem>) => {
-                const index = state.sops.findIndex(s => s.id_sop === action.payload.id_sop);
-                if (index !== -1) {
-                    state.sops[index] = action.payload;
-                }
-                if (state.currentSop?.id_sop === action.payload.id_sop) {
-                    state.currentSop = action.payload;
-                }
-            })
-
-            // Confirm SOP
-            .addCase(confirmSop.fulfilled, (state, action: PayloadAction<SopItem>) => {
-                const index = state.sops.findIndex(s => s.id_sop === action.payload.id_sop);
-                if (index !== -1) {
-                    state.sops[index] = action.payload;
-                }
-                if (state.currentSop?.id_sop === action.payload.id_sop) {
-                    state.currentSop = action.payload;
-                }
-            })
-
-            // Revisi SOP
-            .addCase(revisiSop.fulfilled, (state, action: PayloadAction<SopItem>) => {
-                const index = state.sops.findIndex(s => s.id_sop === action.payload.id_sop);
-                if (index !== -1) {
-                    state.sops[index] = action.payload;
-                }
-                if (state.currentSop?.id_sop === action.payload.id_sop) {
-                    state.currentSop = action.payload;
-                }
             });
     }
 });

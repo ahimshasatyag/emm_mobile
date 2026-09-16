@@ -21,7 +21,7 @@ export const SopTableRevisi: React.FC<SopTableRevisiProps> = ({ history }) => {
                     <Text className="text-gray-600 font-bold flex-1 text-center">Tanggal</Text>
                 </View>
                 {history.map((hist) => (
-                    <View key={hist.id} className="flex-row p-3 px-4 border-b border-gray-100 items-center">
+                    <View key={hist.id_sop_history} className="flex-row p-3 px-4 border-b border-gray-100 items-center">
                         <View className="flex-1 items-center">
                             {hist.file_pdf ? (
                                 <TouchableOpacity 
@@ -36,7 +36,7 @@ export const SopTableRevisi: React.FC<SopTableRevisiProps> = ({ history }) => {
                             )}
                         </View>
                         <Text className="text-gray-800 flex-1 text-center text-xs">
-                            {formatDateTime(new Date(hist.date_update))}
+                            {formatDateTime(new Date(hist.date_update || hist.date_create || Date.now()))}
                         </Text>
                     </View>
                 ))}

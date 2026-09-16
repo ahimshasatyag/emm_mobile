@@ -11,6 +11,7 @@ import Animated, { FadeIn, FadeOut, FadeInUp } from 'react-native-reanimated';
 import { theme } from '../../../theme/theme';
 import { ToastMessages } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import * as DocumentPicker from 'expo-document-picker';
 
 type RootStackParamList = {
     SopEditScreen: { id_sop: string };
@@ -28,7 +29,6 @@ export const SopEditScreen = () => {
         handleChange,
         handleSave,
         handleConfirm,
-        handleRevisi,
         validateForm,
         isSaving,
         loading,
@@ -42,7 +42,7 @@ export const SopEditScreen = () => {
     const [toastMessage, setToastMessage] = useState('');
     const [toastType, setToastType] = useState<'success' | 'error'>('error');
     const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
-    const [confirmAction, setConfirmAction] = useState<'save' | 'confirm' | 'revisi' | null>(null);
+    const [confirmAction, setConfirmAction] = useState<'save' | 'confirm' | null>(null);
 
     useEffect(() => {
         if ((route.params as any)?.showSuccessToast) {
@@ -71,8 +71,7 @@ export const SopEditScreen = () => {
     };
 
     const onRevisiPress = () => {
-        setConfirmAction('revisi');
-        setIsModalConfirmVisible(true);
+        setIsEditMode(true);
     };
 
     const executeAction = () => {
@@ -80,7 +79,7 @@ export const SopEditScreen = () => {
         if (confirmAction === 'save') {
             handleSave(() => {
                 setToastType('success');
-                setToastMessage('SOP berhasil diupdate');
+                setToastMessage(currentSop?.header.status === 'FINALIZE' ? 'SOP berhasil direvisi' : 'SOP berhasil diupdate');
                 setToastVisible(true);
                 setIsEditMode(false);
             }).catch((err: any) => {
@@ -98,26 +97,22 @@ export const SopEditScreen = () => {
                 setToastMessage(err.message || 'Terjadi kesalahan');
                 setToastVisible(true);
             });
-        } else if (confirmAction === 'revisi') {
-            handleRevisi(() => {
-                setToastType('success');
-                setToastMessage('SOP berhasil direvisi');
-                setToastVisible(true);
-            }).catch((err: any) => {
-                setToastType('error');
-                setToastMessage(err.message || 'Terjadi kesalahan');
-                setToastVisible(true);
-            });
         }
     };
 
     const statusColor = () => {
-        switch (currentSop?.status) {
+        switch (currentSop?.header.status) {
             case 'DRAFT': return 'bg-gray-100 text-gray-700';
             case 'IN PROGRESS': return 'bg-orange-100 text-orange-700';
             case 'FINALIZE': return 'bg-green-100 text-green-700';
             default: return 'bg-gray-100 text-gray-700';
         }
+    };
+
+    const getDisplayFileName = (fileObj: any) => {
+        if (!fileObj) return 'Belum ada file';
+        if (typeof fileObj === 'string') return fileObj;
+        return fileObj.name || 'Dokumen PDF';
     };
 
     return (
@@ -132,20 +127,18 @@ export const SopEditScreen = () => {
 
             <ModalConfirm
                 visible={isModalConfirmVisible}
-                title={confirmAction === 'confirm' ? 'Confirm SOP?' : confirmAction === 'revisi' ? 'Revisi SOP?' : 'Konfirmasi'}
+                title={confirmAction === 'confirm' ? 'Confirm SOP?' : 'Konfirmasi'}
                 message={
                     confirmAction === 'confirm' ? 'Anda tidak dapat mengubah data ini lagi ketika sudah di confirm!' :
-                    confirmAction === 'revisi' ? 'Status akan kembali menjadi IN PROGRESS dan history akan dicatat.' :
-                    'Apakah Anda yakin ingin menyimpan perubahan SOP ini?'
+                    (currentSop?.header.status === 'FINALIZE' ? 'Status akan kembali menjadi IN PROGRESS dan history akan dicatat.' : 'Apakah Anda yakin ingin menyimpan perubahan SOP ini?')
                 }
-                cancelText={confirmAction === 'confirm' ? 'Tidak, batalkan!' : confirmAction === 'revisi' ? 'Batal' : 'Batal!'}
-                confirmText={confirmAction === 'confirm' ? 'Ya, Confirm!' : confirmAction === 'revisi' ? 'Ya, Revisi' : 'Simpan!'}
+                cancelText={confirmAction === 'confirm' ? 'Tidak, batalkan!' : 'Batal!'}
+                confirmText={confirmAction === 'confirm' ? 'Ya, Confirm!' : 'Simpan!'}
                 onCancel={() => setIsModalConfirmVisible(false)}
                 onConfirm={executeAction}
-                isLoading={isSaving}
             />
 
-            <HeaderNavigator title={isRefreshing ? "MEMUAT DATA..." : (isEditMode ? `EDIT DAFTAR INDUK DOCUMENT ${formData.divisi}` : `DETAIL DAFTAR INDUK DOCUMENT ${formData.divisi}`)} showBackButton={true} />
+            <HeaderNavigator title={isRefreshing ? "MEMUAT DATA..." : (isEditMode ? `EDIT DAFTAR INDUK DOCUMENT ${currentSop?.header.nm_karyawan_divisi || formData.divisi}` : `DETAIL DAFTAR INDUK DOCUMENT ${currentSop?.header.nm_karyawan_divisi || formData.divisi}`)} showBackButton={true} />
             <ScrollView
                 className="flex-1 px-4 pt-4"
                 showsVerticalScrollIndicator={false}
@@ -164,14 +157,14 @@ export const SopEditScreen = () => {
                                 <View className="flex-row justify-between items-center mb-4 pb-4 border-b border-gray-100">
                                     <Text className="text-gray-500 font-bold">Status Dokumen</Text>
                                     <View className={`px-3 py-1 rounded-full ${statusColor().split(' ')[0]}`}>
-                                        <Text className={`text-xs font-bold ${statusColor().split(' ')[1]}`}>{currentSop?.status}</Text>
+                                        <Text className={`text-xs font-bold ${statusColor().split(' ')[1]}`}>{currentSop?.header.status}</Text>
                                     </View>
                                 </View>
                             )}
                             {/* Divisi */}
                             <View className="mb-4">
                                 <Text className="text-gray-700 text-sm mb-1">Divisi</Text>
-                                <Text className="text-gray-800 font-bold text-base">{formData.divisi}</Text>
+                                <Text className="text-gray-800 font-bold text-base">{currentSop?.header.nm_karyawan_divisi || formData.divisi}</Text>
                             </View>
 
                             {/* No Document */}
@@ -202,24 +195,36 @@ export const SopEditScreen = () => {
                                 {isEditMode ? (
                                     <TouchableOpacity
                                         className="border-2 border-dashed border-gray-300 rounded-lg h-32 items-center justify-center bg-gray-50"
-                                        onPress={() => handleChange('file_pdf', 'dummy_uploaded_file_v2.pdf')}
+                                        onPress={async () => {
+                                            try {
+                                                const result = await DocumentPicker.getDocumentAsync({
+                                                    type: 'application/pdf',
+                                                    copyToCacheDirectory: true
+                                                });
+                                                if (result.assets && result.assets.length > 0) {
+                                                    handleChange('file_pdf', result.assets[0]);
+                                                }
+                                            } catch (e) {
+                                                console.log(e);
+                                            }
+                                        }}
                                     >
                                         {formData.file_pdf ? (
                                             <>
-                                                <Text className="text-gray-700 font-bold mb-1">{formData.file_pdf}</Text>
+                                                <Text className="text-gray-700 font-bold mb-1">{getDisplayFileName(formData.file_pdf)}</Text>
                                                 <Text className="text-gray-500 text-xs">Tap to change file</Text>
                                             </>
                                         ) : (
                                             <>
                                                 <Upload color="#9ca3af" size={32} className="mb-2" />
                                                 <Text className="text-gray-500 font-medium">Upload File PDF</Text>
-                                                <Text className="text-gray-400 text-xs mt-1">Max size 1MB</Text>
+                                                <Text className="text-gray-400 text-xs mt-1">Hanya format PDF</Text>
                                             </>
                                         )}
                                     </TouchableOpacity>
                                 ) : (
                                     <View className="bg-gray-100 p-4 rounded-lg flex-row justify-between items-center">
-                                        <Text className="text-gray-700 flex-1 mr-2" numberOfLines={1}>{formData.file_pdf || 'Belum ada file'}</Text>
+                                        <Text className="text-gray-700 flex-1 mr-2" numberOfLines={1}>{getDisplayFileName(formData.file_pdf)}</Text>
                                         {formData.file_pdf && (
                                             <TouchableOpacity
                                                 style={{ backgroundColor: theme.colors.primary }}
@@ -254,14 +259,14 @@ export const SopEditScreen = () => {
                                             ) : (
                                                 <>
                                                     <Save color="white" size={20} className="mr-2" />
-                                                    <Text className="text-white font-bold text-lg">Update</Text>
+                                                    <Text className="text-white font-bold text-lg">{currentSop?.header.status === 'FINALIZE' ? 'Simpan Revisi' : 'Update'}</Text>
                                                 </>
                                             )}
                                         </TouchableOpacity>
                                     </View>
                                 ) : (
                                     <View className="flex-row gap-3 flex-wrap">
-                                        {(currentSop?.status === 'DRAFT' || currentSop?.status === 'IN PROGRESS') && (
+                                        {(currentSop?.header.status === 'DRAFT' || currentSop?.header.status === 'IN PROGRESS') && (
                                             <>
                                                 <TouchableOpacity
                                                     onPress={() => setIsEditMode(true)}
@@ -287,7 +292,7 @@ export const SopEditScreen = () => {
                                             </>
                                         )}
 
-                                        {currentSop?.status === 'FINALIZE' && (
+                                        {currentSop?.header.status === 'FINALIZE' && (
                                             <TouchableOpacity
                                                 onPress={onRevisiPress}
                                                 disabled={isSaving}

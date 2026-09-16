@@ -21,8 +21,10 @@ export const SopDivisionCard: React.FC<SopDivisionCardProps> = ({ data, onPress 
                     <Folder color={theme.colors.primary} size={24} />
                 </View>
                 <View className="flex-1">
-                    <Text className="text-gray-800 font-bold text-lg">{data.divisi}</Text>
-                    <Text className="text-gray-500 text-sm mt-1">{data.total} SOP Documents</Text>
+                    <Text className="text-gray-800 font-bold text-lg">{data.nm_karyawan_divisi}</Text>
+                    {data.total !== undefined && (
+                        <Text className="text-gray-500 text-sm mt-1">{data.total} SOP Documents</Text>
+                    )}
                 </View>
             </View>
             <ChevronRight color={theme.colors.primary} size={20} />

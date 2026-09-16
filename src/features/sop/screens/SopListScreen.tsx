@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, ScrollView, RefreshControl, TouchableOpacity, Text } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
@@ -13,8 +13,8 @@ import { theme } from '../../../theme/theme';
 import { ButtonAdd } from '../../../components/ui/buttonAdd';
 
 type RootStackParamList = {
-    SopListScreen: { divisi: string };
-    SopFormScreen: { divisi: string };
+    SopListScreen: { divisiId: string, divisiName: string };
+    SopFormScreen: { divisiId: string, divisiName: string };
     SopEditScreen: { id_sop: string };
 };
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -23,7 +23,7 @@ type SopListRouteProp = RouteProp<RootStackParamList, 'SopListScreen'>;
 export const SopListScreen = () => {
     const navigation = useNavigation<NavigationProp>();
     const route = useRoute<SopListRouteProp>();
-    const { divisi } = route.params;
+    const { divisiId, divisiName } = route.params;
 
     const dispatch = useAppDispatch();
     const { sops, loading } = useAppSelector(state => state.sop);
@@ -31,17 +31,19 @@ export const SopListScreen = () => {
 
     const loadData = async (showRefresh = false) => {
         if (showRefresh) setIsRefreshing(true);
-        await dispatch(fetchSopsByDivisi(divisi));
+        await dispatch(fetchSopsByDivisi(divisiId));
         if (showRefresh) setIsRefreshing(false);
     };
 
-    useEffect(() => {
-        loadData();
-    }, [dispatch, divisi]);
+    useFocusEffect(
+        useCallback(() => {
+            loadData();
+        }, [dispatch, divisiId])
+    );
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator title={isRefreshing ? "MEMUAT DATA..." : `DAFTAR INDUK DOCUMENT ${divisi}`} showBackButton={true} />
+            <HeaderNavigator title={isRefreshing ? "MEMUAT DATA..." : `DAFTAR INDUK DOCUMENT ${divisiName}`} showBackButton={true} />
             <ScrollView
                 className="flex-1 px-4 pt-4"
                 showsVerticalScrollIndicator={false}
@@ -53,6 +55,14 @@ export const SopListScreen = () => {
                     <SopListSkeleton />
                 ) : (
                     <Animated.View entering={FadeIn} exiting={FadeOut} className="flex-1">
+                        {!loading && sops.length > 0 && (
+                            <View className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 mb-4 flex-row justify-between items-center">
+                                <Text className="text-gray-600 font-medium">Total Dokumen</Text>
+                                <View className="bg-blue-50 px-3 py-1 rounded-full">
+                                    <Text className="text-blue-600 font-bold">{sops.length} SOP</Text>
+                                </View>
+                            </View>
+                        )}
                         {sops.length === 0 ? (
                             <View className="items-center justify-center py-10">
                                 <Text className="text-gray-500">Belum ada dokumen SOP</Text>
@@ -62,7 +72,7 @@ export const SopListScreen = () => {
                                 <SopCard
                                     key={item.id_sop}
                                     data={item}
-                                    onPress={() => navigation.navigate('SopEditScreen', { id_sop: item.id_sop })}
+                                    onPress={() => navigation.navigate('SopEditScreen', { id_sop: item.id_sop.toString() })}
                                 />
                             ))
                         )}
@@ -71,7 +81,7 @@ export const SopListScreen = () => {
                 )}
             </ScrollView>
 
-            <ButtonAdd onPress={() => navigation.navigate('SopFormScreen', { divisi })} />
+            <ButtonAdd onPress={() => navigation.navigate('SopFormScreen', { divisiId, divisiName })} />
         </View>
     );
 };
