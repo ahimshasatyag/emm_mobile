@@ -5,7 +5,9 @@ import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Dropdown } from 'react-native-element-dropdown';
 import { useAssestForm } from '../hooks/useAssests';
 import { theme } from '../../../theme/theme';
-import { Save, ArrowLeft } from 'lucide-react-native';
+import { Save, ArrowLeft, CalendarDays } from 'lucide-react-native';
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { formatDate, formatDateServer } from '../../../utils/helpers/date';
 import { AssetSerialNumber } from '../types/assests.types';
 import { AssetsManagementSNTable } from '../components/AssetsManagementSNTable';
 import { AssetsFormSkeleton } from '../skeleton/AssetsFormSkeleton';
@@ -40,6 +42,8 @@ export function AssestFormScreen() {
     const [toastMessage, setToastMessage] = useState('');
     const [toastType, setToastType] = useState<'success' | 'error'>('error');
     const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
+    const [showProcuredPicker, setShowProcuredPicker] = useState(false);
+    const [showPurchasedPicker, setShowPurchasedPicker] = useState(false);
 
     const onRefresh = useCallback(() => {
         setIsRefreshing(true);
@@ -204,21 +208,53 @@ export function AssestFormScreen() {
                             <View className="mb-4 flex-row justify-between">
                                 <View className="flex-1 mr-2">
                                     <Text className="text-gray-700 text-sm mb-1">{labelProcured} <Text className="text-red-500">*</Text></Text>
-                                    <TextInput
-                                        className="border border-gray-200 rounded-lg p-3 text-gray-800"
-                                        value={formData.procured_date}
-                                        onChangeText={(t) => handleChange('procured_date', t)}
-                                        placeholder="YYYY-MM-DD"
-                                    />
+                                    <TouchableOpacity
+                                        className="border border-gray-200 rounded-lg p-3 bg-white flex-row items-center"
+                                        onPress={() => setShowProcuredPicker(true)}
+                                    >
+                                        <CalendarDays color="#9CA3AF" size={18} />
+                                        <Text className="ml-2 text-gray-800 text-xs" numberOfLines={1}>
+                                            {formData.procured_date ? formatDate(new Date(formData.procured_date)) : 'Pilih Tanggal'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                    {showProcuredPicker && (
+                                        <DateTimePicker
+                                            value={formData.procured_date ? new Date(formData.procured_date) : new Date()}
+                                            mode="date"
+                                            display="default"
+                                            onChange={(event, date) => {
+                                                setShowProcuredPicker(false);
+                                                if (date) {
+                                                    handleChange('procured_date', formatDateServer(date));
+                                                }
+                                            }}
+                                        />
+                                    )}
                                 </View>
                                 <View className="flex-1 ml-2">
                                     <Text className="text-gray-700 text-sm mb-1">{labelPurchased} <Text className="text-red-500">*</Text></Text>
-                                    <TextInput
-                                        className="border border-gray-200 rounded-lg p-3 text-gray-800"
-                                        value={formData.purchased_date}
-                                        onChangeText={(t) => handleChange('purchased_date', t)}
-                                        placeholder="YYYY-MM-DD"
-                                    />
+                                    <TouchableOpacity
+                                        className="border border-gray-200 rounded-lg p-3 bg-white flex-row items-center"
+                                        onPress={() => setShowPurchasedPicker(true)}
+                                    >
+                                        <CalendarDays color="#9CA3AF" size={18} />
+                                        <Text className="ml-2 text-gray-800 text-xs" numberOfLines={1}>
+                                            {formData.purchased_date ? formatDate(new Date(formData.purchased_date)) : 'Pilih Tanggal'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                    {showPurchasedPicker && (
+                                        <DateTimePicker
+                                            value={formData.purchased_date ? new Date(formData.purchased_date) : new Date()}
+                                            mode="date"
+                                            display="default"
+                                            onChange={(event, date) => {
+                                                setShowPurchasedPicker(false);
+                                                if (date) {
+                                                    handleChange('purchased_date', formatDateServer(date));
+                                                }
+                                            }}
+                                        />
+                                    )}
                                 </View>
                             </View>
 
