@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, TextInput, RefreshControl } from 'react-native';
+import { View, TextInput, RefreshControl, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Plus, Search } from 'lucide-react-native';
@@ -30,6 +30,10 @@ export function LogbookProductListScreen() {
         message: '',
         title: undefined
     });
+
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
+    const flatListRef = React.useRef<any>(null);
 
     useEffect(() => {
         if (route.params?.toastMessage) {
@@ -82,11 +86,26 @@ export function LogbookProductListScreen() {
         setIsRefreshing(false);
     };
 
+    useEffect(() => {
+        setVisibleCount(10);
+        flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+    }, [searchQuery, list]);
+
     const filteredList = list.filter(item =>
         item.nm_product?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.code_product?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.id_log_book?.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < filteredList.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, filteredList.length, isLoadMore]);
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -107,14 +126,27 @@ export function LogbookProductListScreen() {
 
             <View className="flex-1">
                 <Animated.FlatList
-                    data={(isLoading || isInitializing) ? [] : filteredList}
+                    ref={flatListRef}
+                    data={(isLoading || isInitializing) ? [] : filteredList.slice(0, visibleCount)}
                     keyExtractor={(item) => item.id_log_book}
                     renderItem={({ item, index }) => <LogbookProductCard logbook={item} index={index} />}
                     contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
                     showsVerticalScrollIndicator={false}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
                     refreshControl={
                         <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
                     }
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
                     ListEmptyComponent={() => {
                         if (error) {
                             return (

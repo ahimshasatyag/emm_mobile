@@ -5,7 +5,7 @@ export function LogbookProductListSkeleton() {
     return (
         <View className="flex-1 bg-gray-50 p-4">
             <View className="space-y-3">
-                {[1, 2, 3, 4, 5].map((item) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((item) => (
                     <View key={item} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-3">
                         <View className="flex-row justify-between items-start mb-2">
                             <View className="flex-1 mr-3">

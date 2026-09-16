@@ -10,10 +10,12 @@ import {
     deleteLogbookProduct,
     clearCurrent
 } from '../stores/logbookproductSlice';
+import { notificationService } from '../../../services/notification/notificationService';
 
 export function useLogbookProductForm(idLogbook?: string) {
     const dispatch = useAppDispatch();
     const { current, masterDataBarang, masterDataTypeKerusakan, isLoading } = useAppSelector(state => state.logbookproduct);
+    const authUser = useAppSelector((state) => state.auth.user);
 
     const [formData, setFormData] = useState<Partial<LogbookProduct>>({
         id_product: '',
@@ -89,9 +91,29 @@ export function useLogbookProductForm(idLogbook?: string) {
 
             if (idLogbook) {
                 await dispatch(updateLogbookProduct({ ...payload, id_log_book: idLogbook })).unwrap();
+                
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'LOGBOOK PRODUCT',
+                    judul: 'Logbook Product Diperbarui',
+                    pesan: `Logbook Product berhasil diperbarui oleh ${authUser?.nm_users}`,
+                    action: 'Update'
+                }).catch(() => {});
+
                 if (onSuccess) onSuccess(idLogbook);
             } else {
                 const res = await dispatch(createLogbookProduct(payload)).unwrap();
+                
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'LOGBOOK PRODUCT',
+                    judul: 'Logbook Product Baru',
+                    pesan: `Logbook Product berhasil ditambahkan oleh ${authUser?.nm_users}`,
+                    action: 'Create'
+                }).catch(() => {});
+
                 if (res?.kode && onSuccess) onSuccess(res.kode);
             }
         } catch (error: any) {
@@ -106,6 +128,16 @@ export function useLogbookProductForm(idLogbook?: string) {
         setIsSaving(true);
         try {
             await dispatch(deleteLogbookProduct(idLogbook)).unwrap();
+
+            await notificationService.store({
+                user_id: authUser?.id_user ?? 1,
+                id_users_level: authUser?.id_users_level ?? 1,
+                kode_trans: 'LOGBOOK PRODUCT',
+                judul: 'Logbook Product Dihapus',
+                pesan: `Logbook Product berhasil dihapus oleh ${authUser?.nm_users}`,
+                action: 'Delete'
+            }).catch(() => {});
+
             if (onSuccess) onSuccess();
         } catch (error: any) {
             throw error;
