@@ -1,25 +1,31 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TextInput, Alert, RefreshControl } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { Save, X } from 'lucide-react-native';
+import { View, Text, ScrollView, TextInput, RefreshControl } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Save } from 'lucide-react-native';
 import { Dropdown } from "react-native-element-dropdown";
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Button } from '../../../components/ui/button';
 import { theme } from '../../../theme/theme';
 import { useLogbookCustomersForm } from '../hooks/useLogbookCustomersForm';
-import { logbookCustomersApi } from '../api/logbookCustomersApi';
-import { dummyCustomersDropdown } from '../data/dummyCustomers';
 import { LogbookCustomersFormSkeleton } from '../skeleton/LogbookCustomersFormSkeleton';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 
 export function LogbookCustomersFormScreen() {
     const navigation = useNavigation<any>();
-    const { formData, updateField, validate } = useLogbookCustomersForm();
-    const [isSaving, setIsSaving] = useState(false);
+    
+    const { 
+        formData, 
+        updateField, 
+        validate, 
+        handleSave, 
+        masterDataCustomers, 
+        isLoading, 
+        isSaving 
+    } = useLogbookCustomersForm();
+    
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [isInitializing, setIsInitializing] = useState(true);
     const [isSaveModalVisible, setIsSaveModalVisible] = useState(false);
     const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType; title?: string }>({
         visible: false,
@@ -27,51 +33,41 @@ export function LogbookCustomersFormScreen() {
         type: 'success'
     });
 
-    useFocusEffect(
-        React.useCallback(() => {
-            let isActive = true;
-            const initialize = async () => {
-                setIsInitializing(true);
-                await new Promise(resolve => setTimeout(resolve, 800));
-                if (isActive) setIsInitializing(false);
-            };
-            initialize();
-            return () => { isActive = false; setIsInitializing(true); };
-        }, [])
-    );
-
     const handleRefresh = async () => {
         setIsRefreshing(true);
+        // Bisa di dispatch refresh master data jika dibutuhkan
         await new Promise(resolve => setTimeout(resolve, 800));
         setIsRefreshing(false);
     };
 
-    const handleSave = () => {
+    const confirmSave = async () => {
+        setIsSaveModalVisible(false);
+        try {
+            await handleSave((newId) => {
+                navigation.replace('LogbookCustomersEditScreen', { 
+                    id: newId,
+                    showSuccessToast: true,
+                    successMessage: 'Data berhasil disimpan!'
+                });
+            });
+        } catch (e: any) {
+            setToast({ visible: true, type: 'error', message: e.message || 'Gagal menyimpan data.' });
+        }
+    };
+
+    const onSavePress = () => {
         const errorMsg = validate();
         if (errorMsg) {
             setToast({ visible: true, type: 'error', message: errorMsg, title: 'Validasi' });
             return;
         }
-
         setIsSaveModalVisible(true);
     };
 
-    const confirmSave = async () => {
-        setIsSaveModalVisible(false);
-        setIsSaving(true);
-        try {
-            const newRecord = await logbookCustomersApi.create(formData);
-            navigation.replace('LogbookCustomersEditScreen', { 
-                id: newRecord.id_log_book,
-                showSuccessToast: true,
-                successMessage: 'Data berhasil disimpan!'
-            });
-        } catch (e) {
-            setToast({ visible: true, type: 'error', message: 'Gagal menyimpan data.' });
-        } finally {
-            setIsSaving(false);
-        }
-    };
+    const customersDropdownData = masterDataCustomers?.map(c => ({
+        label: c.nm_customers,
+        value: c.id_customers.toString()
+    })) || [];
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -94,11 +90,11 @@ export function LogbookCustomersFormScreen() {
             />
 
             <HeaderNavigator
-                title={(isInitializing || isRefreshing) ? "MEMUAT DATA..." : "TAMBAH LOGBOOK CUSTOMERS"}
+                title={(isLoading || isRefreshing) ? "MEMUAT DATA..." : "TAMBAH LOGBOOK CUSTOMERS"}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
                 disableAnimation={true}
-                isLoading={isInitializing || isRefreshing}
+                isLoading={isLoading || isRefreshing}
             />
 
             <View style={{ padding: 12, flex: 1, paddingBottom: 0 }}>
@@ -110,7 +106,7 @@ export function LogbookCustomersFormScreen() {
                         <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
                     }
                 >
-                    {(isInitializing || isRefreshing) ? (
+                    {(isLoading || isRefreshing) ? (
                         <LogbookCustomersFormSkeleton />
                     ) : (
                         <View className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
@@ -120,13 +116,15 @@ export function LogbookCustomersFormScreen() {
                                 <View className="border border-gray-300 rounded-lg justify-center h-[42px] bg-white">
                                     <Dropdown
                                         style={{ paddingHorizontal: 12 }}
-                                        data={dummyCustomersDropdown}
+                                        data={customersDropdownData}
                                         labelField="label"
                                         valueField="value"
                                         placeholder="Select Customer"
                                         value={formData.id_customers}
                                         onChange={(item) => updateField('id_customers', item.value)}
                                         selectedTextStyle={{ color: '#1F2937', fontSize: 14 }}
+                                        search
+                                        searchPlaceholder="Cari customer..."
                                     />
                                 </View>
                             </View>
@@ -179,7 +177,7 @@ export function LogbookCustomersFormScreen() {
                             {/* Actions */}
                             <Animated.View entering={FadeInUp.delay(100)} className="mt-4 flex-row gap-4">
                                 <Button
-                                    onPress={handleSave}
+                                    onPress={onSavePress}
                                     disabled={isSaving}
                                     className={`flex-1 h-14 rounded-2xl flex-row items-center justify-center ${isSaving ? 'bg-gray-400' : 'bg-green-600'}`}
                                     style={isSaving ? {} : { elevation: 4, shadowColor: '#16a34a', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}

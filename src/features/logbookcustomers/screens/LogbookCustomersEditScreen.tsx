@@ -1,19 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TextInput, Alert, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TextInput, RefreshControl } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useDispatch, useSelector } from 'react-redux';
 import { Save, Edit3, Trash2, X } from 'lucide-react-native';
 import { Dropdown } from "react-native-element-dropdown";
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Button } from '../../../components/ui/button';
 import { theme } from '../../../theme/theme';
-import { fetchLogbookCustomerDetail, clearCurrent } from '../stores/logbookcustomersSlice';
-import { RootState, AppDispatch } from '../../../stores';
 import { LogbookCustomersEditSkeleton } from '../skeleton/LogbookCustomersEditSkeleton';
 import { useLogbookCustomersForm } from '../hooks/useLogbookCustomersForm';
-import { logbookCustomersApi } from '../api/logbookCustomersApi';
-import { dummyCustomersDropdown } from '../data/dummyCustomers';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ModalCancel } from '../../../components/ui/ModalCancel';
@@ -21,14 +16,22 @@ import { ModalCancel } from '../../../components/ui/ModalCancel';
 export function LogbookCustomersEditScreen() {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
-    const dispatch = useDispatch<AppDispatch>();
     
     const { id } = route.params || {};
-    const { current, isLoading } = useSelector((state: RootState) => state.logbookcustomers || { current: null, isLoading: false });
+    
+    const { 
+        formData, 
+        updateField, 
+        validate, 
+        handleSave, 
+        handleDelete, 
+        masterDataCustomers, 
+        isLoading, 
+        isSaving 
+    } = useLogbookCustomersForm(id);
     
     const [isEditing, setIsEditing] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [modalType, setModalType] = useState<'update' | 'delete' | null>(null);
     const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType; title?: string }>({
@@ -36,9 +39,6 @@ export function LogbookCustomersEditScreen() {
         message: '',
         type: 'success'
     });
-
-    // Form Hook
-    const { formData, updateField, validate } = useLogbookCustomersForm(current || undefined);
 
     useEffect(() => {
         if (route.params?.showSuccessToast) {
@@ -51,30 +51,10 @@ export function LogbookCustomersEditScreen() {
         }
     }, [route.params?.showSuccessToast]);
 
-    useEffect(() => {
-        if (id) {
-            loadData();
-        }
-        return () => { dispatch(clearCurrent()); };
-    }, [id]);
-
-    useEffect(() => {
-        if (current) {
-            updateField('id_customers', current.id_customers);
-            updateField('masalah', current.masalah);
-            updateField('solusi', current.solusi);
-            updateField('catatan', current.catatan);
-            updateField('date_log_book', current.date_log_book);
-        }
-    }, [current]);
-
-    const loadData = async () => {
-        await dispatch(fetchLogbookCustomerDetail(id));
-    };
-
     const handleRefresh = async () => {
         setIsRefreshing(true);
-        await loadData();
+        // Refresh handled by reactively waiting for 800ms
+        await new Promise(resolve => setTimeout(resolve, 800));
         setIsRefreshing(false);
     };
 
@@ -90,16 +70,12 @@ export function LogbookCustomersEditScreen() {
 
     const confirmUpdate = async () => {
         setIsModalVisible(false);
-        setIsSaving(true);
         try {
-            await logbookCustomersApi.update(id, formData);
+            await handleSave();
             setToast({ visible: true, type: 'success', message: 'Data berhasil diupdate!' });
             setIsEditing(false);
-            await loadData();
-        } catch (e) {
-            setToast({ visible: true, type: 'error', message: 'Gagal mengupdate data.' });
-        } finally {
-            setIsSaving(false);
+        } catch (e: any) {
+            setToast({ visible: true, type: 'error', message: e.message || 'Gagal mengupdate data.' });
         }
     };
 
@@ -111,20 +87,25 @@ export function LogbookCustomersEditScreen() {
     const confirmDelete = async () => {
         setIsModalVisible(false);
         try {
-            await logbookCustomersApi.delete(id);
-            
-            (navigation as any).navigate('Drawer', {
-                screen: 'LogbookCustomersListScreen',
-                params: {
-                    toastMessage: 'Data berhasil dihapus!',
-                    toastType: 'success',
-                    timestamp: Date.now()
-                }
+            await handleDelete(() => {
+                navigation.navigate('Drawer', {
+                    screen: 'LogbookCustomersListScreen',
+                    params: {
+                        toastMessage: 'Data berhasil dihapus!',
+                        toastType: 'success',
+                        timestamp: Date.now()
+                    }
+                });
             });
-        } catch (e) {
-            setToast({ visible: true, type: 'error', message: 'Gagal menghapus data.' });
+        } catch (e: any) {
+            setToast({ visible: true, type: 'error', message: e.message || 'Gagal menghapus data.' });
         }
     };
+
+    const customersDropdownData = masterDataCustomers?.map(c => ({
+        label: c.nm_customers,
+        value: c.id_customers.toString()
+    })) || [];
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -190,7 +171,7 @@ export function LogbookCustomersEditScreen() {
                                 <View className={`border border-gray-300 rounded-lg justify-center h-[42px] ${isEditing ? 'bg-white' : 'bg-gray-100'}`}>
                                     <Dropdown
                                         style={{ paddingHorizontal: 12 }}
-                                        data={dummyCustomersDropdown}
+                                        data={customersDropdownData}
                                         labelField="label"
                                         valueField="value"
                                         placeholder="Select Customer"
@@ -198,6 +179,8 @@ export function LogbookCustomersEditScreen() {
                                         onChange={(item) => updateField('id_customers', item.value)}
                                         selectedTextStyle={{ color: '#1F2937', fontSize: 14 }}
                                         disable={!isEditing}
+                                        search
+                                        searchPlaceholder="Cari customer..."
                                     />
                                 </View>
                             </View>

@@ -1,11 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { LogbookCustomersState, LogbookCustomer } from '../types/logbookcustomers.types';
 import { logbookCustomersApi } from '../api/logbookCustomersApi';
-import { dummyCustomersData } from '../data/dummyCustomers';
 
 const initialState: LogbookCustomersState = {
     list: [],
     current: null,
+    masterDataCustomers: [],
     isLoading: false,
     error: null,
 };
@@ -13,29 +13,44 @@ const initialState: LogbookCustomersState = {
 export const fetchLogbookCustomers = createAsyncThunk(
     'logbookcustomers/fetchAll',
     async () => {
-        // In real implementation: return await logbookCustomersApi.getAll();
-        return new Promise<LogbookCustomer[]>((resolve) => {
-            setTimeout(() => {
-                resolve(dummyCustomersData);
-            }, 800);
-        });
+        return await logbookCustomersApi.getAll();
+    }
+);
+
+export const fetchLogbookCustomersCreateMasterData = createAsyncThunk(
+    'logbookcustomers/fetchCreateMasterData',
+    async () => {
+        return await logbookCustomersApi.getCreateMasterData();
     }
 );
 
 export const fetchLogbookCustomerDetail = createAsyncThunk(
     'logbookcustomers/fetchDetail',
     async (id: string) => {
-        // In real implementation: return await logbookCustomersApi.getById(id);
-        return new Promise<LogbookCustomer>((resolve, reject) => {
-            setTimeout(() => {
-                const data = dummyCustomersData.find(item => item.id_log_book === id);
-                if (data) {
-                    resolve(data);
-                } else {
-                    reject(new Error('Data not found'));
-                }
-            }, 800);
-        });
+        return await logbookCustomersApi.getById(id);
+    }
+);
+
+export const createLogbookCustomer = createAsyncThunk(
+    'logbookcustomers/create',
+    async (data: Partial<LogbookCustomer>) => {
+        return await logbookCustomersApi.create(data);
+    }
+);
+
+export const updateLogbookCustomer = createAsyncThunk(
+    'logbookcustomers/update',
+    async (data: Partial<LogbookCustomer> & { id_log_book: string }) => {
+        const { id_log_book, ...updateData } = data;
+        return await logbookCustomersApi.update(id_log_book, updateData);
+    }
+);
+
+export const deleteLogbookCustomer = createAsyncThunk(
+    'logbookcustomers/delete',
+    async (id: string) => {
+        await logbookCustomersApi.delete(id);
+        return id;
     }
 );
 
@@ -49,6 +64,7 @@ const logbookcustomersSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
+            // fetchAll
             .addCase(fetchLogbookCustomers.pending, (state) => {
                 state.isLoading = true;
                 state.error = null;
@@ -61,17 +77,36 @@ const logbookcustomersSlice = createSlice({
                 state.isLoading = false;
                 state.error = action.error.message || 'Failed to fetch';
             })
+            // fetchCreateMasterData
+            .addCase(fetchLogbookCustomersCreateMasterData.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(fetchLogbookCustomersCreateMasterData.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.masterDataCustomers = action.payload.data_customers;
+            })
+            .addCase(fetchLogbookCustomersCreateMasterData.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.error.message || 'Failed to fetch master data';
+            })
+            // fetchDetail
             .addCase(fetchLogbookCustomerDetail.pending, (state) => {
                 state.isLoading = true;
                 state.error = null;
             })
             .addCase(fetchLogbookCustomerDetail.fulfilled, (state, action) => {
                 state.isLoading = false;
-                state.current = action.payload;
+                state.current = action.payload.data;
+                state.masterDataCustomers = action.payload.data_customers;
             })
             .addCase(fetchLogbookCustomerDetail.rejected, (state, action) => {
                 state.isLoading = false;
                 state.error = action.error.message || 'Failed to fetch detail';
+            })
+            // delete
+            .addCase(deleteLogbookCustomer.fulfilled, (state, action) => {
+                state.list = state.list.filter(item => item.id_log_book !== action.payload);
             });
     }
 });
