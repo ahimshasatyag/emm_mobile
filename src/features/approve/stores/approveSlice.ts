@@ -18,24 +18,10 @@ const initialState: ApproveState = {
     error: null,
 };
 
-export const fetchQuotations = createAsyncThunk(
-    'approve/fetchQuotations',
+export const fetchApprovals = createAsyncThunk(
+    'approve/fetchApprovals',
     async (search?: string) => {
-        return await approveApi.fetchQuotations(search);
-    }
-);
-
-export const fetchAccounting = createAsyncThunk(
-    'approve/fetchAccounting',
-    async (search?: string) => {
-        return await approveApi.fetchAccounting(search);
-    }
-);
-
-export const fetchHistory = createAsyncThunk(
-    'approve/fetchHistory',
-    async (search?: string) => {
-        return await approveApi.fetchHistory(search);
+        return await approveApi.fetchApproveData(search);
     }
 );
 
@@ -56,44 +42,20 @@ const approveSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            // Fetch Quotations
-            .addCase(fetchQuotations.pending, (state) => {
+            // Fetch All Approvals
+            .addCase(fetchApprovals.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(fetchQuotations.fulfilled, (state, action) => {
+            .addCase(fetchApprovals.fulfilled, (state, action) => {
                 state.loading = false;
-                state.quotations = action.payload;
+                state.quotations = action.payload.data_quotations || [];
+                state.accounting = action.payload.data_accounting || [];
+                state.history = action.payload.data_history || [];
             })
-            .addCase(fetchQuotations.rejected, (state, action) => {
+            .addCase(fetchApprovals.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.error.message || 'Failed to fetch quotations';
-            })
-            // Fetch Accounting
-            .addCase(fetchAccounting.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(fetchAccounting.fulfilled, (state, action) => {
-                state.loading = false;
-                state.accounting = action.payload;
-            })
-            .addCase(fetchAccounting.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.error.message || 'Failed to fetch accounting';
-            })
-            // Fetch History
-            .addCase(fetchHistory.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(fetchHistory.fulfilled, (state, action) => {
-                state.loading = false;
-                state.history = action.payload;
-            })
-            .addCase(fetchHistory.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.error.message || 'Failed to fetch history';
+                state.error = action.error.message || 'Failed to fetch approvals';
             });
     }
 });

@@ -20,9 +20,7 @@ export const ApproveListScreen = () => {
         history,
         loading,
         error,
-        getQuotations,
-        getAccounting,
-        getHistory,
+        getApprovals,
         submitApproval
     } = useApprove();
 
@@ -69,13 +67,7 @@ export const ApproveListScreen = () => {
     );
 
     const fetchData = () => {
-        if (activeTab === 'quotations') {
-            getQuotations(searchQuery);
-        } else if (activeTab === 'accounting') {
-            getAccounting(searchQuery);
-        } else {
-            getHistory(searchQuery);
-        }
+        getApprovals(searchQuery);
     };
 
     const handleSearch = () => {

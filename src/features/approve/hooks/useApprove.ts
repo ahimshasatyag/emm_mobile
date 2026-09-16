@@ -2,9 +2,7 @@ import { useCallback } from 'react';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { 
-    fetchQuotations, 
-    fetchAccounting, 
-    fetchHistory, 
+    fetchApprovals, 
     submitApprovalAction 
 } from '../stores/approveSlice';
 
@@ -12,16 +10,8 @@ export const useApprove = () => {
     const dispatch = useAppDispatch();
     const { quotations, accounting, history, loading, error } = useAppSelector((state) => state.approve);
 
-    const getQuotations = useCallback((search?: string) => {
-        dispatch(fetchQuotations(search));
-    }, [dispatch]);
-
-    const getAccounting = useCallback((search?: string) => {
-        dispatch(fetchAccounting(search));
-    }, [dispatch]);
-
-    const getHistory = useCallback((search?: string) => {
-        dispatch(fetchHistory(search));
+    const getApprovals = useCallback((search?: string) => {
+        dispatch(fetchApprovals(search));
     }, [dispatch]);
 
     const submitApproval = useCallback(async (id_approval: string, action: string, status: string) => {
@@ -42,9 +32,7 @@ export const useApprove = () => {
         history,
         loading,
         error,
-        getQuotations,
-        getAccounting,
-        getHistory,
+        getApprovals,
         submitApproval,
         validateApproval
     };

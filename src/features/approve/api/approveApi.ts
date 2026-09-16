@@ -1,45 +1,27 @@
 import { QuotationApproval, AccountingApproval, HistoryApproval } from '../types/approve.types';
-import { mockQuotations, mockAccounting, mockHistory } from '../data/approveMockData';
+import api from '../../../services/api/api';
+
+export interface ApproveDataResponse {
+    status: boolean;
+    data_quotations: QuotationApproval[];
+    data_accounting: AccountingApproval[];
+    data_history: HistoryApproval[];
+    search?: string;
+}
 
 export const approveApi = {
-    fetchQuotations: async (search?: string): Promise<QuotationApproval[]> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                if (search) {
-                    const filtered = mockQuotations.filter(item => 
-                        item.code_so.toLowerCase().includes(search.toLowerCase()) || 
-                        item.nm_customers.toLowerCase().includes(search.toLowerCase())
-                    );
-                    resolve(filtered);
-                } else {
-                    resolve(mockQuotations);
-                }
-            }, 800);
-        });
-    },
-
-    fetchAccounting: async (search?: string): Promise<AccountingApproval[]> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve(mockAccounting); // Mock search not fully implemented for accounting
-            }, 800);
-        });
-    },
-
-    fetchHistory: async (search?: string): Promise<HistoryApproval[]> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve(mockHistory);
-            }, 800);
-        });
+    fetchApproveData: async (search?: string): Promise<ApproveDataResponse> => {
+        const response = await api.get('/approve', { params: { search } });
+        return response.data;
     },
 
     submitApproval: async (id_approval: string, action: string, status: string): Promise<{ status: boolean, message: string }> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                // Simulate success
-                resolve({ status: true, message: `Successfully ${action === '1' ? 'Approved' : 'Rejected'} ${id_approval}` });
-            }, 1000);
+        // According to the controller, it expects id_approval, aksi (from action), and status
+        const response = await api.post('/approve/process', { 
+            id_approval, 
+            aksi: action, 
+            status 
         });
+        return response.data;
     }
 };
