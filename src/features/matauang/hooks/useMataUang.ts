@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { fetchMataUangData, setBaseCurrency } from '../stores/matauangSlice';
@@ -30,10 +30,12 @@ export const useMataUang = () => {
     const baseKurs = getBaseCurrencyKurs();
 
     // Data with calculated rate
-    const calculatedItems = items.map(item => ({
-        ...item,
-        rate: item.kurs / baseKurs
-    }));
+    const calculatedItems = useMemo(() => {
+        return items.map(item => ({
+            ...item,
+            rate: item.kurs / baseKurs
+        }));
+    }, [items, baseKurs]);
 
     return {
         items: calculatedItems,

@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, RefreshControl, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, Text, FlatList, RefreshControl, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { MataUangCard } from '../components/MataUangCard';
@@ -59,47 +59,49 @@ export function MataUangScreen() {
                         <Text className="text-red-500 text-center">{error}</Text>
                     </View>
                 ) : (
-                    <FlatList
-                        data={[{ id: 'table_container' }]}
-                        keyExtractor={(i) => i.id}
-                        refreshControl={
-                            <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
-                        }
-                        renderItem={() => (
-                            <View className="px-4 pb-20">
-                                <View className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                                        <View>
-                                            {/* Table Header */}
-                                            <View className="flex-row bg-gray-200 rounded-t-xl overflow-hidden border border-gray-200">
-                                                <Text className="w-24 py-3 px-2 font-bold text-[12px] text-gray-700 text-center">Mata Uang</Text>
-                                                <Text className="w-40 py-3 px-2 font-bold text-[12px] text-gray-700 text-right">Kurs</Text>
-                                                <Text className="w-40 py-3 px-2 font-bold text-[12px] text-gray-700 text-right">Rate</Text>
-                                                <Text className="w-48 py-3 px-2 font-bold text-[12px] text-gray-700 text-center">Date Update</Text>
-                                            </View>
-
-                                            {/* Table Body */}
-                                            {isLoading ? (
-                                                <MataUangSkeleton />
-                                            ) : items.length > 0 ? items.map((item, index) => (
-                                                <MataUangCard
-                                                    key={item.mata_uang}
-                                                    item={item}
-                                                    index={index}
-                                                />
-                                            )) : (
-                                                <View className="py-10 bg-white border border-t-0 border-gray-100 rounded-b-xl items-center justify-center">
-                                                    <Database size={32} color="#9ca3af" className="mb-2" />
-                                                    <Text className="text-gray-500">Tidak ada data ditemukan</Text>
-                                                </View>
-                                            )}
+                    <View className="flex-1 px-4 pb-4">
+                        <View className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                            <ScrollView 
+                                horizontal 
+                                showsHorizontalScrollIndicator={false} 
+                                contentContainerStyle={{ minWidth: '100%' }}
+                            >
+                                <FlatList
+                                    data={items}
+                                    keyExtractor={(item) => item.mata_uang}
+                                    refreshControl={
+                                        <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
+                                    }
+                                    ListHeaderComponent={
+                                        <View className="flex-row bg-gray-200 border-b border-gray-200">
+                                            <Text className="w-24 py-3 px-2 font-bold text-[12px] text-gray-700 text-center">Mata Uang</Text>
+                                            <Text className="w-40 py-3 px-2 font-bold text-[12px] text-gray-700 text-right">Kurs</Text>
+                                            <Text className="w-40 py-3 px-2 font-bold text-[12px] text-gray-700 text-right">Rate</Text>
+                                            <Text className="w-48 py-3 px-2 font-bold text-[12px] text-gray-700 text-center">Date Update</Text>
                                         </View>
-                                    </ScrollView>
-                                </View>
-                            </View>
-                        )}
-                        contentContainerStyle={{ paddingBottom: 100 }}
-                    />
+                                    }
+                                    renderItem={({ item, index }) => (
+                                        <MataUangCard
+                                            item={item}
+                                            index={index}
+                                        />
+                                    )}
+                                    ListEmptyComponent={
+                                        isLoading ? (
+                                            <MataUangSkeleton />
+                                        ) : (
+                                            <View className="py-10 items-center justify-center">
+                                                <Database size={32} color="#9ca3af" className="mb-2" />
+                                                <Text className="text-gray-500">Tidak ada data ditemukan</Text>
+                                            </View>
+                                        )
+                                    }
+                                    contentContainerStyle={{ paddingBottom: 20 }}
+                                    showsVerticalScrollIndicator={false}
+                                />
+                            </ScrollView>
+                        </View>
+                    </View>
                 )}
             </View>
         </View>

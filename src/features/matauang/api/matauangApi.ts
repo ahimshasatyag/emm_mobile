@@ -1,14 +1,22 @@
 import { MataUangResponse } from '../types/matauang.types';
-import { CLEAN_DUMMY_MATAUANG } from '../data/dummy';
+import api from '../../../services/api/api';
 
 export const fetchMataUang = async (): Promise<MataUangResponse> => {
-    // Simulate network delay
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve({
+    try {
+        const response = await api.get('/matauang');
+        if (response.data && response.data.status) {
+            return {
                 status: true,
-                data: CLEAN_DUMMY_MATAUANG
-            });
-        }, 1000);
-    });
+                data: response.data.data.map((item: any) => ({
+                    mata_uang: item.mata_uang,
+                    kurs: typeof item.kurs === 'string' ? parseFloat(item.kurs) : item.kurs,
+                    date_create: item.date_create
+                }))
+            };
+        }
+        return { status: false, data: [] };
+    } catch (error) {
+        console.error('Error fetching mata uang:', error);
+        throw error;
+    }
 };
