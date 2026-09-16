@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { InventorySchedule, AssetItem, UserItem } from '../types/inventoryschedule.types';
+import { InventorySchedule, AssetItem, UserItem, ScheduleSavePayload } from '../types/inventoryschedule.types';
 import * as api from '../api/inventoryscheduleApi';
 
 interface InventoryScheduleState {
@@ -7,6 +7,7 @@ interface InventoryScheduleState {
     assets: AssetItem[];
     users: UserItem[];
     loading: boolean;
+    isSaving: boolean;
     error: string | null;
 }
 
@@ -15,41 +16,41 @@ const initialState: InventoryScheduleState = {
     assets: [],
     users: [],
     loading: false,
+    isSaving: false,
     error: null,
 };
 
-export const fetchSchedulesList = createAsyncThunk(
-    'inventoryschedule/fetchSchedules',
+export const loadScheduleData = createAsyncThunk(
+    'inventoryschedule/loadData',
     async (_, { rejectWithValue }) => {
         try {
-            const data = await api.fetchSchedules();
-            return data;
+            const [schedules, supportData] = await Promise.all([
+                api.fetchSchedules(),
+                api.fetchScheduleSupportData()
+            ]);
+            return {
+                schedules,
+                assets: supportData.assets,
+                users: supportData.users
+            };
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Failed to fetch schedules');
+            return rejectWithValue(error.message || 'Failed to load schedule data');
         }
     }
 );
 
-export const fetchAssetsList = createAsyncThunk(
-    'inventoryschedule/fetchAssets',
-    async (_, { rejectWithValue }) => {
+export const submitSchedule = createAsyncThunk(
+    'inventoryschedule/submit',
+    async ({ id, payload }: { id?: string | null, payload: ScheduleSavePayload }, { dispatch, rejectWithValue }) => {
         try {
-            const data = await api.fetchAssets();
-            return data;
+            const response = await api.saveSchedule(id, payload);
+            if (response && response.status) {
+                // Reload list to get the updated records from backend
+                dispatch(loadScheduleData());
+            }
+            return response;
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Failed to fetch assets');
-        }
-    }
-);
-
-export const fetchUsersList = createAsyncThunk(
-    'inventoryschedule/fetchUsers',
-    async (_, { rejectWithValue }) => {
-        try {
-            const data = await api.fetchUsers();
-            return data;
-        } catch (error: any) {
-            return rejectWithValue(error.message || 'Failed to fetch users');
+            return rejectWithValue(error.message || 'Failed to save schedule');
         }
     }
 );
@@ -60,23 +61,30 @@ const inventoryScheduleSlice = createSlice({
     reducers: {},
     extraReducers: (builder) => {
         builder
-            .addCase(fetchSchedulesList.pending, (state) => {
+            .addCase(loadScheduleData.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(fetchSchedulesList.fulfilled, (state, action: PayloadAction<InventorySchedule[]>) => {
+            .addCase(loadScheduleData.fulfilled, (state, action) => {
                 state.loading = false;
-                state.schedules = action.payload;
+                state.schedules = action.payload.schedules;
+                state.assets = action.payload.assets;
+                state.users = action.payload.users;
             })
-            .addCase(fetchSchedulesList.rejected, (state, action) => {
+            .addCase(loadScheduleData.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
             })
-            .addCase(fetchAssetsList.fulfilled, (state, action: PayloadAction<AssetItem[]>) => {
-                state.assets = action.payload;
+            .addCase(submitSchedule.pending, (state) => {
+                state.isSaving = true;
+                state.error = null;
             })
-            .addCase(fetchUsersList.fulfilled, (state, action: PayloadAction<UserItem[]>) => {
-                state.users = action.payload;
+            .addCase(submitSchedule.fulfilled, (state) => {
+                state.isSaving = false;
+            })
+            .addCase(submitSchedule.rejected, (state, action) => {
+                state.isSaving = false;
+                state.error = action.payload as string;
             });
     },
 });

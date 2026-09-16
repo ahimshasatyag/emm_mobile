@@ -1,47 +1,70 @@
-import { AssetItem, InventorySchedule, UserItem } from '../types/inventoryschedule.types';
-import { DUMMY_ASSETS, DUMMY_SCHEDULES, DUMMY_USERS } from '../data/dummy';
+import { AssetItem, InventorySchedule, UserItem, ScheduleListResponse, ScheduleSupportDataResponse, ScheduleDetailResponse, ScheduleSavePayload } from '../types/inventoryschedule.types';
+import api from '../../../services/api/api';
 
-export const fetchSchedules = async (): Promise<InventorySchedule[]> => {
-    return new Promise((resolve) => {
-        setTimeout(() => resolve(DUMMY_SCHEDULES), 800);
-    });
+export const fetchSchedules = async (page: number = 1, search: string = ''): Promise<InventorySchedule[]> => {
+    try {
+        const response = await api.get<ScheduleListResponse>('/inventoryschedule', {
+            params: { per_page: 50, search }
+        });
+        if (response.data && response.data.status) {
+            const resData = response.data.data;
+            if (Array.isArray(resData)) {
+                return resData;
+            } else if (resData && Array.isArray(resData.data)) {
+                return resData.data;
+            }
+        }
+        return [];
+    } catch (error) {
+        console.error('Error fetching schedules:', error);
+        throw error;
+    }
 };
 
-export const fetchScheduleById = async (id: string): Promise<InventorySchedule | undefined> => {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const schedule = DUMMY_SCHEDULES.find((s) => s.id === id);
-            resolve(schedule);
-        }, 500);
-    });
+export const fetchScheduleSupportData = async (): Promise<{ assets: AssetItem[], users: UserItem[] }> => {
+    try {
+        const response = await api.get<ScheduleSupportDataResponse>('/inventoryschedule/support-data');
+        if (response.data && response.data.status) {
+            return {
+                assets: response.data.data_asset || [],
+                users: response.data.data_user || []
+            };
+        }
+        return { assets: [], users: [] };
+    } catch (error) {
+        console.error('Error fetching schedule support data:', error);
+        throw error;
+    }
 };
 
-export const fetchAssets = async (): Promise<AssetItem[]> => {
-    return new Promise((resolve) => {
-        setTimeout(() => resolve(DUMMY_ASSETS), 300);
-    });
+export const fetchScheduleDetail = async (id: string): Promise<{ schedule: InventorySchedule, pic: any[] }> => {
+    try {
+        const response = await api.get<ScheduleDetailResponse>(`/inventoryschedule/${id}`);
+        if (response.data && response.data.status) {
+            return {
+                schedule: response.data.data,
+                pic: response.data.data_pic || []
+            };
+        }
+        throw new Error('Data not found');
+    } catch (error) {
+        console.error('Error fetching schedule detail:', error);
+        throw error;
+    }
 };
 
-export const fetchUsers = async (): Promise<UserItem[]> => {
-    return new Promise((resolve) => {
-        setTimeout(() => resolve(DUMMY_USERS), 300);
-    });
+export const saveSchedule = async (id: string | null | undefined, payload: ScheduleSavePayload): Promise<any> => {
+    try {
+        if (id) {
+            const response = await api.put(`/inventoryschedule/${id}`, payload);
+            return response.data;
+        } else {
+            const response = await api.post(`/inventoryschedule`, payload);
+            return response.data;
+        }
+    } catch (error) {
+        console.error('Error saving schedule:', error);
+        throw error;
+    }
 };
 
-export const saveSchedule = async (schedule: Partial<InventorySchedule>): Promise<InventorySchedule> => {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const newSchedule = { ...schedule, id: Date.now().toString() } as InventorySchedule;
-            resolve(newSchedule);
-        }, 1000);
-    });
-};
-
-export const updateSchedule = async (id: string, schedule: Partial<InventorySchedule>): Promise<InventorySchedule> => {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const updatedSchedule = { ...schedule, id } as InventorySchedule;
-            resolve(updatedSchedule);
-        }, 1000);
-    });
-};

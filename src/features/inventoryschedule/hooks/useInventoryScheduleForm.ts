@@ -1,45 +1,72 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { InventorySchedule, UserItem } from '../types/inventoryschedule.types';
-import { saveSchedule, updateSchedule } from '../api/inventoryscheduleApi';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
-import { fetchAssetsList, fetchUsersList } from '../stores/inventoryscheduleSlice';
+import { loadScheduleData, submitSchedule } from '../stores/inventoryscheduleSlice';
+import { notificationService } from '../../../services/notification/notificationService';
+import { formatDateServer } from '../../../utils/helpers/date';
+
+export const useInventoryScheduleList = () => {
+    const dispatch = useAppDispatch();
+    const { schedules, loading, error } = useAppSelector((state) => state.inventoryschedule);
+
+    useEffect(() => {
+        if (schedules.length === 0) {
+            dispatch(loadScheduleData());
+        }
+    }, [dispatch, schedules.length]);
+
+    const handleRefresh = useCallback(() => {
+        dispatch(loadScheduleData());
+    }, [dispatch]);
+
+    return {
+        schedules,
+        loading,
+        error,
+        handleRefresh
+    };
+};
 
 export const useInventoryScheduleForm = (initialData?: InventorySchedule) => {
     const dispatch = useAppDispatch();
-    const { assets, users } = useAppSelector((state) => state.inventoryschedule);
+    const authUser = useAppSelector((state) => state.auth.user);
+    const { assets, users, isSaving } = useAppSelector((state) => state.inventoryschedule);
 
     const [formData, setFormData] = useState<Partial<InventorySchedule>>({
         asset_id: '',
         name: '',
         deskripsi: '',
         periode: 'Monthly',
-        due_date: new Date().toISOString().split('T')[0],
+        due_date: formatDateServer(new Date()),
         reminder: '',
         pic: []
     });
 
-    const [isSaving, setIsSaving] = useState(false);
-
     useEffect(() => {
-        dispatch(fetchAssetsList());
-        dispatch(fetchUsersList());
-    }, [dispatch]);
+        if (assets.length === 0 || users.length === 0) {
+            dispatch(loadScheduleData());
+        }
+    }, [dispatch, assets.length, users.length]);
 
     useEffect(() => {
         if (initialData) {
-            setFormData({
-                id: initialData.id,
-                asset_id: initialData.asset_id || '',
-                name: initialData.name || '',
-                deskripsi: initialData.deskripsi || '',
-                periode: initialData.periode || 'Monthly',
-                due_date: initialData.due_date || new Date().toISOString().split('T')[0],
-                reminder: initialData.reminder || '',
-                pic: initialData.pic || []
-            });
+            setInitialData(initialData);
         }
     }, [initialData]);
+
+    const setInitialData = (data: InventorySchedule) => {
+        setFormData({
+            id: data.id,
+            asset_id: data.asset_id || '',
+            name: data.name || '',
+            deskripsi: data.deskripsi || '',
+            periode: data.periode || 'Monthly',
+            due_date: data.due_date || formatDateServer(new Date()),
+            reminder: data.reminder || '',
+            pic: data.pic || []
+        });
+    };
 
     const handleChange = (key: keyof InventorySchedule, value: any) => {
         setFormData((prev) => ({ ...prev, [key]: value }));
@@ -74,19 +101,42 @@ export const useInventoryScheduleForm = (initialData?: InventorySchedule) => {
         });
     };
 
-    const handleSave = async (onSuccess?: (savedData?: InventorySchedule) => void) => {
-        setIsSaving(true);
-        try {
-            let res;
+    const handleSave = async (onSuccess?: (savedData?: any) => void) => {
+        // Construct the expected backend payload
+        const payload = {
+            asset_id: formData.asset_id || '',
+            name: formData.name || '',
+            deskripsi: formData.deskripsi || '',
+            periode: formData.periode || 'Monthly',
+            due_date: formData.due_date || formatDateServer(new Date()),
+            reminder: formData.reminder ? formData.reminder.split(',') : [],
+            username: formData.pic ? formData.pic.map(p => p.username) : []
+        };
+
+        const resultAction = await dispatch(submitSchedule({ id: formData.id, payload }));
+
+        if (submitSchedule.fulfilled.match(resultAction)) {
             if (formData.id) {
-                res = await updateSchedule(formData.id, formData);
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'SCHEDULE',
+                    judul: 'Schedule Diperbarui',
+                    pesan: `Schedule ${formData.name} berhasil diperbarui oleh ${authUser?.nm_users}`,
+                    action: 'Update'
+                }).catch(() => { });
             } else {
-                res = await saveSchedule(formData);
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'SCHEDULE',
+                    judul: 'Schedule Baru',
+                    pesan: `Schedule ${formData.name} berhasil ditambahkan oleh ${authUser?.nm_users}`,
+                    action: 'Create'
+                }).catch(() => { });
             }
-            if (onSuccess) onSuccess(res);
-        } catch (error) {
-        } finally {
-            setIsSaving(false);
+
+            if (onSuccess) onSuccess(resultAction.payload);
         }
     };
 
@@ -116,6 +166,7 @@ export const useInventoryScheduleForm = (initialData?: InventorySchedule) => {
         handleReminderChange,
         handlePicChange,
         handleSave,
-        validateForm
+        validateForm,
+        setInitialData
     };
 };

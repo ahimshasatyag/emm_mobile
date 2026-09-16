@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { CalendarDays, Clock, FileText } from 'lucide-react-native';
 import { InventorySchedule } from '../types/inventoryschedule.types';
 import { theme } from '../../../theme/theme';
+import { formatDate } from '../../../utils/helpers/date';
 
 interface Props {
     schedule: InventorySchedule;
@@ -31,14 +32,14 @@ export function InventoryScheduleCard({ schedule, onPress }: Props) {
                 <View className="flex-row items-center">
                     <CalendarDays size={16} color={theme.colors.primary} />
                     <Text className="text-xs font-bold text-gray-600 ml-2">
-                        Due: {schedule.due_date}
+                        Due: {schedule.due_date ? formatDate(new Date(schedule.due_date)) : '-'}
                     </Text>
                 </View>
 
                 <View className="flex-row items-center bg-gray-50 px-2 py-1 rounded-lg">
                     <CalendarDays size={16} color={theme.colors.primary} />
                     <Text className="text-xs font-bold text-gray-600 ml-2">
-                        Periode: {schedule.due_date}
+                        Periode: {schedule.periode || '-'}
                     </Text>
                 </View>
             </View>

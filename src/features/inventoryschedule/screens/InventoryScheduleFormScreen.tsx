@@ -1,8 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Save, CheckSquare, Square } from 'lucide-react-native';
+import { Save, CheckSquare, Square, CalendarDays } from 'lucide-react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { formatDate, formatDateServer } from '../../../utils/helpers/date';
 import { theme } from '../../../theme/theme';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Dropdown, MultiSelect } from 'react-native-element-dropdown';
@@ -41,6 +43,7 @@ export function InventoryScheduleFormScreen() {
     const [toastMessage, setToastMessage] = useState('');
     const [toastType, setToastType] = useState<'success' | 'error'>('error');
     const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
+    const [showDatePicker, setShowDatePicker] = useState(false);
 
     const onRefresh = useCallback(() => {
         setIsRefreshing(true);
@@ -178,12 +181,28 @@ export function InventoryScheduleFormScreen() {
                             {/* Due Date */}
                             <View className="mb-4">
                                 <Text className="text-gray-700 text-sm mb-1">Payment DueDate</Text>
-                                <TextInput
-                                    className="border border-gray-200 rounded-lg p-3 text-gray-800"
-                                    value={formData.due_date}
-                                    onChangeText={(val) => handleChange('due_date', val)}
-                                    placeholder="YYYY-MM-DD"
-                                />
+                                <TouchableOpacity
+                                    className="border border-gray-200 rounded-lg p-3 bg-white flex-row items-center"
+                                    onPress={() => setShowDatePicker(true)}
+                                >
+                                    <CalendarDays color="#9CA3AF" size={18} />
+                                    <Text className="ml-2 text-gray-800">
+                                        {formData.due_date ? formatDate(new Date(formData.due_date)) : 'Pilih Tanggal'}
+                                    </Text>
+                                </TouchableOpacity>
+                                {showDatePicker && (
+                                    <DateTimePicker
+                                        value={formData.due_date ? new Date(formData.due_date) : new Date()}
+                                        mode="date"
+                                        display="default"
+                                        onChange={(event, date) => {
+                                            setShowDatePicker(false);
+                                            if (date) {
+                                                handleChange('due_date', formatDateServer(date));
+                                            }
+                                        }}
+                                    />
+                                )}
                             </View>
 
                             {/* Reminder */}

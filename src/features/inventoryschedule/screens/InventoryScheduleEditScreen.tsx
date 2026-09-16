@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Save, CheckSquare, Square, Pencil } from 'lucide-react-native';
+import { Save, CheckSquare, Square, Pencil, CalendarDays } from 'lucide-react-native';
 import Animated, { FadeIn, FadeInUp, FadeOut } from 'react-native-reanimated';
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { formatDate, formatDateServer } from '../../../utils/helpers/date';
 import { theme } from '../../../theme/theme';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Dropdown, MultiSelect } from 'react-native-element-dropdown';
 import { useInventoryScheduleForm } from '../hooks/useInventoryScheduleForm';
 import { InventoryScheduleEditSkeleton } from '../skeleton/InventoryScheduleEditSkeleton';
-import { fetchScheduleById } from '../api/inventoryscheduleApi';
+import { fetchScheduleDetail } from '../api/inventoryscheduleApi';
 import { InventorySchedule } from '../types/inventoryschedule.types';
 import { ToastMessages } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
@@ -26,6 +28,7 @@ export function InventoryScheduleEditScreen() {
     const [toastMessage, setToastMessage] = useState('');
     const [toastType, setToastType] = useState<'success' | 'error'>('error');
     const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
+    const [showDatePicker, setShowDatePicker] = useState(false);
 
     useEffect(() => {
         if (route.params?.showSuccessToast) {
@@ -45,14 +48,18 @@ export function InventoryScheduleEditScreen() {
         handleReminderChange,
         handlePicChange,
         handleSave,
-        validateForm
+        validateForm,
+        setInitialData: syncInitialData
     } = useInventoryScheduleForm(initialData);
 
     useEffect(() => {
         const loadData = async () => {
             if (id) {
-                const data = await fetchScheduleById(id);
-                setInitialData(data);
+                try {
+                    const data = await fetchScheduleDetail(id);
+                    setInitialData({ ...data.schedule, pic: data.pic });
+                } catch (error) {
+                }
             }
             setIsLoadingData(false);
         };
@@ -64,11 +71,15 @@ export function InventoryScheduleEditScreen() {
     const onRefresh = useCallback(async () => {
         setIsRefreshing(true);
         if (id) {
-            const data = await fetchScheduleById(id);
-            setInitialData(data);
+            try {
+                const data = await fetchScheduleDetail(id);
+                setInitialData({ ...data.schedule, pic: data.pic });
+                syncInitialData({ ...data.schedule, pic: data.pic }); // Update form explicitly
+            } catch (error) {
+            }
         }
         setIsRefreshing(false);
-    }, [id]);
+    }, [id, syncInitialData]);
 
     const onSavePress = () => {
         const errorMsg = validateForm();
@@ -206,12 +217,29 @@ export function InventoryScheduleEditScreen() {
                             {/* Due Date */}
                             <View className="mb-4">
                                 <Text className="text-gray-700 text-sm mb-1">Payment DueDate</Text>
-                                <TextInput
-                                    className={`border border-gray-200 rounded-lg p-3 ${isEditMode ? 'bg-white text-gray-800' : 'bg-gray-100 text-gray-500'}`}
-                                    value={formData.due_date}
-                                    onChangeText={(val) => handleChange('due_date', val)}
-                                    editable={isEditMode}
-                                />
+                                <TouchableOpacity
+                                    className={`border border-gray-200 rounded-lg p-3 flex-row items-center ${isEditMode ? 'bg-white' : 'bg-gray-100'}`}
+                                    onPress={() => isEditMode && setShowDatePicker(true)}
+                                    disabled={!isEditMode}
+                                >
+                                    <CalendarDays color="#9CA3AF" size={18} />
+                                    <Text className={`ml-2 ${isEditMode ? 'text-gray-800' : 'text-gray-500'}`}>
+                                        {formData.due_date ? formatDate(new Date(formData.due_date)) : 'Pilih Tanggal'}
+                                    </Text>
+                                </TouchableOpacity>
+                                {showDatePicker && (
+                                    <DateTimePicker
+                                        value={formData.due_date ? new Date(formData.due_date) : new Date()}
+                                        mode="date"
+                                        display="default"
+                                        onChange={(event, date) => {
+                                            setShowDatePicker(false);
+                                            if (date) {
+                                                handleChange('due_date', formatDateServer(date));
+                                            }
+                                        }}
+                                    />
+                                )}
                             </View>
 
                             {/* Reminder */}

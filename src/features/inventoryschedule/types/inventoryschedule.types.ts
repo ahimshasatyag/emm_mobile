@@ -26,3 +26,34 @@ export interface InventorySchedule {
     date_update?: string;
     pic?: UserItem[]; // Resolved PICs
 }
+
+export interface ScheduleListResponse {
+    status: boolean;
+    data: {
+        data: InventorySchedule[];
+        current_page?: number;
+        last_page?: number;
+    } | InventorySchedule[];
+}
+
+export interface ScheduleSupportDataResponse {
+    status: boolean;
+    data_asset: AssetItem[];
+    data_user: UserItem[];
+}
+
+export interface ScheduleDetailResponse {
+    status: boolean;
+    data: InventorySchedule;
+    data_pic: SchedulePic[];
+}
+
+export interface ScheduleSavePayload {
+    asset_id: string;
+    name: string;
+    deskripsi: string;
+    periode: string;
+    due_date: string;
+    reminder: string[];
+    username: string[];
+}

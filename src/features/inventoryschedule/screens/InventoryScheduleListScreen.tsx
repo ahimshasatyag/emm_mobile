@@ -6,7 +6,7 @@ import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { theme } from '../../../theme/theme';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
-import { fetchSchedulesList } from '../stores/inventoryscheduleSlice';
+import { loadScheduleData } from '../stores/inventoryscheduleSlice';
 import { InventoryScheduleListSkeleton } from '../skeleton/InventoryScheduleListSkeleton';
 import { InventoryScheduleCard } from '../components/InventoryScheduleCard';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
@@ -24,7 +24,7 @@ export function InventoryScheduleListScreen() {
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     const loadData = useCallback(async () => {
-        await dispatch(fetchSchedulesList());
+        await dispatch(loadScheduleData());
     }, [dispatch]);
 
     useFocusEffect(
