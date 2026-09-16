@@ -107,7 +107,6 @@ export function LogbookProductListScreen() {
 
             <View className="flex-1">
                 <Animated.FlatList
-                    entering={FadeInDown}
                     data={(isLoading || isInitializing) ? [] : filteredList}
                     keyExtractor={(item) => item.id_log_book}
                     renderItem={({ item, index }) => <LogbookProductCard logbook={item} index={index} />}

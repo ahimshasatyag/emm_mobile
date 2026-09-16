@@ -1,11 +1,12 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { LogbookProduct, LogbookProductState } from '../types/logbookproduct.types';
+import { LogbookProduct, LogbookProductState, MasterDataBarang, MasterDataTypeKerusakan } from '../types/logbookproduct.types';
 import { logbookProductApi } from '../api/logbookProductApi';
-import { dummyLogbookProducts } from '../data/dummyProducts';
 
 const initialState: LogbookProductState = {
     list: [],
     current: null,
+    masterDataBarang: [],
+    masterDataTypeKerusakan: [],
     isLoading: false,
     error: null,
 };
@@ -13,25 +14,42 @@ const initialState: LogbookProductState = {
 export const fetchLogbookProducts = createAsyncThunk(
     'logbookproduct/fetchList',
     async () => {
-        // In real implementation: return await logbookProductApi.getAll();
-        return new Promise<LogbookProduct[]>((resolve) => {
-            setTimeout(() => {
-                resolve(dummyLogbookProducts);
-            }, 800);
-        });
+        return await logbookProductApi.getAll();
     }
 );
 
 export const fetchLogbookProductDetail = createAsyncThunk(
     'logbookproduct/fetchDetail',
     async (id: string) => {
-        // In real implementation: return await logbookProductApi.getById(id);
-        return new Promise<LogbookProduct | null>((resolve) => {
-            setTimeout(() => {
-                const found = dummyLogbookProducts.find(item => item.id_log_book === id);
-                resolve(found || null);
-            }, 500);
-        });
+        return await logbookProductApi.getById(id);
+    }
+);
+
+export const fetchLogbookCreateMasterData = createAsyncThunk(
+    'logbookproduct/fetchCreateMasterData',
+    async () => {
+        return await logbookProductApi.getCreateMasterData();
+    }
+);
+
+export const createLogbookProduct = createAsyncThunk(
+    'logbookproduct/create',
+    async (payload: any) => {
+        return await logbookProductApi.create(payload);
+    }
+);
+
+export const updateLogbookProduct = createAsyncThunk(
+    'logbookproduct/update',
+    async (payload: any) => {
+        return await logbookProductApi.update(payload);
+    }
+);
+
+export const deleteLogbookProduct = createAsyncThunk(
+    'logbookproduct/delete',
+    async (id: string) => {
+        return await logbookProductApi.delete(id);
     }
 );
 
@@ -59,9 +77,31 @@ const logbookProductSlice = createSlice({
             .addCase(fetchLogbookProductDetail.pending, (state) => {
                 state.isLoading = true;
             })
-            .addCase(fetchLogbookProductDetail.fulfilled, (state, action: PayloadAction<LogbookProduct | null>) => {
+            .addCase(fetchLogbookProductDetail.fulfilled, (state, action) => {
                 state.isLoading = false;
-                state.current = action.payload;
+                if (action.payload) {
+                    state.current = action.payload.data;
+                    state.masterDataBarang = action.payload.data_barang;
+                    state.masterDataTypeKerusakan = action.payload.data_type_kerusakan;
+                }
+            })
+            .addCase(fetchLogbookProductDetail.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.error.message || 'Failed to fetch detail';
+            })
+            .addCase(fetchLogbookCreateMasterData.pending, (state) => {
+                state.isLoading = true;
+            })
+            .addCase(fetchLogbookCreateMasterData.fulfilled, (state, action) => {
+                state.isLoading = false;
+                if (action.payload) {
+                    state.masterDataBarang = action.payload.data_barang;
+                    state.masterDataTypeKerusakan = action.payload.data_type_kerusakan;
+                }
+            })
+            .addCase(fetchLogbookCreateMasterData.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.error.message || 'Failed to fetch master data';
             });
     }
 });

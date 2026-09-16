@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TextInput, Alert, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TextInput, RefreshControl } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { Save, X } from 'lucide-react-native';
+import { Save } from 'lucide-react-native';
 import { Dropdown } from "react-native-element-dropdown";
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Button } from '../../../components/ui/button';
 import { theme } from '../../../theme/theme';
 import { useLogbookProductForm } from '../hooks/useLogbookProductForm';
-import { logbookProductApi } from '../api/logbookProductApi';
-import { dummyProductsDropdown, dummyKerusakanDropdown } from '../data/dummyProducts';
 import { LogbookProductFormSkeleton } from '../skeleton/LogbookProductFormSkeleton';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
@@ -18,11 +16,8 @@ export function LogbookProductFormScreen() {
     const navigation = useNavigation<any>();
 
     // Form State
-    const { formData, updateField, validate } = useLogbookProductForm();
-    const [isSaving, setIsSaving] = useState(false);
+    const { formData, updateField, validate, handleSave, masterDataBarang, masterDataTypeKerusakan, isLoading, isSaving } = useLogbookProductForm();
     const [isSaveModalVisible, setIsSaveModalVisible] = useState(false);
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [isInitializing, setIsInitializing] = useState(true);
     const [toast, setToast] = useState<{ visible: boolean; type: ToastType; message: string; title?: string }>({
         visible: false,
         type: 'success',
@@ -30,50 +25,38 @@ export function LogbookProductFormScreen() {
         title: undefined
     });
 
-    useFocusEffect(
-        React.useCallback(() => {
-            let isActive = true;
-            const initialize = async () => {
-                setIsInitializing(true);
-                await new Promise(resolve => setTimeout(resolve, 800));
-                if (isActive) setIsInitializing(false);
-            };
-            initialize();
-            return () => { isActive = false; setIsInitializing(true); };
-        }, [])
-    );
+    const productOptions = masterDataBarang.map(item => ({
+        label: `${item.code_product} - ${item.nm_product}`,
+        value: item.id_product.toString()
+    }));
 
-    const handleRefresh = async () => {
-        setIsRefreshing(true);
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setIsRefreshing(false);
+    const kerusakanOptions = masterDataTypeKerusakan.map(item => ({
+        label: item.nm_type_kerusakan,
+        value: item.id_type_kerusakan.toString()
+    }));
+
+    const confirmSave = async () => {
+        setIsSaveModalVisible(false);
+        try {
+            await handleSave((id) => {
+                navigation.replace('LogbookProductEditScreen', { 
+                    id_log_book: id,
+                    showSuccessToast: true,
+                    successMessage: 'Data berhasil disimpan!'
+                });
+            });
+        } catch (e: any) {
+            setToast({ visible: true, type: 'error', message: e.message || 'Gagal menyimpan data.' });
+        }
     };
 
-    const handleSave = () => {
+    const onSavePress = () => {
         const errorMsg = validate();
         if (errorMsg) {
             setToast({ visible: true, type: 'error', message: errorMsg, title: 'Validasi' });
             return;
         }
-
         setIsSaveModalVisible(true);
-    };
-
-    const confirmSave = async () => {
-        setIsSaveModalVisible(false);
-        setIsSaving(true);
-        try {
-            const newRecord = await logbookProductApi.create(formData);
-            navigation.replace('LogbookProductEditScreen', { 
-                id: newRecord.id_log_book,
-                showSuccessToast: true,
-                successMessage: 'Data berhasil disimpan!'
-            });
-        } catch (e) {
-            setToast({ visible: true, type: 'error', message: 'Gagal menyimpan data.' });
-        } finally {
-            setIsSaving(false);
-        }
     };
 
     return (
@@ -97,11 +80,11 @@ export function LogbookProductFormScreen() {
             />
 
             <HeaderNavigator
-                title={(isInitializing || isRefreshing) ? "MEMUAT DATA..." : "TAMBAH LOGBOOK PRODUCT"}
+                title={isLoading ? "MEMUAT DATA..." : "TAMBAH LOGBOOK PRODUCT"}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
                 disableAnimation={true}
-                isLoading={isInitializing || isRefreshing}
+                isLoading={isLoading}
             />
 
             <View style={{ padding: 12, flex: 1, paddingBottom: 0 }}>
@@ -109,11 +92,8 @@ export function LogbookProductFormScreen() {
                     className="flex-1"
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={{ paddingBottom: 100 }}
-                    refreshControl={
-                        <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
-                    }
                 >
-                    {(isInitializing || isRefreshing) ? (
+                    {isLoading ? (
                         <LogbookProductFormSkeleton />
                     ) : (
                         <View className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
@@ -123,13 +103,15 @@ export function LogbookProductFormScreen() {
                                 <View className="border border-gray-300 rounded-lg justify-center h-[42px] bg-white">
                                     <Dropdown
                                         style={{ paddingHorizontal: 12 }}
-                                        data={dummyProductsDropdown}
+                                        data={productOptions}
                                         labelField="label"
                                         valueField="value"
                                         placeholder="Select Product"
                                         value={formData.id_product}
                                         onChange={(item) => updateField('id_product', item.value)}
                                         selectedTextStyle={{ color: '#1F2937', fontSize: 14 }}
+                                        search
+                                        searchPlaceholder="Cari..."
                                     />
                                 </View>
                             </View>
@@ -139,13 +121,15 @@ export function LogbookProductFormScreen() {
                                 <View className="border border-gray-300 rounded-lg justify-center h-[42px] bg-white">
                                     <Dropdown
                                         style={{ paddingHorizontal: 12 }}
-                                        data={dummyKerusakanDropdown}
+                                        data={kerusakanOptions}
                                         labelField="label"
                                         valueField="value"
                                         placeholder="Select Tipe Kerusakan"
                                         value={formData.id_type_kerusakan}
                                         onChange={(item) => updateField('id_type_kerusakan', item.value)}
                                         selectedTextStyle={{ color: '#1F2937', fontSize: 14 }}
+                                        search
+                                        searchPlaceholder="Cari..."
                                     />
                                 </View>
                             </View>
@@ -198,7 +182,7 @@ export function LogbookProductFormScreen() {
                             {/* Actions */}
                             <Animated.View entering={FadeInUp.delay(100)} className="mt-4 flex-row gap-4">
                                 <Button
-                                    onPress={handleSave}
+                                    onPress={onSavePress}
                                     disabled={isSaving}
                                     className={`flex-1 h-14 rounded-2xl flex-row items-center justify-center ${isSaving ? 'bg-gray-400' : ''}`}
                                     style={isSaving ? {} : { backgroundColor: theme.colors.primary, elevation: 4, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}

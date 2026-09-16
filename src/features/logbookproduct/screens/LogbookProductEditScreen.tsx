@@ -1,19 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TextInput, RefreshControl } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { Save, Edit3, Trash2, X } from 'lucide-react-native';
 import { Dropdown } from "react-native-element-dropdown";
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Button } from '../../../components/ui/button';
 import { theme } from '../../../theme/theme';
-import { RootState, AppDispatch } from '../../../stores';
-import { fetchLogbookProductDetail, clearCurrent } from '../stores/logbookproductSlice';
+import { AppDispatch } from '../../../stores';
+import { fetchLogbookProductDetail } from '../stores/logbookproductSlice';
 import { LogbookProductEditSkeleton } from '../skeleton/LogbookProductEditSkeleton';
 import { useLogbookProductForm } from '../hooks/useLogbookProductForm';
-import { logbookProductApi } from '../api/logbookProductApi';
-import { dummyProductsDropdown, dummyKerusakanDropdown } from '../data/dummyProducts';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ModalCancel } from '../../../components/ui/ModalCancel';
@@ -24,11 +22,9 @@ export function LogbookProductEditScreen() {
     const dispatch = useDispatch<AppDispatch>();
 
     const { id } = route.params || {};
-    const { current, isLoading } = useSelector((state: RootState) => state.logbookproduct || { current: null, isLoading: false });
 
     const [isEditing, setIsEditing] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [modalType, setModalType] = useState<'save' | 'delete' | null>(null);
     const [toast, setToast] = useState<{ visible: boolean; type: ToastType; message: string; title?: string }>({
@@ -39,14 +35,7 @@ export function LogbookProductEditScreen() {
     });
 
     // Form Hook
-    const { formData, updateField, validate } = useLogbookProductForm(current || undefined);
-
-    useEffect(() => {
-        if (id) {
-            loadData();
-        }
-        return () => { dispatch(clearCurrent()); };
-    }, [id]);
+    const { formData, updateField, validate, handleSave, handleDelete: deleteRecord, masterDataBarang, masterDataTypeKerusakan, isLoading, isSaving } = useLogbookProductForm(id);
 
     useEffect(() => {
         if (route.params?.showSuccessToast && route.params?.successMessage) {
@@ -55,19 +44,10 @@ export function LogbookProductEditScreen() {
         }
     }, [route.params?.showSuccessToast, route.params?.successMessage, navigation]);
 
-    useEffect(() => {
-        if (current) {
-            updateField('id_product', current.id_product);
-            updateField('id_type_kerusakan', current.id_type_kerusakan);
-            updateField('masalah', current.masalah);
-            updateField('solusi', current.solusi);
-            updateField('catatan', current.catatan);
-            updateField('date_log_book', current.date_log_book);
-        }
-    }, [current]);
-
     const loadData = async () => {
-        await dispatch(fetchLogbookProductDetail(id));
+        if (id) {
+            await dispatch(fetchLogbookProductDetail(id));
+        }
     };
 
     const handleRefresh = async () => {
@@ -89,16 +69,12 @@ export function LogbookProductEditScreen() {
 
     const confirmUpdate = async () => {
         setIsModalVisible(false);
-        setIsSaving(true);
         try {
-            await logbookProductApi.update(id, formData);
+            await handleSave();
             setToast({ visible: true, type: 'success', message: 'Data berhasil diupdate!' });
             setIsEditing(false);
-            await loadData();
-        } catch (e) {
-            setToast({ visible: true, type: 'error', message: 'Gagal mengupdate data.' });
-        } finally {
-            setIsSaving(false);
+        } catch (e: any) {
+            setToast({ visible: true, type: 'error', message: e.message || 'Gagal mengupdate data.' });
         }
     };
 
@@ -110,8 +86,7 @@ export function LogbookProductEditScreen() {
     const confirmDelete = async () => {
         setIsModalVisible(false);
         try {
-            await logbookProductApi.delete(id);
-
+            await deleteRecord();
             (navigation as any).navigate('Drawer', {
                 screen: 'LogbookProductListScreen',
                 params: {
@@ -120,10 +95,20 @@ export function LogbookProductEditScreen() {
                     timestamp: Date.now()
                 }
             });
-        } catch (e) {
-            setToast({ visible: true, type: 'error', message: 'Gagal menghapus data.' });
+        } catch (e: any) {
+            setToast({ visible: true, type: 'error', message: e.message || 'Gagal menghapus data.' });
         }
     };
+
+    const productOptions = masterDataBarang.map(item => ({
+        label: `${item.code_product} - ${item.nm_product}`,
+        value: item.id_product.toString()
+    }));
+
+    const kerusakanOptions = masterDataTypeKerusakan.map(item => ({
+        label: item.nm_type_kerusakan,
+        value: item.id_type_kerusakan.toString()
+    }));
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -187,7 +172,7 @@ export function LogbookProductEditScreen() {
                                 <View className={`border border-gray-300 rounded-lg justify-center h-[42px] ${isEditing ? 'bg-white' : 'bg-gray-100'}`}>
                                     <Dropdown
                                         style={{ paddingHorizontal: 12 }}
-                                        data={dummyProductsDropdown}
+                                        data={productOptions}
                                         labelField="label"
                                         valueField="value"
                                         placeholder="Select Product"
@@ -195,6 +180,8 @@ export function LogbookProductEditScreen() {
                                         onChange={(item) => updateField('id_product', item.value)}
                                         selectedTextStyle={{ color: '#1F2937', fontSize: 14 }}
                                         disable={!isEditing}
+                                        search
+                                        searchPlaceholder="Cari..."
                                     />
                                 </View>
                             </View>
@@ -204,7 +191,7 @@ export function LogbookProductEditScreen() {
                                 <View className={`border border-gray-300 rounded-lg justify-center h-[42px] ${isEditing ? 'bg-white' : 'bg-gray-100'}`}>
                                     <Dropdown
                                         style={{ paddingHorizontal: 12 }}
-                                        data={dummyKerusakanDropdown}
+                                        data={kerusakanOptions}
                                         labelField="label"
                                         valueField="value"
                                         placeholder="Select Tipe Kerusakan"
@@ -212,6 +199,8 @@ export function LogbookProductEditScreen() {
                                         onChange={(item) => updateField('id_type_kerusakan', item.value)}
                                         selectedTextStyle={{ color: '#1F2937', fontSize: 14 }}
                                         disable={!isEditing}
+                                        search
+                                        searchPlaceholder="Cari..."
                                     />
                                 </View>
                             </View>
