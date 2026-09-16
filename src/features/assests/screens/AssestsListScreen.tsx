@@ -47,8 +47,8 @@ export function AssestsListScreen() {
         if (!searchQuery) return items;
         const query = searchQuery.toLowerCase();
         return items.filter(item => 
-            item.name.toLowerCase().includes(query) ||
-            item.inventory_number.toLowerCase().includes(query)
+            item.name?.toLowerCase().includes(query) ||
+            item.serial?.toLowerCase().includes(query)
         );
     }, [items, searchQuery]);
 

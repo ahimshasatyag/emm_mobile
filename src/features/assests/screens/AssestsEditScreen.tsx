@@ -13,6 +13,7 @@ import { Button } from '../../../components/ui/button';
 import Animated, { FadeIn, FadeOut, FadeInUp } from 'react-native-reanimated';
 import { ToastMessages } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { fetchAssetDetail } from '../api/assestsApi';
 
 export function AssestsEditScreen() {
     const navigation = useNavigation();
@@ -32,15 +33,37 @@ export function AssestsEditScreen() {
         removeSerialNumber,
         setMainSerialNumber,
         handleSave,
-        validateForm
+        validateForm,
+        setInitialData
     } = useAssestForm(asset);
 
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isFetchingDetail, setIsFetchingDetail] = useState(true);
     const [isEditMode, setIsEditMode] = useState(false);
     const [toastVisible, setToastVisible] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
     const [toastType, setToastType] = useState<'success' | 'error'>('error');
     const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
+
+    useEffect(() => {
+        const loadDetail = async () => {
+            const idToLoad = assetId || asset?.id;
+            if (idToLoad) {
+                try {
+                    setIsFetchingDetail(true);
+                    const detail = await fetchAssetDetail(idToLoad);
+                    setInitialData(detail);
+                } catch (error) {
+                    console.error('Failed to load asset detail', error);
+                } finally {
+                    setIsFetchingDetail(false);
+                }
+            } else {
+                setIsFetchingDetail(false);
+            }
+        };
+        loadDetail();
+    }, [assetId, asset?.id]);
 
     useEffect(() => {
         if (route.params?.showSuccessToast) {
@@ -51,11 +74,19 @@ export function AssestsEditScreen() {
         }
     }, [route.params?.showSuccessToast, navigation]);
 
-    const onRefresh = useCallback(() => {
+    const onRefresh = useCallback(async () => {
         setIsRefreshing(true);
-        // Simulate refresh delay
-        setTimeout(() => setIsRefreshing(false), 800);
-    }, []);
+        const idToLoad = assetId || asset?.id;
+        if (idToLoad) {
+            try {
+                const detail = await fetchAssetDetail(idToLoad);
+                setInitialData(detail);
+            } catch (error) {
+                console.error('Failed to refresh asset detail', error);
+            }
+        }
+        setIsRefreshing(false);
+    }, [assetId, asset?.id]);
 
     const statusOptions = [
         { label: 'Active', value: 'active' },
@@ -164,7 +195,7 @@ export function AssestsEditScreen() {
                     <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
                 }
             >
-                {isRefreshing ? (
+                {isRefreshing || isFetchingDetail ? (
                     <Animated.View key="skeleton" exiting={FadeOut.duration(300)} className="-mx-4 -mt-4">
                         <AssestsEditSkeleton />
                     </Animated.View>

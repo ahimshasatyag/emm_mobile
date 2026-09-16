@@ -3,6 +3,7 @@ import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { loadAssetsData, submitAsset } from '../stores/assestsSlice';
 import { AssetItem, AssetSerialNumber } from '../types/assests.types';
+import { notificationService } from '../../../services/notification/notificationService';
 
 export const useAssests = () => {
     const dispatch = useAppDispatch();
@@ -28,6 +29,7 @@ export const useAssests = () => {
 
 export const useAssestForm = (initialData?: AssetItem) => {
     const dispatch = useAppDispatch();
+    const authUser = useAppSelector((state) => state.auth.user);
     const { categories, types, isSaving, error } = useAppSelector((state) => state.assests);
 
     const [formData, setFormData] = useState<Partial<AssetItem>>(initialData || {
@@ -63,12 +65,41 @@ export const useAssestForm = (initialData?: AssetItem) => {
     };
 
     const handleSave = async (onSuccess: (savedAsset: any) => void) => {
-        const dataToSave = {
+        const payload = {
             ...formData,
-            serial_numbers: serialNumbers
-        };
-        const resultAction = await dispatch(submitAsset(dataToSave));
+            sn: serialNumbers.map(s => ({
+                name_sn: s.name_sn,
+                serial_number: s.serial_number
+            }))
+        } as any;
+
+        // Ensure we remove properties that don't belong to the payload
+        delete payload.id;
+        delete payload.serial_numbers;
+        delete payload.type_name;
+        delete payload.category_name;
+
+        const resultAction = await dispatch(submitAsset({ id: formData.id, payload }));
         if (submitAsset.fulfilled.match(resultAction)) {
+            if (formData.id) {
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'ASSET',
+                    judul: 'Asset Diperbarui',
+                    pesan: `Asset ${formData.name} berhasil diperbarui oleh ${authUser?.nm_users}`,
+                    action: 'Update'
+                }).catch(() => {});
+            } else {
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'ASSET',
+                    judul: 'Asset Baru',
+                    pesan: `Asset ${formData.name} berhasil ditambahkan oleh ${authUser?.nm_users}`,
+                    action: 'Create'
+                }).catch(() => {});
+            }
             onSuccess(resultAction.payload);
         }
     };
@@ -98,6 +129,11 @@ export const useAssestForm = (initialData?: AssetItem) => {
         return null;
     };
 
+    const setInitialData = (data: AssetItem) => {
+        setFormData(data);
+        setSerialNumbers(data.serial_numbers || []);
+    };
+
     return {
         formData,
         serialNumbers,
@@ -113,7 +149,8 @@ export const useAssestForm = (initialData?: AssetItem) => {
         removeSerialNumber,
         setMainSerialNumber,
         handleSave,
-        validateForm
+        validateForm,
+        setInitialData
     };
 };
 

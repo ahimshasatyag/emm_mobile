@@ -10,7 +10,7 @@ export interface AssetType {
 
 export interface AssetSerialNumber {
     id: string;
-    asset_id: string;
+    asset_id?: string;
     name_sn: string;
     serial_number: string;
     f_print: string | null; // Indicates if this is the primary SN
@@ -27,7 +27,36 @@ export interface AssetItem {
     purchased_date: string;
     deskripsi: string;
     serial: string;
-    status: 'active' | 'normal' | 'not_assigned' | 'sold' | 'rusak';
+    status: 'active' | 'normal' | 'not_assigned' | 'sold' | 'rusak' | string;
     f_print: string | null;
     serial_numbers?: AssetSerialNumber[];
+}
+
+export interface AssetListResponse {
+    status: boolean;
+    data: {
+        data: AssetItem[];
+        current_page?: number;
+        last_page?: number;
+    } | AssetItem[]; // Sometimes backend returns direct array, sometimes paginated obj
+}
+
+export interface AssetSupportDataResponse {
+    status: boolean;
+    data_asset: any[];
+    data_assets_type: AssetType[];
+    data_assets_category: AssetCategory[];
+}
+
+export interface AssetDetailResponse {
+    status: boolean;
+    data: AssetItem;
+    data_sn: AssetSerialNumber[];
+}
+
+export interface AssetSavePayload extends Omit<AssetItem, 'id' | 'serial_numbers' | 'type_name' | 'category_name'> {
+    sn: {
+        name_sn: string;
+        serial_number: string;
+    }[];
 }

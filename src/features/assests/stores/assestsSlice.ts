@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { AssetItem, AssetCategory, AssetType } from '../types/assests.types';
-import { fetchAssets, fetchAssetCategories, fetchAssetTypes, saveAsset } from '../api/assestsApi';
+import { AssetItem, AssetCategory, AssetType, AssetSavePayload } from '../types/assests.types';
+import { fetchAssets, fetchAssetSupportData, saveAsset } from '../api/assestsApi';
 
 interface AssestsState {
     items: AssetItem[];
@@ -24,26 +24,33 @@ export const loadAssetsData = createAsyncThunk(
     'assests/loadData',
     async (_, { rejectWithValue }) => {
         try {
-            const [assets, categories, types] = await Promise.all([
+            const [assets, supportData] = await Promise.all([
                 fetchAssets(),
-                fetchAssetCategories(),
-                fetchAssetTypes()
+                fetchAssetSupportData()
             ]);
-            return { assets, categories, types };
+            return { 
+                assets, 
+                categories: supportData.categories, 
+                types: supportData.types 
+            };
         } catch (error: any) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(error.message || 'Failed to load assets data');
         }
     }
 );
 
 export const submitAsset = createAsyncThunk(
     'assests/submit',
-    async (asset: Partial<AssetItem>, { rejectWithValue }) => {
+    async ({ id, payload }: { id?: string | null, payload: AssetSavePayload }, { dispatch, rejectWithValue }) => {
         try {
-            const response = await saveAsset(asset);
+            const response = await saveAsset(id, payload);
+            if (response && response.status) {
+                // Reload list to get the updated records from backend
+                dispatch(loadAssetsData());
+            }
             return response;
         } catch (error: any) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(error.message || 'Failed to save asset');
         }
     }
 );
@@ -74,8 +81,6 @@ const assestsSlice = createSlice({
             })
             .addCase(submitAsset.fulfilled, (state, action) => {
                 state.isSaving = false;
-                // Since this is mock, we just prepend it
-                state.items = [action.payload, ...state.items];
             })
             .addCase(submitAsset.rejected, (state, action) => {
                 state.isSaving = false;
