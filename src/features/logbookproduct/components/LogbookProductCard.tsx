@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LogbookProduct } from '../types/logbookproduct.types';
+import { formatDate } from '../../../utils/helpers/date';
 
 interface LogbookProductCardProps {
     logbook: LogbookProduct;
@@ -35,7 +36,7 @@ export function LogbookProductCard({ logbook, index }: LogbookProductCardProps) 
                     </View>
                     <View className="flex-1 items-end">
                         <Text className="text-xs text-gray-500 mb-0.5">Date</Text>
-                        <Text className="text-xs font-semibold text-gray-800">{logbook.date_log_book}</Text>
+                        <Text className="text-xs font-semibold text-gray-800">{logbook.date_log_book ? formatDate(new Date(logbook.date_log_book)) : '-'}</Text>
                     </View>
                 </View>
             </TouchableOpacity>

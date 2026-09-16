@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LogbookCustomer } from '../types/logbookcustomers.types';
+import { formatDate } from '../../../utils/helpers/date';
 
 interface LogbookCustomersCardProps {
     logbook: LogbookCustomer;
@@ -21,8 +22,10 @@ export function LogbookCustomersCard({ logbook, index }: LogbookCustomersCardPro
             >
                 <View className="flex-row justify-between items-start mb-2">
                     <View className="flex-1 mr-3">
-                        <Text className="text-sm font-bold text-gray-900">{logbook.id_customers}</Text>
-                        <Text className="text-xs font-semibold text-gray-800 mt-0.5">{logbook.nm_customer}</Text>
+                        <Text className="text-sm font-bold text-gray-900">{logbook.nm_customers}</Text>
+                        {logbook.id_customers && (
+                            <Text className="text-xs font-semibold text-gray-800 mt-0.5">{logbook.id_customers}</Text>
+                        )}
                     </View>
                 </View>
 
@@ -31,11 +34,11 @@ export function LogbookCustomersCard({ logbook, index }: LogbookCustomersCardPro
                 <View className="flex-row justify-between items-end">
                     <View className="flex-1">
                         <Text className="text-xs text-gray-500 mb-0.5">Created By</Text>
-                        <Text className="text-xs font-semibold text-gray-800">{logbook.username}</Text>
+                        <Text className="text-xs font-semibold text-gray-800">{logbook.nm_users || logbook.username}</Text>
                     </View>
                     <View className="flex-1 items-end">
                         <Text className="text-xs text-gray-500 mb-0.5">Date</Text>
-                        <Text className="text-xs font-semibold text-gray-800">{logbook.date_log_book}</Text>
+                        <Text className="text-xs font-semibold text-gray-800">{logbook.date_log_book ? formatDate(new Date(logbook.date_log_book)) : '-'}</Text>
                     </View>
                 </View>
             </TouchableOpacity>

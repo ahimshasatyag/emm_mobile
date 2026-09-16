@@ -11,6 +11,7 @@ import { useLogbookCustomersForm } from '../hooks/useLogbookCustomersForm';
 import { LogbookCustomersFormSkeleton } from '../skeleton/LogbookCustomersFormSkeleton';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
+import { formatDate } from '../../../utils/helpers/date';
 
 export function LogbookCustomersFormScreen() {
     const navigation = useNavigation<any>();
@@ -132,7 +133,7 @@ export function LogbookCustomersFormScreen() {
                             <View className="mb-5">
                                 <Text className="text-xs font-bold text-gray-700 mb-2">Date</Text>
                                 <View className="bg-gray-100 px-3 justify-center border border-gray-200 rounded-lg h-[42px]">
-                                    <Text className="text-sm text-gray-800">{formData.date_log_book}</Text>
+                                    <Text className="text-sm text-gray-800">{formData.date_log_book ? formatDate(new Date(formData.date_log_book)) : ''}</Text>
                                 </View>
                             </View>
 
