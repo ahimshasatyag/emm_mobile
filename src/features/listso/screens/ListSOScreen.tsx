@@ -6,23 +6,10 @@ import { ListSOCard } from '../components/ListSOCard';
 import { ListSOSkeleton, ListSOSummaryTableRowSkeleton } from '../skeleton/ListSOSkeleton';
 import { useListSO } from '../hooks/useListSO';
 import { theme } from '../../../theme/theme';
-import { Calendar, Search, Check, Filter, Download } from 'lucide-react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { Calendar, Check, Filter, Download } from 'lucide-react-native';
 import { Dropdown } from 'react-native-element-dropdown';
-
-const DUMMY_CUSTOMERS = [
-    { label: 'Semua Customer', value: '' },
-    { label: 'PT. LESTARI GEMILANG', value: 'CUST-001' },
-    { label: 'CV. KARYA BERSAMA', value: 'CUST-002' },
-    { label: 'BINTANG ABADI', value: 'CUST-003' },
-];
-
-const DUMMY_PRODUCTS = [
-    { label: 'Semua Product', value: '' },
-    { label: 'Print Pack Premium', value: 'PROD-001' },
-    { label: 'Plastic Standar', value: 'PROD-002' },
-    { label: 'Machinery XYZ', value: 'PROD-003' },
-];
+import { customersApi } from '../../customers/api/customers.api';
+import { productsApi } from '../../products/api/products.api';
 
 export function ListSOScreen() {
     const navigation = useNavigation<any>();
@@ -37,12 +24,41 @@ export function ListSOScreen() {
     const [isInitializing, setIsInitializing] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
+    const [customerOptions, setCustomerOptions] = useState([{ label: 'Semua Customer', value: '' }]);
+    const [productOptions, setProductOptions] = useState([{ label: 'Semua Product', value: '' }]);
+
     useFocusEffect(
         useCallback(() => {
             let isActive = true;
             const initialize = async () => {
                 setIsInitializing(true);
                 try {
+                    const [custRes, prodRes] = await Promise.all([
+                        customersApi.fetchCustomers(),
+                        productsApi.fetchProducts().catch(() => [])
+                    ]);
+
+                    if (isActive) {
+                        if (custRes.success && custRes.data) {
+                            setCustomerOptions([
+                                { label: 'Semua Customer', value: '' },
+                                ...custRes.data.map(c => ({
+                                    label: c.nm_customers,
+                                    value: c.id_customers?.toString()
+                                }))
+                            ]);
+                        }
+                        if (prodRes && Array.isArray(prodRes)) {
+                            setProductOptions([
+                                { label: 'Semua Product', value: '' },
+                                ...prodRes.map(p => ({
+                                    label: p.nm_product,
+                                    value: p.id_product?.toString()
+                                }))
+                            ]);
+                        }
+                    }
+
                     await Promise.all([
                         loadList(),
                         new Promise(resolve => setTimeout(resolve, 800))
@@ -91,7 +107,7 @@ export function ListSOScreen() {
                     <View className="border border-gray-200 rounded-xl bg-gray-50 overflow-hidden">
                         <Dropdown
                             style={{ height: 48, paddingHorizontal: 16 }}
-                            data={DUMMY_CUSTOMERS}
+                            data={customerOptions}
                             labelField="label"
                             valueField="value"
                             placeholder="Pilih Customer"
@@ -108,7 +124,7 @@ export function ListSOScreen() {
                     <View className="border border-gray-200 rounded-xl bg-gray-50 overflow-hidden">
                         <Dropdown
                             style={{ height: 48, paddingHorizontal: 16 }}
-                            data={DUMMY_PRODUCTS}
+                            data={productOptions}
                             labelField="label"
                             valueField="value"
                             placeholder="Pilih Product"
@@ -168,8 +184,8 @@ export function ListSOScreen() {
 
     const renderSummaryTable = () => {
         const renderRow = (
-            name: string, 
-            code: string, 
+            name: string,
+            code: string,
             qty: number = 0,
             total: number = 0,
             percentage: number = 0,
@@ -227,14 +243,14 @@ export function ListSOScreen() {
         const ppMonth = getSummaryRow(monthItems, 'PP');
         const plMonth = getSummaryRow(monthItems, 'PL');
         const axMonth = getSummaryRow(monthItems, 'AX');
-        
+
         const sumQtyMonth = ppMonth.nqty + plMonth.nqty + axMonth.nqty;
         const sumTotalMonth = ppMonth.product_price + plMonth.product_price + axMonth.product_price;
 
         const ppYTD = getSummaryRow(ytdItems, 'PP');
         const plYTD = getSummaryRow(ytdItems, 'PL');
         const axYTD = getSummaryRow(ytdItems, 'AX');
-        
+
         const sumQtyYTD = ppYTD.nqty + plYTD.nqty + axYTD.nqty;
         const sumTotalYTD = ppYTD.product_price + plYTD.product_price + axYTD.product_price;
 
