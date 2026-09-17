@@ -226,6 +226,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         if (route === 'ApprovalItemsList') return 'Approval Items';
         if (route === 'ApprovalSchemeList') return 'Approval Scheme';
         if (route === 'EmployeeList') return 'Employee';
+        if (route === 'EmployeeDivisiList') return 'Division';
         if (route === 'CustomerList') return 'Company';
         if (route === 'CustomerContactList') return 'Contact';
         if (route === 'ProductList') return 'Product';
@@ -338,6 +339,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                                     props.navigation.navigate('ApprovalSchemeList');
                                 } else if (subMenuName === 'Employee') {
                                     props.navigation.navigate('EmployeeList');
+                                } else if (subMenuName === 'Division') {
+                                    props.navigation.navigate('EmployeeDivisiList');
                                 } else if (subMenuName === 'Company') {
                                     props.navigation.navigate('CustomerList');
                                 } else if (subMenuName === 'Contact') {
@@ -468,6 +471,7 @@ export function SideBarNavigator() {
             <Drawer.Screen name="ApprovalItemsList" component={require('../../features/approvalitems/screens/ApprovalItemsListScreen').ApprovalItemsListScreen} />
             <Drawer.Screen name="ApprovalSchemeList" component={require('../../features/approvalscheme/screens/ApprovalSchemeListScreen').ApprovalSchemeListScreen} />
             <Drawer.Screen name="EmployeeList" component={require('../../features/employee/screens/EmployeeListScreen').EmployeeListScreen} />
+            <Drawer.Screen name="EmployeeDivisiList" component={require('../../features/employeedivisi/screens/EmployeeDivisiScreen').EmployeeDivisiScreen} />
             <Drawer.Screen name="CustomerList" component={require('../../features/customers/screens/CustomerListScreen').CustomerListScreen} />
             <Drawer.Screen name="CustomerContactList" component={require('../../features/customercontacts/screens/CustomerContactListScreen').CustomerContactListScreen} />
             <Drawer.Screen name="ProductList" component={require('../../features/products/screens/ProductListScreen').ProductListScreen} />

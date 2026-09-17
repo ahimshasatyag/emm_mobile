@@ -210,6 +210,16 @@ export function MainNavigator() {
                 getComponent={() => require('../../features/employee/screens/EmployeeEditScreen').EmployeeEditScreen}
             />
 
+            {/* Employee Divisi */}
+            <Stack.Screen
+                name="EmployeeDivisiForm"
+                getComponent={() => require('../../features/employeedivisi/screens/EmployeeDivisiFormScreen').EmployeeDivisiFormScreen}
+            />
+            <Stack.Screen
+                name="EmployeeDivisiEdit"
+                getComponent={() => require('../../features/employeedivisi/screens/EmployeeDivisiEditScreen').EmployeeDivisiEditScreen}
+            />
+
             {/* Customers */}
             <Stack.Screen
                 name="CustomerList"

@@ -13,6 +13,7 @@ import inventorytypeReducer from '../features/inventorytype/stores/inventorytype
 import approvalitemsReducer from '../features/approvalitems/stores/approvalitemsSlice';
 import { approvalSchemeReducer } from '../features/approvalscheme/stores/approvalschemeSlice';
 import employeeReducer from '../features/employee/stores/employeeSlice';
+import employeedivisiReducer from '../features/employeedivisi/stores/employeedivisiSlice';
 import customersReducer from '../features/customers/stores/customersSlice';
 import customerContactsReducer from '../features/customercontacts/stores/customerContactsSlice';
 import productsReducer from '../features/products/stores/productsSlice';
@@ -75,6 +76,7 @@ export const store = configureStore({
     approvalitems: approvalitemsReducer,
     approvalscheme: approvalSchemeReducer,
     employee: employeeReducer,
+    employeedivisi: employeedivisiReducer,
     customers: customersReducer,
     customerContacts: customerContactsReducer,
     products: productsReducer,
