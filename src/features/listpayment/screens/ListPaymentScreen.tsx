@@ -3,30 +3,72 @@ import { View, Text, FlatList, RefreshControl, TouchableOpacity, TextInput, Scro
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { ListPaymentCard } from '../components/ListPaymentCard';
+import { ListPaymentSummary } from '../components/ListPaymentSummary';
 import { ListPaymentSkeleton, ListPaymentSummaryTableRowSkeleton } from '../skeleton/ListPaymentSkeleton';
 import { useListPayment } from '../hooks/useListPayment';
 import { theme } from '../../../theme/theme';
 import { Calendar, Filter, Check, Download } from 'lucide-react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 
-const DUMMY_CUSTOMERS = [
-    { label: 'Semua Customer', value: '' },
-    { label: 'PT DUMMY CUSTOMER', value: 'CUST-001' },
-    { label: 'CV MAJU JAYA', value: 'CUST-002' },
-];
-
-const DUMMY_PRODUCTS = [
-    { label: 'Semua Product', value: '' },
-    { label: 'Produk Dummy', value: 'PRD001' },
-    { label: 'Produk Dummy 2', value: 'PRD002' },
-];
+import { customersApi } from '../../customers/api/customers.api';
+import { productsApi } from '../../products/api/products.api';
 
 export function ListPaymentScreen() {
     const navigation = useNavigation<any>();
     const { items, summary, isLoading, error, periode, ckPeriode, idCustomer, idProduct, handleSearch, setPeriode, setCkPeriode, setIdCustomer, setIdProduct } = useListPayment();
 
-    const [isInitializing, setIsInitializing] = useState(false);
+    const [isInitializing, setIsInitializing] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const [customerOptions, setCustomerOptions] = useState([{ label: 'Semua Customer', value: '' }]);
+    const [productOptions, setProductOptions] = useState([{ label: 'Semua Product', value: '' }]);
+
+    useFocusEffect(
+        useCallback(() => {
+            let isActive = true;
+            const initialize = async () => {
+                setIsInitializing(true);
+                try {
+                    const [custRes, prodRes] = await Promise.all([
+                        customersApi.fetchCustomers(),
+                        productsApi.fetchProducts().catch(() => [])
+                    ]);
+
+                    if (isActive) {
+                        if (custRes.success && custRes.data) {
+                            setCustomerOptions([
+                                { label: 'Semua Customer', value: '' },
+                                ...custRes.data.map((c: any) => ({
+                                    label: c.nm_customers,
+                                    value: c.id_customers?.toString()
+                                }))
+                            ]);
+                        }
+                        if (prodRes && Array.isArray(prodRes)) {
+                            setProductOptions([
+                                { label: 'Semua Product', value: '' },
+                                ...prodRes.map((p: any) => ({
+                                    label: p.nm_product,
+                                    value: p.id_product?.toString()
+                                }))
+                            ]);
+                        }
+                    }
+
+                    handleSearch();
+                } catch (error) {
+                    // ignore
+                } finally {
+                    if (isActive) setIsInitializing(false);
+                }
+            };
+            initialize();
+            return () => {
+                isActive = false;
+                setIsInitializing(true);
+            };
+        }, [])
+    );
 
     const onRefresh = useCallback(async () => {
         setIsRefreshing(true);
@@ -45,7 +87,7 @@ export function ListPaymentScreen() {
                     <View className="border border-gray-200 rounded-xl bg-gray-50 overflow-hidden">
                         <Dropdown
                             style={{ height: 48, paddingHorizontal: 16 }}
-                            data={DUMMY_CUSTOMERS}
+                            data={customerOptions}
                             labelField="label"
                             valueField="value"
                             placeholder="Pilih Customer"
@@ -61,7 +103,7 @@ export function ListPaymentScreen() {
                     <View className="border border-gray-200 rounded-xl bg-gray-50 overflow-hidden">
                         <Dropdown
                             style={{ height: 48, paddingHorizontal: 16 }}
-                            data={DUMMY_PRODUCTS}
+                            data={productOptions}
                             labelField="label"
                             valueField="value"
                             placeholder="Pilih Product"
@@ -119,75 +161,17 @@ export function ListPaymentScreen() {
     const renderSummaryTable = () => {
         if (!summary || summary.length === 0) return null;
 
-        const getSummary = (kat: string, type: string) => {
-            return summary.find(s => s.kategori === kat && s.type_kategori === type) || { product_price: 0, nqty: 0 };
-        };
-
-        const totalMonth = summary.filter(s => s.kategori === 'month').reduce((acc, curr) => acc + curr.product_price, 0);
-        const qtyMonth = summary.filter(s => s.kategori === 'month').reduce((acc, curr) => acc + curr.nqty, 0);
-        const totalYtd = summary.filter(s => s.kategori === 'ytd').reduce((acc, curr) => acc + curr.product_price, 0);
-        const qtyYtd = summary.filter(s => s.kategori === 'ytd').reduce((acc, curr) => acc + curr.nqty, 0);
-
-        const renderRow = (name: string, code: string, qty: number, total: number, isTotal: boolean = false) => (
-            <View key={code} className={`flex-row border-b border-gray-200 ${isTotal ? 'bg-gray-100' : 'bg-white'}`}>
-                <View style={{ flex: 2 }} className="flex-row p-2 border-r border-gray-200 items-center">
-                    <Text className={`flex-1 text-xs text-gray-700 ${isTotal ? 'font-bold' : ''}`}>{name}</Text>
-                    {!isTotal && <Text className="w-8 text-xs border-l border-gray-200 text-gray-500 text-center">{code}</Text>}
-                </View>
-                <View style={{ flex: 0.5 }} className="p-2 border-r border-gray-200 items-end justify-center">
-                    <Text className={`text-xs text-gray-700 ${isTotal ? 'font-bold' : ''}`}>{qty}</Text>
-                </View>
-                <View style={{ flex: 1.5 }} className="p-2 border-r border-gray-200 items-end justify-center">
-                    <Text className={`text-xs text-gray-700 ${isTotal ? 'font-bold' : ''}`}>Rp {total.toLocaleString('id-ID')}</Text>
-                </View>
-            </View>
-        );
-
-        const renderHeaderRow = (title: string) => (
-            <View className="flex-row bg-gray-200 border-b border-gray-200">
-                <View style={{ flex: 2 }} className="p-2 border-r border-gray-200 justify-center">
-                    <Text className="font-bold text-gray-700 text-center text-xs">{title}</Text>
-                </View>
-                <View style={{ flex: 0.5 }} className="p-2 border-r border-gray-200 justify-center items-center">
-                    <Text className="font-bold text-gray-700 text-xs">Qty</Text>
-                </View>
-                <View style={{ flex: 1.5 }} className="p-2 border-r border-gray-200 justify-center items-center">
-                    <Text className="font-bold text-gray-700 text-xs">Total Val</Text>
-                </View>
-            </View>
-        );
-
         return (
             <View className="px-4 mt-10 pb-24">
-                <TouchableOpacity className="bg-green-600 px-4 py-2 rounded-xl flex-row items-center justify-center self-start">
+                <TouchableOpacity className="bg-green-600 px-4 py-2 rounded-xl flex-row items-center justify-center self-start mb-4">
                     <Download size={16} color="white" className="mr-2" />
                     <Text className="text-white font-bold text-sm">Click export to Excel</Text>
                 </TouchableOpacity>
-                <View className="rounded-xl mt-4 border border-gray-200 overflow-hidden bg-white shadow-sm">
-                    {renderHeaderRow('Bulan Ini')}
-                    {isLoading || isInitializing ? (
-                        <ListPaymentSummaryTableRowSkeleton section="bln" />
-                    ) : (
-                        <>
-                            {renderRow('Print Pack', 'PP_BLN', getSummary('month', 'PP').nqty, getSummary('month', 'PP').product_price)}
-                            {renderRow('Plastic', 'PL_BLN', getSummary('month', 'PL').nqty, getSummary('month', 'PL').product_price)}
-                            {renderRow('Auxiliary', 'AX_BLN', getSummary('month', 'AX').nqty, getSummary('month', 'AX').product_price)}
-                            {renderRow('Total', 'TOT_BLN', qtyMonth, totalMonth, true)}
-                        </>
-                    )}
-
-                    {renderHeaderRow('Year to Date')}
-                    {isLoading || isInitializing ? (
-                        <ListPaymentSummaryTableRowSkeleton section="ytd" />
-                    ) : (
-                        <>
-                            {renderRow('Print Pack', 'PP_YTD', getSummary('ytd', 'PP').nqty, getSummary('ytd', 'PP').product_price)}
-                            {renderRow('Plastic', 'PL_YTD', getSummary('ytd', 'PL').nqty, getSummary('ytd', 'PL').product_price)}
-                            {renderRow('Auxiliary', 'AX_YTD', getSummary('ytd', 'AX').nqty, getSummary('ytd', 'AX').product_price)}
-                            {renderRow('Total', 'TOT_YTD', qtyYtd, totalYtd, true)}
-                        </>
-                    )}
-                </View>
+                {isLoading || isInitializing ? (
+                    <ListPaymentSummaryTableRowSkeleton section="bln" />
+                ) : (
+                    <ListPaymentSummary summary={summary} periodeStr={periode} />
+                )}
             </View>
         );
     };
@@ -217,21 +201,30 @@ export function ListPaymentScreen() {
                                 <View>
                                     {/* Table Header */}
                                     <View className="flex-row bg-gray-200 rounded-t-xl overflow-hidden border border-gray-200">
-                                        <Text className="w-12 py-3 px-2 font-bold text-[11px] text-gray-700 text-center">No</Text>
-                                        <Text className="w-24 py-3 px-2 font-bold text-[11px] text-gray-700 text-center">Tipe</Text>
-                                        <Text className="w-24 py-3 px-2 font-bold text-[11px] text-gray-700 text-center">Tgl SO</Text>
-                                        <Text className="w-32 py-3 px-2 font-bold text-[11px] text-gray-700">Kode SO</Text>
+                                        <Text className="w-12 py-3 px-2 font-bold text-[11px] text-gray-700 text-center">Line</Text>
+                                        <Text className="w-24 py-3 px-2 font-bold text-[11px] text-gray-700 text-center">Type</Text>
+                                        <Text className="w-24 py-3 px-2 font-bold text-[11px] text-gray-700 text-center">Tgl</Text>
+                                        <Text className="w-32 py-3 px-2 font-bold text-[11px] text-gray-700">No SO</Text>
                                         <Text className="w-40 py-3 px-2 font-bold text-[11px] text-gray-700">Customer</Text>
-                                        <Text className="w-32 py-3 px-2 font-bold text-[11px] text-gray-700">Produk</Text>
                                         <Text className="w-24 py-3 px-2 font-bold text-[11px] text-gray-700 text-center">Mata Uang</Text>
-                                        <Text className="w-24 py-3 px-2 font-bold text-[11px] text-gray-700 text-right">Harga Unit</Text>
+                                        <Text className="w-24 py-3 px-2 font-bold text-[11px] text-gray-700 text-right">Unit Price</Text>
                                         <Text className="w-16 py-3 px-2 font-bold text-[11px] text-gray-700 text-center">Qty</Text>
+                                        <Text className="w-24 py-3 px-2 font-bold text-[11px] text-gray-700 text-right">Tax</Text>
                                         <Text className="w-28 py-3 px-2 font-bold text-[11px] text-gray-700 text-right">Subtotal</Text>
-                                        <Text className="w-32 py-3 px-2 font-bold text-[11px] text-gray-700 text-center">Invoice</Text>
-                                        <Text className="w-48 py-3 px-2 font-bold text-[11px] text-gray-700">Detail Payment</Text>
-                                        <Text className="w-32 py-3 px-2 font-bold text-[11px] text-gray-700">Tipe Pembayaran</Text>
-                                        <Text className="w-32 py-3 px-2 font-bold text-[11px] text-gray-700">Term</Text>
+                                        <Text className="w-32 py-3 px-2 font-bold text-[11px] text-gray-700">Commodity</Text>
+                                        <Text className="w-32 py-3 px-2 font-bold text-[11px] text-gray-700">Merk</Text>
                                         <Text className="w-32 py-3 px-2 font-bold text-[11px] text-gray-700">Sales</Text>
+                                        <Text className="w-32 py-3 px-2 font-bold text-[11px] text-gray-700">Tipe Pembayaran</Text>
+                                        <Text className="w-32 py-3 px-2 font-bold text-[11px] text-gray-700">Term Pembayaran</Text>
+                                        <Text className="w-40 py-3 px-2 font-bold text-[11px] text-gray-700">Notes</Text>
+                                        <Text className="w-48 py-3 px-2 font-bold text-[11px] text-gray-700">Detail Payment</Text>
+                                        <Text className="w-24 py-3 px-2 font-bold text-[11px] text-gray-700 text-center">Tgl INV</Text>
+                                        <Text className="w-32 py-3 px-2 font-bold text-[11px] text-gray-700">Nomor INV</Text>
+                                        <Text className="w-24 py-3 px-2 font-bold text-[11px] text-gray-700 text-center">Tgl Kirim DO</Text>
+                                        <Text className="w-24 py-3 px-2 font-bold text-[11px] text-gray-700 text-right">Success Fee</Text>
+                                        <Text className="w-24 py-3 px-2 font-bold text-[11px] text-gray-700 text-right">Biaya Freight</Text>
+                                        <Text className="w-24 py-3 px-2 font-bold text-[11px] text-gray-700 text-right">Biaya Teknisi</Text>
+                                        <Text className="w-24 py-3 px-2 font-bold text-[11px] text-gray-700 text-right">Biaya Forklift</Text>
                                     </View>
 
                                     {/* Table Body */}

@@ -14,16 +14,36 @@ export interface ListPaymentItem {
     nm_type_pembayaran: string;
     term_pembayaran: string; // generated from ndp_persen, ntenor etc
     keterangan: string;
-    detail_payment: string; // array string with \n or <br> mapped to array? we'll just use string or string[]
+    detail_payment: string | null; 
     date_invoice: string;
     code_invoice: string;
     date_delivery: string;
     success_fee: number;
-    freight_notes: string;
-    teknisi_notes: string;
-    forklift_notes: string;
-    tax_amount: string;
-    subtotal: string;
+    freight: string | number;
+    freight_amount: number;
+    teknisi: string | number;
+    teknisi_amount: number;
+    forklift: string | number;
+    forklift_amount: number;
+    ndp_persen: number;
+    ndp_amount: number;
+    ntenor: number;
+    ntenor_amount: number;
+    flag_ppn: string | number;
+}
+
+export interface ListPaymentDetailItem {
+    id_product: string;
+    code_product: string;
+    nm_product: string;
+    product_price: string;
+    nqty: string;
+    satuan?: string;
+    date_delivery?: string;
+}
+
+export interface ListPaymentDetail extends Omit<ListPaymentItem, 'code_product' | 'nm_product' | 'harga_ppn' | 'tot_qty'> {
+    items: ListPaymentDetailItem[];
 }
 
 export interface ListPaymentSummaryItem {

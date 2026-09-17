@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
-import { fetchListPayment, setFilters } from '../stores/listpaymentSlice';
+import { fetchListPayment, setFilters, fetchPaymentDetail, clearDetail } from '../stores/listpaymentSlice';
 import { Alert } from 'react-native';
 
 export const useListPayment = () => {
     const dispatch = useAppDispatch();
-    const { items, summary, isLoading, filters, error } = useAppSelector((state) => state.listpayment);
+    const { items, summary, currentDetail, isLoading, isLoadingDetail, filters, error } = useAppSelector((state) => state.listpayment);
 
     const [periode, setPeriode] = useState(filters.periode);
     const [ckPeriode, setCkPeriode] = useState(filters.ck_periode);
@@ -38,10 +38,20 @@ export const useListPayment = () => {
         }));
     };
 
+    const loadDetail = useCallback((id: string) => {
+        dispatch(fetchPaymentDetail(id));
+    }, [dispatch]);
+
+    const resetDetail = useCallback(() => {
+        dispatch(clearDetail());
+    }, [dispatch]);
+
     return {
         items,
         summary,
+        currentDetail,
         isLoading,
+        isLoadingDetail,
         error,
         periode,
         setPeriode,
@@ -51,6 +61,8 @@ export const useListPayment = () => {
         setIdCustomer,
         idProduct,
         setIdProduct,
-        handleSearch
+        handleSearch,
+        loadDetail,
+        resetDetail
     };
 };
