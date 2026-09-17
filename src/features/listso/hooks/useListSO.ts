@@ -7,7 +7,7 @@ import { useCallback } from 'react';
 export const useListSO = () => {
     const dispatch = useDispatch<AppDispatch>();
     
-    const { items, currentDetail, filters, isLoadingList, isLoadingDetail, error } = useSelector(
+    const { items, summary, currentDetail, filters, isLoadingList, isLoadingDetail, error } = useSelector(
         (state: RootState) => state.listso
     );
 
@@ -29,6 +29,7 @@ export const useListSO = () => {
 
     return {
         items,
+        summary,
         currentDetail,
         filters,
         isLoadingList,

@@ -4,6 +4,7 @@ import { getSODetail, getSOList } from '../api/listsoApi';
 
 interface ListSOState {
     items: ListSOItem[];
+    summary: ListSOSummaryItem[];
     currentDetail: ListSODetail | null;
     filters: ListSOFilter;
     isLoadingList: boolean;
@@ -13,6 +14,7 @@ interface ListSOState {
 
 const initialState: ListSOState = {
     items: [],
+    summary: [],
     currentDetail: null,
     filters: {
         periode: new Date().toISOString().slice(0, 7), // e.g. "2026-07"
@@ -60,7 +62,8 @@ const listsoSlice = createSlice({
             })
             .addCase(fetchSOList.fulfilled, (state, action) => {
                 state.isLoadingList = false;
-                state.items = action.payload;
+                state.items = action.payload.items;
+                state.summary = action.payload.summary;
             })
             .addCase(fetchSOList.rejected, (state, action) => {
                 state.isLoadingList = false;

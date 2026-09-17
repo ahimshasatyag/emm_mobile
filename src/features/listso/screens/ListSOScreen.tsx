@@ -26,7 +26,7 @@ const DUMMY_PRODUCTS = [
 
 export function ListSOScreen() {
     const navigation = useNavigation<any>();
-    const { items, filters, isLoadingList, loadList, updateFilters } = useListSO();
+    const { items, filters, isLoadingList, loadList, updateFilters, summary } = useListSO();
 
     // local states
     const [isAllPeriode, setIsAllPeriode] = useState(filters.periode === 'ALL' || filters.periode === '');
@@ -167,23 +167,37 @@ export function ListSOScreen() {
     );
 
     const renderSummaryTable = () => {
-        const renderRow = (name: string, code: string, isTotal: boolean = false) => (
-            <View key={code} className={`flex-row border-b border-gray-200 ${isTotal ? 'bg-gray-100' : 'bg-white'}`}>
-                <View style={{ flex: 2 }} className="flex-row p-2 border-r border-gray-200 items-center">
-                    <Text className={`flex-1 text-xs text-gray-700 ${isTotal ? 'font-bold' : ''}`}>{name}</Text>
-                    {!isTotal && <Text className="w-8 text-xs border-l border-gray-200 text-gray-500 text-center">{code}</Text>}
+        const renderRow = (
+            name: string, 
+            code: string, 
+            qty: number = 0,
+            total: number = 0,
+            percentage: number = 0,
+            isTotal: boolean = false
+        ) => {
+            const formatCurrency = (val: string | number) => {
+                const n = typeof val === 'string' ? parseFloat(val) : val;
+                return (n || 0).toLocaleString('id-ID');
+            };
+
+            return (
+                <View key={code} className={`flex-row border-b border-gray-200 ${isTotal ? 'bg-gray-100' : 'bg-white'}`}>
+                    <View style={{ flex: 2 }} className="flex-row p-2 border-r border-gray-200 items-center">
+                        <Text className={`flex-1 text-xs text-gray-700 ${isTotal ? 'font-bold' : ''}`}>{name}</Text>
+                        {!isTotal && <Text className="w-8 text-xs border-l border-gray-200 text-gray-500 text-center">{code}</Text>}
+                    </View>
+                    <View style={{ flex: 0.5 }} className="p-2 border-r border-gray-200 items-end justify-center">
+                        <Text className={`text-xs text-gray-700 ${isTotal ? 'font-bold' : ''}`}>{formatCurrency(qty)}</Text>
+                    </View>
+                    <View style={{ flex: 1.5 }} className="p-2 border-r border-gray-200 items-end justify-center">
+                        <Text className={`text-xs text-gray-700 ${isTotal ? 'font-bold' : ''}`}>{formatCurrency(total)}</Text>
+                    </View>
+                    <View style={{ flex: 1.5 }} className="p-2 items-end justify-center">
+                        <Text className={`text-xs text-gray-700 ${isTotal ? 'font-bold' : ''}`}>{percentage.toFixed(2)}%</Text>
+                    </View>
                 </View>
-                <View style={{ flex: 0.5 }} className="p-2 border-r border-gray-200 items-end justify-center">
-                    <Text className={`text-xs text-gray-700 ${isTotal ? 'font-bold' : ''}`}>0</Text>
-                </View>
-                <View style={{ flex: 1.5 }} className="p-2 border-r border-gray-200 items-end justify-center">
-                    <Text className={`text-xs text-gray-700 ${isTotal ? 'font-bold' : ''}`}>0</Text>
-                </View>
-                <View style={{ flex: 1.5 }} className="p-2 items-end justify-center">
-                    <Text className={`text-xs text-gray-700 ${isTotal ? 'font-bold' : ''}`}>0%</Text>
-                </View>
-            </View>
-        );
+            );
+        };
 
         const renderHeaderRow = (title: string) => (
             <View className="flex-row bg-gray-200 border-b border-gray-200">
@@ -202,6 +216,40 @@ export function ListSOScreen() {
             </View>
         );
 
+        const getSummaryRow = (items: any[], typeKategori: string) => {
+            const found = items.find(s => s.type_kategori?.toUpperCase() === typeKategori.toUpperCase());
+            return found ? { product_price: parseFloat(found.product_price || 0), nqty: parseFloat(found.nqty || 0) } : { product_price: 0, nqty: 0 };
+        };
+
+        const monthItems = summary?.filter(s => s.kategori === 'month') || [];
+        const ytdItems = summary?.filter(s => s.kategori === 'ytd') || [];
+
+        const ppMonth = getSummaryRow(monthItems, 'PP');
+        const plMonth = getSummaryRow(monthItems, 'PL');
+        const axMonth = getSummaryRow(monthItems, 'AX');
+        
+        const sumQtyMonth = ppMonth.nqty + plMonth.nqty + axMonth.nqty;
+        const sumTotalMonth = ppMonth.product_price + plMonth.product_price + axMonth.product_price;
+
+        const ppYTD = getSummaryRow(ytdItems, 'PP');
+        const plYTD = getSummaryRow(ytdItems, 'PL');
+        const axYTD = getSummaryRow(ytdItems, 'AX');
+        
+        const sumQtyYTD = ppYTD.nqty + plYTD.nqty + axYTD.nqty;
+        const sumTotalYTD = ppYTD.product_price + plYTD.product_price + axYTD.product_price;
+
+        const getPct = (val: number, total: number) => total > 0 ? (val / total) * 100 : 0;
+
+        const formatPeriode = (periode: string) => {
+            if (!periode || periode === 'ALL') return 'Semua Periode';
+            const [y, m] = periode.split('-');
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const idx = parseInt(m) - 1;
+            if (idx >= 0 && idx < 12) return `${months[idx]} ${y}`;
+            return periode;
+        };
+        const titleBulan = formatPeriode(filters.periode);
+
         return (
             <View className="px-4 mt-10 pb-24">
                 <TouchableOpacity className="bg-green-600 px-4 py-2 rounded-xl flex-row items-center justify-center self-start">
@@ -210,28 +258,28 @@ export function ListSOScreen() {
                 </TouchableOpacity>
                 <View className="rounded-xl mt-4 border border-gray-200 overflow-hidden bg-white shadow-sm">
                     {/* Section 1: Bulan Ini */}
-                    {renderHeaderRow('Bulan Ini')}
+                    {renderHeaderRow(titleBulan)}
                     {isLoadingList || isInitializing ? (
                         <ListSOSummaryTableRowSkeleton section="bln" />
                     ) : (
                         <>
-                            {renderRow('Print Pack', 'PP_BLN')}
-                            {renderRow('Plastic', 'PL_BLN')}
-                            {renderRow('Auxiliary', 'AX_BLN')}
-                            {renderRow('Total', 'TOT_BLN', true)}
+                            {renderRow('Print Pack', 'PP', ppMonth.nqty, ppMonth.product_price, getPct(ppMonth.product_price, sumTotalMonth))}
+                            {renderRow('Plastic', 'PL', plMonth.nqty, plMonth.product_price, getPct(plMonth.product_price, sumTotalMonth))}
+                            {renderRow('Auxiliary', 'AX', axMonth.nqty, axMonth.product_price, getPct(axMonth.product_price, sumTotalMonth))}
+                            {renderRow('Total', '', sumQtyMonth, sumTotalMonth, 100, true)}
                         </>
                     )}
 
                     {/* Section 2: Year to Date */}
-                    {renderHeaderRow('Year to Date')}
+                    {renderHeaderRow('Year to date')}
                     {isLoadingList || isInitializing ? (
                         <ListSOSummaryTableRowSkeleton section="ytd" />
                     ) : (
                         <>
-                            {renderRow('Print Pack', 'PP_YTD')}
-                            {renderRow('Plastic', 'PL_YTD')}
-                            {renderRow('Auxiliary', 'AX_YTD')}
-                            {renderRow('Total', 'TOT_YTD', true)}
+                            {renderRow('Print Pack', 'PP', ppYTD.nqty, ppYTD.product_price, getPct(ppYTD.product_price, sumTotalYTD))}
+                            {renderRow('Plastic', 'PL', plYTD.nqty, plYTD.product_price, getPct(plYTD.product_price, sumTotalYTD))}
+                            {renderRow('Auxiliary', 'AX', axYTD.nqty, axYTD.product_price, getPct(axYTD.product_price, sumTotalYTD))}
+                            {renderRow('Total', '', sumQtyYTD, sumTotalYTD, 100, true)}
                         </>
                     )}
                 </View>

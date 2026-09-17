@@ -6,10 +6,31 @@ export interface ListSOItem {
     nm_customers: string;
     nm_karyawan: string;
     vcurrency: string;
-    tot_qty: number;
-    tot_price_netto: number;
-    harga_ppn: number;
+    tot_qty: string | number;
+    tot_price_netto: string | number;
+    harga_ppn: string | number;
     status_so: string;
+    date_do?: string;
+    date_delivery?: string;
+    options_so?: any[];
+
+    code_product?: string;
+    nm_product?: string;
+    nm_product_brand?: string;
+    type_kategori?: string;
+    nm_type_pembayaran?: string;
+    ntenor?: number;
+    keterangan?: string;
+    flag_ppn?: number | string;
+    code_invoice?: string;
+    date_invoice?: string;
+    id_invoice?: string;
+    nppn_amount?: string | number;
+    nkurs?: string | number;
+    ndp_persen?: string | number;
+    ndp_amount?: string | number;
+    ntenor_amount?: string | number;
+    no_po_cust?: string;
 }
 
 export interface ListSOProduct {
@@ -23,7 +44,8 @@ export interface ListSOProduct {
     nqty: number;
     nm_product_satuan: string;
     delivery_term: string;
-    subtotal: number;
+    subtotal?: number;
+    ntot_product_price_netto?: number;
 }
 
 export interface ListSODetail {
@@ -62,4 +84,16 @@ export interface ListSOFilter {
     periode: string; // YYYY-MM or 'ALL'
     id_customers: string;
     id_product: string;
+}
+
+export interface ListSOSummaryItem {
+    product_price: string | number;
+    nqty: string | number;
+    type_kategori: string;
+    kategori: 'month' | 'ytd';
+}
+
+export interface ListSOListResponse {
+    items: ListSOItem[];
+    summary: ListSOSummaryItem[];
 }
