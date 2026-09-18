@@ -99,7 +99,7 @@ const SIDEBAR_MENUS = [
         title: 'Warehouse',
         iconName: 'Warehouse',
         color: '#eab308',
-        subMenus: ['Delivery Order', 'Inventory']
+        subMenus: ['Delivery Order']
     },
     {
         id: '111',
@@ -507,6 +507,10 @@ export function SideBarNavigator() {
             <Drawer.Screen
                 name="ProductPriceReqListScreen"
                 component={require('../../features/productpricereq/screens/ProductPriceReqListScreen').ProductPriceReqListScreen}
+            />
+            <Drawer.Screen
+                name="ProductPriceLogListScreen"
+                component={require('../../features/productpricelog/screens/ProductPriceLogListScreen').ProductPriceLogListScreen}
             />
             <Drawer.Screen
                 name="CsrListScreen"

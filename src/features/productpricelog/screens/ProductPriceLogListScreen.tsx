@@ -38,7 +38,6 @@ export function ProductPriceLogListScreen() {
 
             return () => {
                 isActive = false;
-                setIsInitializing(true);
             };
         }, [loadLogs, resetError])
     );
@@ -76,11 +75,7 @@ export function ProductPriceLogListScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator
-                title="LOG SEARCH"
-                showBackButton={true}
-                onBackPress={() => navigation.goBack()}
-            />
+            <HeaderNavigator title="LOG SEARCH" />
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
                 <View className="bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2 shadow-sm">
