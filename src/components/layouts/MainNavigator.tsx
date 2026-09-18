@@ -220,6 +220,20 @@ export function MainNavigator() {
                 getComponent={() => require('../../features/employeedivisi/screens/EmployeeDivisiEditScreen').EmployeeDivisiEditScreen}
             />
 
+            {/* Employee Posisi */}
+            <Stack.Screen
+                name="EmployeePosisiList"
+                getComponent={() => require('../../features/employeeposisi/screens/EmployeePosisiScreen').EmployeePosisiScreen}
+            />
+            <Stack.Screen
+                name="EmployeePosisiForm"
+                getComponent={() => require('../../features/employeeposisi/screens/EmployeePosisiFormScreen').EmployeePosisiFormScreen}
+            />
+            <Stack.Screen
+                name="EmployeePosisiEdit"
+                getComponent={() => require('../../features/employeeposisi/screens/EmployeePosisiEditScreen').EmployeePosisiEditScreen}
+            />
+
             {/* Customers */}
             <Stack.Screen
                 name="CustomerList"

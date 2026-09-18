@@ -4,19 +4,19 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Save, Edit2, X, Trash2 } from 'lucide-react-native';
 import { theme } from '../../../theme/theme';
-import { useEmployeeDivisiForm } from '../hooks/useEmployeeDivisiForm';
+import { useEmployeePosisiForm } from '../hooks/useEmployeePosisiForm';
 import Animated, { FadeInUp, LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
-import { EmployeeDivisiEditSkeleton } from '../skeleton/EmployeeDivisiEditSkeleton';
+import { EmployeePosisiEditSkeleton } from '../skeleton/EmployeePosisiEditSkeleton';
 
-export function EmployeeDivisiEditScreen() {
+export function EmployeePosisiEditScreen() {
     const route = useRoute<any>();
     const navigation = useNavigation<any>();
 
-    const divisiId = route.params?.id;
-    const { formData, updateField, save, remove, isLoading, isSaving, initialLoadDone, validateForm, loadData } = useEmployeeDivisiForm(divisiId);
+    const posisiId = route.params?.id;
+    const { formData, updateField, save, remove, isLoading, isSaving, initialLoadDone, validateForm, loadData } = useEmployeePosisiForm(posisiId);
 
     const [isEditing, setIsEditing] = useState(false);
     const [focusedField, setFocusedField] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export function EmployeeDivisiEditScreen() {
             setToastState({
                 visible: true,
                 type: 'success',
-                message: 'Divisi berhasil ditambahkan'
+                message: 'Posisi berhasil ditambahkan'
             });
             navigation.setParams({ showSuccessToast: undefined });
         }
@@ -60,7 +60,7 @@ export function EmployeeDivisiEditScreen() {
                 setToastState({
                     visible: true,
                     type: 'success',
-                    message: 'Divisi berhasil diperbarui'
+                    message: 'Posisi berhasil diperbarui'
                 });
                 setIsEditing(false);
             } else {
@@ -70,7 +70,7 @@ export function EmployeeDivisiEditScreen() {
             setToastState({
                 visible: true,
                 type: 'error',
-                message: error?.message || 'Gagal memperbarui divisi'
+                message: error?.message || 'Gagal memperbarui posisi'
             });
         }
     };
@@ -81,7 +81,7 @@ export function EmployeeDivisiEditScreen() {
     };
 
     const handleDelete = () => {
-        Alert.alert("Hapus Divisi", "Apakah Anda yakin ingin menghapus divisi ini?", [
+        Alert.alert("Hapus Posisi", "Apakah Anda yakin ingin menghapus posisi ini?", [
             { text: "Batal", style: "cancel" },
             {
                 text: "Hapus",
@@ -89,8 +89,8 @@ export function EmployeeDivisiEditScreen() {
                 onPress: async () => {
                     const success = await remove();
                     if (success) {
-                        navigation.navigate('EmployeeDivisiList', {
-                            toastMessage: 'Divisi berhasil dihapus',
+                        navigation.navigate('EmployeePosisiList', {
+                            toastMessage: 'Posisi berhasil dihapus',
                             toastType: 'success'
                         });
                     } else {
@@ -108,33 +108,33 @@ export function EmployeeDivisiEditScreen() {
     return (
         <View className="flex-1 bg-gray-50">
             <HeaderNavigator
-                title={!initialLoadDone || isLoading ? "MEMUAT DATA..." : (isEditing ? "EDIT DIVISI" : "DETAIL DIVISI")}
+                title={!initialLoadDone || isLoading ? "MEMUAT DATA..." : (isEditing ? "EDIT POSISI" : "DETAIL POSISI")}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
             />
 
             <ToastMessages visible={toastState.visible} type={toastState.type} title={toastState.type === 'success' ? 'Sukses' : 'Validasi'} message={toastState.message} onClose={() => setToastState({ ...toastState, visible: false })} />
 
-            <ModalConfirm visible={isModalConfirmVisible} title="Konfirmasi" message="Apakah Anda yakin ingin menyimpan perubahan divisi ini?" confirmText="Ya, Simpan" cancelText="Batal" onCancel={() => setIsModalConfirmVisible(false)} onConfirm={confirmSave} isLoading={isSaving} />
+            <ModalConfirm visible={isModalConfirmVisible} title="Konfirmasi" message="Apakah Anda yakin ingin menyimpan perubahan posisi ini?" confirmText="Ya, Simpan" cancelText="Batal" onCancel={() => setIsModalConfirmVisible(false)} onConfirm={confirmSave} isLoading={isSaving} />
 
             <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingTop: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={isLoading && initialLoadDone} onRefresh={loadData} colors={[theme.colors.primary]} />}>
                 {(!initialLoadDone && isLoading) ? (
                     <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
-                        <EmployeeDivisiEditSkeleton />
+                        <EmployeePosisiEditSkeleton />
                     </Animated.View>
                 ) : (
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
                         <Animated.View key={`form-container-${isEditing}`} entering={FadeInUp.delay(50)} layout={LinearTransition.springify()} className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-4" style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}>
                             <View>
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Nama Divisi <Text className="text-red-500">*</Text></Text>
+                                <Text className="text-sm font-bold text-gray-700 mb-2">Nama Posisi <Text className="text-red-500">*</Text></Text>
                                 <TextInput
                                     className={`px-4 py-3 rounded-xl border ${isEditing ? 'bg-gray-50 text-gray-900' : 'bg-gray-100 border-gray-200 text-gray-500'}`}
-                                    style={isEditing ? { borderColor: focusedField === 'nm_karyawan_divisi' ? theme.colors.primary : '#e5e7eb' } : undefined}
-                                    placeholder="Masukkan nama divisi"
-                                    value={formData.nm_karyawan_divisi}
-                                    onChangeText={(text) => updateField('nm_karyawan_divisi', text)}
+                                    style={isEditing ? { borderColor: focusedField === 'nm_karyawan_posisi' ? theme.colors.primary : '#e5e7eb' } : undefined}
+                                    placeholder="Masukkan nama posisi"
+                                    value={formData.nm_karyawan_posisi}
+                                    onChangeText={(text) => updateField('nm_karyawan_posisi', text)}
                                     editable={isEditing}
-                                    onFocus={() => setFocusedField('nm_karyawan_divisi')}
+                                    onFocus={() => setFocusedField('nm_karyawan_posisi')}
                                     onBlur={() => setFocusedField(null)}
                                 />
                             </View>
