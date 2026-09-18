@@ -56,8 +56,8 @@ export function TabProduct({
                             </Text>
                         </View>
                         <Text className="w-20 text-xs text-gray-700 text-right">{formatRupiah(item.product_price)}</Text>
-                        <Text className="w-12 text-xs text-gray-700 text-center">{item.nqty}</Text>
-                        <Text className="w-24 text-xs font-bold text-gray-900 text-right" style={{ color: theme.colors.primary }}>{formatRupiah(item.product_price * item.nqty)}</Text>
+                        <Text className="w-12 text-xs text-gray-700 text-center">{item.qty}</Text>
+                        <Text className="w-24 text-xs font-bold text-gray-900 text-right" style={{ color: theme.colors.primary }}>{formatRupiah(item.product_price * item.qty)}</Text>
                     </TouchableOpacity>
                 ))}
 
@@ -72,7 +72,7 @@ export function TabProduct({
                     <View className="px-4 py-3 flex-row justify-between items-center bg-gray-50">
                         <Text className="text-sm font-bold text-gray-700">Total</Text>
                         <Text className="text-lg font-black" style={{ color: theme.colors.primary }}>
-                            {formatRupiah(formData.products.reduce((acc: number, curr: any) => acc + (curr.product_price * curr.nqty), 0))}
+                            {formatRupiah(formData.products.reduce((acc: number, curr: any) => acc + (curr.product_price * curr.qty), 0))}
                         </Text>
                     </View>
                 )}

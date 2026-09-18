@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, RefreshControl, TextInput } from 'react-native';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { View, Text, RefreshControl, TextInput, ActivityIndicator, FlatList } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
@@ -21,6 +21,8 @@ export function LeadsScreen() {
     const [isInitializing, setIsInitializing] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [statusFilter, setStatusFilter] = useState('ALL STATUS');
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
     // Reset status filter
     React.useEffect(() => {
@@ -31,8 +33,10 @@ export function LeadsScreen() {
 
     const statusOptions = [
         { label: 'ALL STATUS', value: 'ALL STATUS' },
+        { label: 'DRAFT', value: 'DRAFT' },
         { label: 'ONGOING', value: 'ONGOING' },
         { label: 'OPEN', value: 'OPEN' },
+        { label: 'FAIL', value: 'FAIL' },
         { label: 'SUCCESS', value: 'SUCCESS' },
         { label: 'CANCEL', value: 'CANCEL' },
     ];
@@ -41,6 +45,20 @@ export function LeadsScreen() {
         if (statusFilter === 'ALL STATUS') return items;
         return items.filter((item: any) => item.status?.toUpperCase() === statusFilter);
     }, [items, statusFilter]);
+
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, items, statusFilter]);
+
+    const handleLoadMore = useCallback(() => {
+        if (visibleCount < displayItems.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, displayItems.length, isLoadMore]);
 
     const onRefresh = useCallback(async () => {
         setIsRefreshing(true);
@@ -115,10 +133,10 @@ export function LeadsScreen() {
             </Animated.View>
 
             <View className="flex-1">
-                <Animated.FlatList
-                    entering={FadeInDown}
-                    data={(isLoadingList || isInitializing) ? [] : displayItems}
-                    keyExtractor={(item) => item.id}
+                <Animated.View className="flex-1" entering={FadeInDown}>
+                    <FlatList
+                        data={(isLoadingList || isInitializing) ? [] : (displayItems || []).slice(0, visibleCount)}
+                    keyExtractor={(item) => item.id.toString()}
                     renderItem={({ item, index }) => (
                         <LeadsCard
                             item={item}
@@ -128,9 +146,21 @@ export function LeadsScreen() {
                     )}
                     contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
                     showsVerticalScrollIndicator={false}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
                     refreshControl={
                         <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
                     }
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
                     ListEmptyComponent={() => {
                         if (error) {
                             return (
@@ -158,6 +188,7 @@ export function LeadsScreen() {
                         );
                     }}
                 />
+                </Animated.View>
             </View>
 
             {(!isLoadingList && !isInitializing) && (

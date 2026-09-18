@@ -15,10 +15,11 @@ export function LeadsCard({ item, index, onPress }: Props) {
     // Generate status color logic similar to previous, but returning specific tailwind classes for text and bg
     const getStatusColor = (status: string) => {
         switch (status.toUpperCase()) {
+            case 'OPEN': return { bg: 'bg-green-100', text: 'text-green-700' };
+            case 'DRAFT': return { bg: 'bg-gray-100', text: 'text-gray-700' };
+            case 'FAIL': return { bg: 'bg-red-100', text: 'text-red-700' };
             case 'SUCCESS': return { bg: 'bg-green-100', text: 'text-green-700' };
             case 'CANCEL': return { bg: 'bg-red-100', text: 'text-red-700' };
-            case 'FAIL': return { bg: 'bg-orange-100', text: 'text-orange-700' };
-            case 'OPEN':
             default: return { bg: 'bg-blue-100', text: 'text-blue-700' };
         }
     };

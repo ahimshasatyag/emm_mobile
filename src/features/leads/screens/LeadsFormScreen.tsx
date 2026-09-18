@@ -92,9 +92,9 @@ export function LeadsFormScreen() {
 
     const handleConfirmSave = async () => {
         setIsConfirmVisible(false);
-        const success = await save();
-        if (success) {
-            navigation.replace('LeadsEditScreen' as never, { id: 'new-id', showSuccessToast: true } as never);
+        const savedId = await save();
+        if (savedId) {
+            navigation.replace('LeadsEditScreen' as never, { id: savedId, showSuccessToast: true } as never);
         } else if (error) {
             setToastConfig({ visible: true, type: 'error', message: error });
         }
@@ -270,6 +270,7 @@ export function LeadsFormScreen() {
                 onDelete={editingProductIndex !== null ? () => removeProductRow(editingProductIndex) : undefined}
                 productsList={productsList}
                 initialData={editingProductIndex !== null ? formData.products[editingProductIndex] : null}
+                kurs={formData.kurs}
             />
             <VisitModal
                 visible={isVisitModalVisible}

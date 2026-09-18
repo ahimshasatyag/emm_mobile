@@ -5,7 +5,10 @@ import Slider from '@react-native-community/slider';
 import { formatRp, formatInputNumber } from '../../../utils/helpers/money';
 import { theme } from '../../../theme/theme';
 import { X, Check, Trash2, Save } from 'lucide-react-native';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { useAppSelector } from '../../../hooks/useAppSelector';
 import { ToastMessages } from '../../../components/ui/ToastMessages';
+import { fetchProductPrices } from '../../productprice/stores/productPriceSlice';
 
 interface ProductModalProps {
     visible: boolean;
@@ -13,27 +16,37 @@ interface ProductModalProps {
     onSave: (product: {
         id_product: string;
         product_price: number;
-        nqty: number;
+        qty: number;
         persentase: number;
     }) => void;
     onDelete?: () => void;
-    productsList: { id_product: string; code_product: string; nm_product: string }[];
+    productsList: { id_product: string; code_product: string; nm_product: string; product_price?: number }[];
     initialData?: {
         id_product: string;
         product_price: number;
-        nqty: number;
+        qty: number;
         persentase: number;
     } | null;
     isReadOnly?: boolean;
+    kurs?: number;
 }
 
-export const ProductModal = ({ visible, onDismiss, onSave, onDelete, productsList, initialData, isReadOnly = false }: ProductModalProps) => {
+export const ProductModal = ({ visible, onDismiss, onSave, onDelete, productsList, initialData, isReadOnly = false, kurs = 1 }: ProductModalProps) => {
     const [idProduct, setIdProduct] = useState('');
     const [namaBarang, setNamaBarang] = useState('');
     const [price, setPrice] = useState(0);
     const [qty, setQty] = useState(1);
     const [persentase, setPersentase] = useState(0);
     const [toastConfig, setToastConfig] = useState<{ visible: boolean; type: 'success' | 'error' | 'error' | 'info'; message: string }>({ visible: false, type: 'info', message: '' });
+
+    const dispatch = useAppDispatch();
+    const productPrices = useAppSelector(state => state.productPrice.prices);
+
+    useEffect(() => {
+        if (visible && productPrices.length === 0) {
+            dispatch(fetchProductPrices());
+        }
+    }, [visible]);
 
     // Reset atau isi form saat modal dibuka
     useEffect(() => {
@@ -43,7 +56,7 @@ export const ProductModal = ({ visible, onDismiss, onSave, onDelete, productsLis
                 const product = productsList.find(p => p.id_product === initialData.id_product);
                 setNamaBarang(product ? product.nm_product : '');
                 setPrice(initialData.product_price);
-                setQty(initialData.nqty);
+                setQty(initialData.qty);
                 setPersentase(initialData.persentase);
             } else {
                 setIdProduct('');
@@ -59,10 +72,22 @@ export const ProductModal = ({ visible, onDismiss, onSave, onDelete, productsLis
     const handleProductSelect = (selectedId: string) => {
         setIdProduct(selectedId);
         const product = productsList.find(p => p.id_product === selectedId);
+        const priceData = productPrices.find(p => p.id_product.toString() === selectedId.toString());
+
         if (product) {
             setNamaBarang(product.nm_product);
+            
+            let basePrice = 0;
+            if (priceData && priceData.product_price) {
+                basePrice = parseFloat(priceData.product_price);
+            } else if (product.product_price) {
+                basePrice = product.product_price;
+            }
+
+            setPrice(basePrice * (kurs || 1));
         } else {
             setNamaBarang('');
+            setPrice(0);
         }
     };
 
@@ -79,7 +104,7 @@ export const ProductModal = ({ visible, onDismiss, onSave, onDelete, productsLis
         onSave({
             id_product: idProduct,
             product_price: price,
-            nqty: qty,
+            qty: qty,
             persentase: persentase
         });
         onDismiss();

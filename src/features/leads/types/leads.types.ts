@@ -11,9 +11,9 @@ export interface LeadsProduct {
     nm_product: string;
     nm_product_satuan: string;
     product_price: number;
-    nqty: number;
+    qty: number;
     persentase: number;
-    subtotal: number;
+    total: number;
 }
 
 export interface LeadsVisit {
@@ -43,7 +43,7 @@ export interface LeadsFormData {
     products: {
         id_product: string;
         product_price: number;
-        nqty: number;
+        qty: number;
         persentase: number;
     }[];
     visits: {

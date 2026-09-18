@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Save, Pencil, X } from 'lucide-react-native';
+import { Save, Pencil, X, CheckCircle, XCircle } from 'lucide-react-native';
 import { useLeadsForm } from '../hooks/useLeadsForm';
 import { useLeads } from '../hooks/useLeads';
 import { LeadsEditSkeleton } from '../skeleton/LeadsEditSkeleton';
@@ -12,6 +12,7 @@ import { Button } from '../../../components/ui/button';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { ToastMessages } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ModalCancel } from '../../../components/ui/ModalCancel';
 import { ProductModal } from '../components/ProductModal';
 import { VisitModal } from '../components/VisitModal';
 import { TabProduct } from '../components/TabProduct';
@@ -23,7 +24,7 @@ export function LeadsEditScreen() {
     const route = useRoute<any>();
     const { id, showSuccessToast } = route.params || {};
 
-    const { currentDetail, isLoadingDetail, loadDetail, resetDetail } = useLeads();
+    const { currentDetail, isLoadingDetail, loadDetail, resetDetail, updateStatus } = useLeads();
 
     useEffect(() => {
         if (id) {
@@ -42,11 +43,14 @@ export function LeadsEditScreen() {
 
     const [activeTab, setActiveTab] = useState<'product' | 'visit'>('product');
     const [isProductModalVisible, setIsProductModalVisible] = useState(false);
+    const [isVisitModalVisible, setIsVisitModalVisible] = useState(false);
     const [editingProductIndex, setEditingProductIndex] = useState<number | null>(null);
     const [editingVisitIndex, setEditingVisitIndex] = useState<number | null>(null);
     const [isEditMode, setIsEditMode] = useState(false);
-    const [toastConfig, setToastConfig] = useState<{ visible: boolean; type: 'success' | 'error' | 'warning' | 'info'; message: string }>({ visible: false, type: 'info', message: '' });
+    const [toastConfig, setToastConfig] = useState<{ visible: boolean; type: 'success' | 'error' | 'warning' | 'info'; message: string; title?: string }>({ visible: false, type: 'info', message: '' });
     const [isConfirmVisible, setIsConfirmVisible] = useState(false);
+    const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
+    const [isFailModalVisible, setIsFailModalVisible] = useState(false);
 
     useEffect(() => {
         if (showSuccessToast) {
@@ -110,8 +114,8 @@ export function LeadsEditScreen() {
 
     const handleConfirmSave = async () => {
         setIsConfirmVisible(false);
-        const success = await save();
-        if (success) {
+        const savedId = await save();
+        if (savedId) {
             setToastConfig({ visible: true, type: 'success', message: 'Data Leads berhasil diperbarui' });
             setTimeout(() => {
                 setIsEditMode(false);
@@ -131,6 +135,7 @@ export function LeadsEditScreen() {
             <ToastMessages
                 visible={toastConfig.visible}
                 type={toastConfig.type}
+                title={toastConfig.title}
                 message={toastConfig.message}
                 onClose={() => setToastConfig(prev => ({ ...prev, visible: false }))}
             />
@@ -141,6 +146,40 @@ export function LeadsEditScreen() {
                 onConfirm={handleConfirmSave}
                 onCancel={() => setIsConfirmVisible(false)}
                 confirmText="Ya, Simpan"
+                cancelText="Kembali"
+            />
+            <ModalConfirm
+                visible={isSuccessModalVisible}
+                title="Konfirmasi Success"
+                message="Tandai Leads ini sebagai Success?"
+                onConfirm={async () => {
+                    setIsSuccessModalVisible(false);
+                    const success = await updateStatus(id, 'OPEN', formData.nm_customers || 'Customer');
+                    if (success) {
+                        setToastConfig({ visible: true, type: 'success', message: 'status berhasil diubah menjadi OPEN' });
+                    } else {
+                        setToastConfig({ visible: true, type: 'error', message: 'Gagal memperbarui status' });
+                    }
+                }}
+                onCancel={() => setIsSuccessModalVisible(false)}
+                confirmText="Ya"
+                cancelText="Kembali"
+            />
+            <ModalCancel
+                visible={isFailModalVisible}
+                title="Konfirmasi Fail"
+                message="Tandai Leads ini sebagai Fail?"
+                onConfirm={async () => {
+                    setIsFailModalVisible(false);
+                    const success = await updateStatus(id, 'FAIL', formData.nm_customers || 'Customer');
+                    if (success) {
+                        setToastConfig({ visible: true, type: 'success', message: 'status berhasil diubah menjadi FAIL' });
+                    } else {
+                        setToastConfig({ visible: true, type: 'error', message: 'Gagal memperbarui status' });
+                    }
+                }}
+                onCancel={() => setIsFailModalVisible(false)}
+                confirmText="Ya"
                 cancelText="Kembali"
             />
             <HeaderNavigator
@@ -170,6 +209,21 @@ export function LeadsEditScreen() {
 
                             <View className="bg-white rounded-3xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
                                 <View className="p-6">
+
+                                    <View className="mb-4 flex-row justify-between items-center">
+                                        <View>
+                                            <Text className="font-bold text-lg text-gray-900">
+                                                {currentDetail?.code_leads || '-'}
+                                            </Text>
+                                        </View>
+                                        <View>
+                                            <View className={`px-3 py-1 rounded-md ${currentDetail?.status === 'OPEN' || currentDetail?.status === 'SUCCESS' ? 'bg-green-100' : currentDetail?.status === 'FAIL' || currentDetail?.status === 'CANCEL' ? 'bg-red-100' : currentDetail?.status === 'DRAFT' ? 'bg-gray-200' : 'bg-blue-100'}`}>
+                                                <Text className={`text-sm font-bold ${currentDetail?.status === 'OPEN' || currentDetail?.status === 'SUCCESS' ? 'text-green-700' : currentDetail?.status === 'FAIL' || currentDetail?.status === 'CANCEL' ? 'text-red-700' : currentDetail?.status === 'DRAFT' ? 'text-gray-700' : 'text-blue-700'}`}>
+                                                    {currentDetail?.status || '-'}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </View>
 
                                     <View className="mb-4">
                                         <Text className="text-sm font-bold text-gray-700 mb-2">Customer <Text className="text-red-500">*</Text></Text>
@@ -300,15 +354,35 @@ export function LeadsEditScreen() {
                                             )}
                                         </Button>
                                     </View>
-                                ) : (
-                                    <Button
-                                        onPress={() => setIsEditMode(true)}
-                                        className="w-full h-14 rounded-2xl flex-row items-center justify-center bg-gray-800"
-                                    >
-                                        <Pencil color="white" size={20} className="mr-2" />
-                                        <Text className="text-white font-bold text-lg">Edit Data</Text>
-                                    </Button>
-                                )}
+                                ) : currentDetail?.status === 'DRAFT' ? (
+                                    <View className="gap-4">
+                                        <Button
+                                            onPress={() => setIsEditMode(true)}
+                                            className="w-full h-14 rounded-2xl flex-row items-center justify-center bg-gray-800"
+                                        >
+                                            <Pencil color="white" size={20} className="mr-2" />
+                                            <Text className="text-white font-bold text-lg">Edit Data</Text>
+                                        </Button>
+                                        <View className="flex-row gap-4">
+                                            <Button
+                                                onPress={() => setIsSuccessModalVisible(true)}
+                                                className="flex-1 h-14 rounded-2xl flex-row items-center justify-center"
+                                                style={{ backgroundColor: '#16a34a', elevation: 2, shadowColor: '#16a34a', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 }}
+                                            >
+                                                <CheckCircle color="white" size={20} className="mr-2" />
+                                                <Text className="text-white font-bold text-lg">Success</Text>
+                                            </Button>
+                                            <Button
+                                                onPress={() => setIsFailModalVisible(true)}
+                                                className="flex-1 h-14 rounded-2xl flex-row items-center justify-center"
+                                                style={{ backgroundColor: '#dc2626', elevation: 2, shadowColor: '#dc2626', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 }}
+                                            >
+                                                <XCircle color="white" size={20} className="mr-2" />
+                                                <Text className="text-white font-bold text-lg">Fail</Text>
+                                            </Button>
+                                        </View>
+                                    </View>
+                                ) : null}
                             </Animated.View>
 
                         </Animated.View>
@@ -322,6 +396,7 @@ export function LeadsEditScreen() {
                 onDelete={editingProductIndex !== null ? () => removeProductRow(editingProductIndex) : undefined}
                 productsList={productsList}
                 initialData={editingProductIndex !== null ? formData.products[editingProductIndex] : null}
+                kurs={formData.kurs}
                 isReadOnly={!isEditMode}
             />
             <VisitModal

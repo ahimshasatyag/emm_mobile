@@ -5,7 +5,8 @@ import { useAppSelector } from '../../../hooks/useAppSelector';
 import { fetchCustomers } from '../../customers/stores/customersSlice';
 import { fetchProducts } from '../../products/stores/productsSlice';
 import { LeadsFormData, LeadsDetail } from '../types/leads.types';
-import { Alert } from 'react-native';
+import { createLead, updateLead } from '../api/leads.api';
+import { notificationService } from '../../../services/notification/notificationService';
 
 const INITIAL_FORM_DATA: LeadsFormData = {
     id_customers: '',
@@ -19,11 +20,12 @@ const INITIAL_FORM_DATA: LeadsFormData = {
 export function useLeadsForm(initialData?: LeadsDetail) {
     const navigation = useNavigation();
     const dispatch = useAppDispatch();
-    
+
     // Select reference data from Redux
     const customers = useAppSelector(state => state.customers.data);
     const productsList = useAppSelector(state => state.products.products);
-    
+    const authUser = useAppSelector(state => state.auth.user);
+
     const [formData, setFormData] = useState<LeadsFormData>(INITIAL_FORM_DATA);
 
     const resetForm = () => {
@@ -36,7 +38,7 @@ export function useLeadsForm(initialData?: LeadsDetail) {
                 products: initialData.products ? initialData.products.map(p => ({
                     id_product: p.id_product || '',
                     product_price: p.product_price || 0,
-                    nqty: p.nqty || 1,
+                    qty: p.qty || 1,
                     persentase: p.persentase || 0
                 })) : [],
                 visits: initialData.visits ? initialData.visits.map(v => ({
@@ -77,7 +79,7 @@ export function useLeadsForm(initialData?: LeadsDetail) {
     const updateField = (field: keyof LeadsFormData, value: any) => {
         setFormData(prev => {
             const next = { ...prev, [field]: value };
-            
+
             // Auto update address if customer changes
             if (field === 'id_customers') {
                 const selectedCustomer = customers.find(c => c.id_customers === value);
@@ -85,7 +87,7 @@ export function useLeadsForm(initialData?: LeadsDetail) {
                     next.customers_address = selectedCustomer.customers_address || '';
                 }
             }
-            
+
             return next;
         });
     };
@@ -94,7 +96,7 @@ export function useLeadsForm(initialData?: LeadsDetail) {
     const addProductRow = () => {
         setFormData(prev => ({
             ...prev,
-            products: [...prev.products, { id_product: '', product_price: 0, nqty: 1, persentase: 0 }]
+            products: [...prev.products, { id_product: '', product_price: 0, qty: 1, persentase: 0 }]
         }));
     };
 
@@ -109,7 +111,7 @@ export function useLeadsForm(initialData?: LeadsDetail) {
         setFormData(prev => {
             const newProducts = [...prev.products];
             newProducts[index] = { ...newProducts[index], [field]: value };
-            
+
             // Auto fill price when product is selected
             if (field === 'id_product') {
                 const selectedProd = productsList.find(p => p.id_product === value);
@@ -117,7 +119,7 @@ export function useLeadsForm(initialData?: LeadsDetail) {
                     newProducts[index].product_price = selectedProd.product_price * prev.kurs;
                 }
             }
-            
+
             return { ...prev, products: newProducts };
         });
     };
@@ -163,7 +165,7 @@ export function useLeadsForm(initialData?: LeadsDetail) {
             return 'Customer wajib diisi';
         }
 
-        const hasEmptyProduct = formData.products.some(p => !p.id_product || p.nqty <= 0);
+        const hasEmptyProduct = formData.products.some(p => !p.id_product || p.qty <= 0);
         if (hasEmptyProduct) {
             return 'Semua baris barang harus memiliki produk dan QTY > 0';
         }
@@ -171,16 +173,54 @@ export function useLeadsForm(initialData?: LeadsDetail) {
         return null;
     };
 
-    const save = async (): Promise<boolean> => {
-
+    const save = async (): Promise<string | null> => {
         try {
             setIsSaving(true);
-            // Simulate API save
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            return true;
+            const payload = {
+                id_customers: formData.id_customers,
+                notes: formData.notes,
+                kurs: formData.kurs,
+                items: formData.products.map(p => ({
+                    id_product: p.id_product,
+                    qty: p.qty,
+                    product_price: p.product_price,
+                    persentase: p.persentase
+                })),
+                visits: formData.visits.map(v => ({
+                    date_visit: v.date_visit,
+                    visit_activity: v.visit_activity
+                }))
+            };
+
+            const selectedCustomer = customers.find(c => c.id_customers === formData.id_customers);
+            const customerName = selectedCustomer ? selectedCustomer.nm_customers : 'Customer';
+
+            if (initialData?.id) {
+                await updateLead(initialData.id, payload as any);
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'LEADS',
+                    judul: 'Leads Diperbarui',
+                    pesan: `Leads untuk ${customerName} berhasil diperbarui oleh ${authUser?.nm_users}`,
+                    action: 'Update'
+                }).catch(() => {});
+                return initialData.id;
+            } else {
+                const response = await createLead(payload as any);
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'LEADS',
+                    judul: 'Leads Baru',
+                    pesan: `Leads baru untuk ${customerName} berhasil ditambahkan oleh ${authUser?.nm_users}`,
+                    action: 'Create'
+                }).catch(() => {});
+                return response.data?.id?.toString() || null;
+            }
         } catch (err: any) {
             setError(err.message || 'Gagal menyimpan data');
-            return false;
+            return null;
         } finally {
             setIsSaving(false);
         }
