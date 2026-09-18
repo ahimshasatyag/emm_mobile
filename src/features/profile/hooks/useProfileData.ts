@@ -7,15 +7,18 @@ import { setData, setLoading, setError } from '../store/profileSlice';
 export const useProfileData = () => {
     const dispatch = useAppDispatch();
     const { data, isLoading, error } = useAppSelector((state) => state.profile);
+    const authUser = useAppSelector((state) => state.auth.user);
 
     useEffect(() => {
         let isMounted = true;
 
         const loadData = async () => {
+            if (!authUser?.username) return;
+
             if (!isMounted) return;
             dispatch(setLoading(true));
             try {
-                const result = await fetchProfileDataApi();
+                const result = await fetchProfileDataApi(authUser.username);
                 if (isMounted) {
                     dispatch(setData(result));
                 }
@@ -26,12 +29,16 @@ export const useProfileData = () => {
             }
         };
 
-        loadData();
+        if (authUser?.username) {
+            loadData();
+        } else {
+            dispatch(setLoading(false));
+        }
 
         return () => {
             isMounted = false;
         };
-    }, [dispatch]);
+    }, [dispatch, authUser?.username]);
 
     return { data, isLoading, error };
 };

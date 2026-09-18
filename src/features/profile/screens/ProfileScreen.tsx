@@ -4,6 +4,7 @@ import { View, Text, ScrollView, RefreshControl } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, Easing, FadeIn, FadeOut } from 'react-native-reanimated';
 import { useProfileData } from '../hooks/useProfileData';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { useAppSelector } from '../../../hooks/useAppSelector';
 import { setData, setLoading, setError } from '../store/profileSlice';
 import { fetchProfileDataApi } from '../api/profile.api';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
@@ -16,6 +17,7 @@ import { theme } from '../../../theme/theme';
 
 export function ProfileScreen() {
     const { data, isLoading, error } = useProfileData();
+    const authUser = useAppSelector((state) => state.auth.user);
 
     const [isInitializing, setIsInitializing] = useState(true);
 
@@ -63,9 +65,10 @@ export function ProfileScreen() {
     }));
 
     const handleRefresh = async () => {
+        if (!authUser?.username) return;
         dispatch(setLoading(true));
         try {
-            const result = await fetchProfileDataApi();
+            const result = await fetchProfileDataApi(authUser.username);
             dispatch(setData(result));
         } catch (e: any) {
             dispatch(setError(e.message));

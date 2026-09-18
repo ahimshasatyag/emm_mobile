@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { IdCard, Users, Building, Phone, MapPin, Calendar } from 'lucide-react-native';
-import { ProfileData } from '../../types/profile.types';
+import { Users, Building, Phone } from 'lucide-react-native';
+import { ProfileData } from '../types/profile.types';
 import { theme } from '../../../theme/theme';
 
 interface ProfileInfoCardProps {
@@ -36,12 +36,9 @@ export function ProfileInfoCard({ data }: ProfileInfoCardProps) {
         >
             <Text className="text-lg font-black text-gray-800 mb-2 ml-1">Informasi Karyawan</Text>
             
-            <InfoRow icon={IdCard} label="ID Karyawan" value={data.employeeId} />
             <InfoRow icon={Building} label="Divisi" value={data.division} />
             <InfoRow icon={Users} label="Departemen" value={data.department} />
-            <InfoRow icon={Phone} label="Nomor Telepon" value={data.phone} />
-            <InfoRow icon={MapPin} label="Lokasi Kantor" value={data.officeLocation} />
-            <InfoRow icon={Calendar} label="Tanggal Bergabung" value={data.joinDate} isLast={true} />
+            <InfoRow icon={Phone} label="Nomor Telepon" value={data.phone} isLast={true} />
         </Animated.View>
     );
 }
