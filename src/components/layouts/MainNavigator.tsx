@@ -88,6 +88,69 @@ import { TandaTerimaCustFormScreen } from '../../features/tandaterimacust/screen
 import { TandaTerimaCustEditScreen } from '../../features/tandaterimacust/screens/TandaTerimaCustEditScreen';
 import { WhatsappChatRoomScreen } from '../../features/whatsappchat/screens/WhatsappChatRoomScreen';
 import { WhatsappLogScreen } from '../../features/whatsappchat/screens/WhatsappLogScreen';
+import { UsersLevelFormScreen } from '../../features/userslevel/screens/UsersLevelFormScreen';
+import { UsersLevelEditScreen } from '../../features/userslevel/screens/UsersLevelEditScreen';
+import { SalesReturListScreen } from '../../features/salesretur/screens/SalesReturListScreen';
+import { LeadsFormScreen } from '../../features/leads/screens/LeadsFormScreen';
+import { CounterEditScreen } from '../../features/counter/screens/CounterEditScreen';
+import { SettingFormScreen } from '../../features/setting/screens/SettingFormScreen';
+import { SettingEditScreen } from '../../features/setting/screens/SettingEditScreen';
+import { InventoryCategoryFormScreen } from '../../features/inventorycategory/screens/InventoryCategoryFormScreen';
+import { InventoryCategoryEditScreen } from '../../features/inventorycategory/screens/InventoryCategoryEditScreen';
+import { InventoryTypeFormScreen } from '../../features/inventorytype/screens/InventoryTypeFormScreen';
+import { InventoryTypeEditScreen } from '../../features/inventorytype/screens/InventoryTypeEditScreen';
+import { ApprovalItemsFormScreen } from '../../features/approvalitems/screens/ApprovalItemsFormScreen';
+import { ApprovalItemsEditScreen } from '../../features/approvalitems/screens/ApprovalItemsEditScreen';
+import { ApprovalSchemeListScreen } from '../../features/approvalscheme/screens/ApprovalSchemeListScreen';
+import { ApprovalSchemeFormScreen } from '../../features/approvalscheme/screens/ApprovalSchemeFormScreen';
+import { ApprovalSchemeEditScreen } from '../../features/approvalscheme/screens/ApprovalSchemeEditScreen';
+import { EmployeeListScreen } from '../../features/employee/screens/EmployeeListScreen';
+import { EmployeeFormScreen } from '../../features/employee/screens/EmployeeFormScreen';
+import { EmployeeEditScreen } from '../../features/employee/screens/EmployeeEditScreen';
+import { EmployeeDivisiFormScreen } from '../../features/employeedivisi/screens/EmployeeDivisiFormScreen';
+import { EmployeeDivisiEditScreen } from '../../features/employeedivisi/screens/EmployeeDivisiEditScreen';
+import { EmployeePosisiScreen } from '../../features/employeeposisi/screens/EmployeePosisiScreen';
+import { EmployeePosisiFormScreen } from '../../features/employeeposisi/screens/EmployeePosisiFormScreen';
+import { EmployeePosisiEditScreen } from '../../features/employeeposisi/screens/EmployeePosisiEditScreen';
+import { CustomerListScreen } from '../../features/customers/screens/CustomerListScreen';
+import { CustomerFormScreen } from '../../features/customers/screens/CustomerFormScreen';
+import { CustomerEditScreen } from '../../features/customers/screens/CustomerEditScreen';
+import { CustomerContactFormScreen } from '../../features/customercontacts/screens/CustomerContactFormScreen';
+import { CustomerContactEditScreen } from '../../features/customercontacts/screens/CustomerContactEditScreen';
+import { ProductListScreen } from '../../features/products/screens/ProductListScreen';
+import { ProductUploadScreen } from '../../features/products/screens/ProductUploadScreen';
+import { ProductFormScreen } from '../../features/products/screens/ProductFormScreen';
+import { ProductEditScreen } from '../../features/products/screens/ProductEditScreen';
+import { ProductCategoryListScreen } from '../../features/productcategory/screens/ProductCategoryListScreen';
+import { ProductCategoryFormScreen } from '../../features/productcategory/screens/ProductCategoryFormScreen';
+import { ProductCategoryEditScreen } from '../../features/productcategory/screens/ProductCategoryEditScreen';
+import { ProductSubCategoryListScreen } from '../../features/productsubcategory/screens/ProductSubCategoryListScreen';
+import { ProductSubCategoryFormScreen } from '../../features/productsubcategory/screens/ProductSubCategoryFormScreen';
+import { ProductSubCategoryEditScreen } from '../../features/productsubcategory/screens/ProductSubCategoryEditScreen';
+import { ProductPriceListScreen } from '../../features/productprice/screens/ProductPriceListScreen';
+import { ProductPriceFormScreen } from '../../features/productprice/screens/ProductPriceFormScreen';
+import { ProductPriceEditScreen } from '../../features/productprice/screens/ProductPriceEditScreen';
+import { ProductPriceMultipleScreen } from '../../features/productprice/screens/ProductPriceMultipleScreen';
+import { ProductPriceUploadScreen } from '../../features/productprice/screens/ProductPriceUploadScreen';
+import { ProductPriceMktDetailScreen } from '../../features/productpricemkt/screens/ProductPriceMktDetailScreen';
+import { QuotationFormScreen } from '../../features/quotations/screens/QuotationFormScreen';
+import { QuotationEditScreen } from '../../features/quotations/screens/QuotationEditScreen';
+import { QuotationEditSurveyScreen } from '../../features/quotations/screens/QuotationEditSurveyScreen';
+import { QuotationEditPdfScreen } from '../../features/quotations/screens/QuotationEditPdfScreen';
+import { SOEditScreen } from '../../features/so/screens/SOEditScreen';
+import { SalesContractFormScreen } from '../../features/salescontract/screens/SalesContractFormScreen';
+import { SalesContractEditScreen } from '../../features/salescontract/screens/SalesContractEditScreen';
+import { SalesReturFormScreen } from '../../features/salesretur/screens/SalesReturFormScreen';
+import { SalesReturEditScreen } from '../../features/salesretur/screens/SalesReturEditScreen';
+import { SurveyFormScreen } from '../../features/survey/screens/SurveyFormScreen';
+import { SurveyEditScreen } from '../../features/survey/screens/SurveyEditScreen';
+import { InventoryScheduleListScreen } from '../../features/inventoryschedule/screens/InventoryScheduleListScreen';
+import { InventoryScheduleFormScreen } from '../../features/inventoryschedule/screens/InventoryScheduleFormScreen';
+import { InventoryScheduleEditScreen } from '../../features/inventoryschedule/screens/InventoryScheduleEditScreen';
+import { SopDivisionScreen } from '../../features/sop/screens/SopDivisionScreen';
+import { SopListScreen } from '../../features/sop/screens/SopListScreen';
+import { SopFormScreen } from '../../features/sop/screens/SopFormScreen';
+import { SopEditScreen } from '../../features/sop/screens/SopEditScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -95,253 +158,546 @@ export function MainNavigator() {
     return (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             {/* SideBarNavigator acts as the primary layout for the authenticated area */}
-            <Stack.Screen name="Drawer" component={SideBarNavigator} />
+            <Stack.Screen
+                name="Drawer"
+                component={SideBarNavigator}
+                options={{ headerShown: false }} />
+
             {/* You can add screens here that shouldn't show the Drawer (e.g. details pages) */}
-            <Stack.Screen name="UserForm" component={UserFormScreen} />
-            <Stack.Screen name="UserEdit" component={UserEditScreen} />
+            <Stack.Screen
+                name="UserForm"
+                component={UserFormScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="UserEdit"
+                component={UserEditScreen}
+                options={{ headerShown: false }} />
 
-            <Stack.Screen name="InventoryList" component={ProductsnListScreen} />
-            <Stack.Screen name="InventoryForm" component={ProductsnFormScreen} />
-            <Stack.Screen name="InventoryEdit" component={ProductsnEditScreen} />
-            <Stack.Screen name="CekSerialNumber" component={CekSerialNumberScreen} />
-            <Stack.Screen name="UsersLevelForm" component={require('../../features/userslevel/screens/UsersLevelFormScreen').UsersLevelFormScreen} />
-            <Stack.Screen name="UsersLevelEdit" component={require('../../features/userslevel/screens/UsersLevelEditScreen').UsersLevelEditScreen} />
-            <Stack.Screen name="SalesReturListScreen" component={require('../../features/salesretur/screens/SalesReturListScreen').SalesReturListScreen} />
-            <Stack.Screen name="SalesReturFormScreen" component={require('../../features/salesretur/screens/SalesReturFormScreen').SalesReturFormScreen} />
-            <Stack.Screen name="SalesReturEditScreen" component={require('../../features/salesretur/screens/SalesReturEditScreen').SalesReturEditScreen} />
+            {/* Inventory */}
+            <Stack.Screen
+                name="InventoryList"
+                component={ProductsnListScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="InventoryForm"
+                component={ProductsnFormScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="InventoryEdit"
+                component={ProductsnEditScreen}
+                options={{ headerShown: false }} />
 
-            <Stack.Screen name="PurchaseRequisitionListScreen" component={PurchaseRequisitionListScreen} />
-            <Stack.Screen name="PurchaseRequisitionFormScreen" component={PurchaseRequisitionFormScreen} />
-            <Stack.Screen name="PurchaseRequisitionEditScreen" component={PurchaseRequisitionEditScreen} />
-            <Stack.Screen name="PurchaseRequisitionListPRScreen" component={PurchaseRequisitionListPRScreen} />
+            {/* Cek Serial Number */}
+            <Stack.Screen
+                name="CekSerialNumber"
+                component={CekSerialNumberScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="UsersLevelForm"
+                component={UsersLevelFormScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="UsersLevelEdit"
+                component={UsersLevelEditScreen}
+                options={{ headerShown: false }} />
 
-            <Stack.Screen name="ListSOScreen" component={ListSOScreen} />
-            <Stack.Screen name="ListSODetailScreen" component={ListSODetailScreen} />
-            <Stack.Screen name="LeadsScreen" component={LeadsScreen} />
-            <Stack.Screen name="LeadsEditScreen" component={LeadsEditScreen} />
-            <Stack.Screen name="SuppliersListScreen" component={SuppliersListScreen} />
-            <Stack.Screen name="SuppliersFormScreen" component={SuppliersFormScreen} />
-            <Stack.Screen name="SuppliersEditScreen" component={SuppliersEditScreen} />
-            <Stack.Screen name="QuotationsAPListScreen" component={QuotationsAPListScreen} />
-            <Stack.Screen name="QuotationsAPFormScreen" component={QuotationsAPFormScreen} />
-            <Stack.Screen name="QuotationsAPEditScreen" component={QuotationsAPEditScreen} />
-            <Stack.Screen name="PoListScreen" component={PoListScreen} />
-            <Stack.Screen name="PoFormScreen" component={PoFormScreen} />
-            <Stack.Screen name="PoEditScreen" component={PoEditScreen} />
-            <Stack.Screen name="IncshipmentListScreen" component={IncshipmentListScreen} />
-            <Stack.Screen name="IncshipmentFormScreen" component={IncshipmentFormScreen} />
-            <Stack.Screen name="IncshipmentEditScreen" component={IncshipmentEditScreen} />
-            <Stack.Screen name="IncshipmentPrintScreen" component={IncshipmentPrintScreen} />
-            <Stack.Screen name="ApproveListScreen" component={ApproveListScreen} />
-            <Stack.Screen name="ApprovebaruListScreen" component={ApprovebaruListScreen} />
-            <Stack.Screen name="DoListScreen" component={DoListScreen} />
-            <Stack.Screen name="DoEditScreen" component={DoEditScreen} />
-            <Stack.Screen name="DoEditSplitScreen" component={DoEditSplitScreen} />
-            <Stack.Screen name="DoPrintSjScreen" component={DoPrintSjScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="CustomerInvoiceListScreen" component={CustomerInvoiceListScreen} />
-            <Stack.Screen name="CustomerInvoiceEditScreen" component={CustomerInvoiceEditScreen} />
-            <Stack.Screen name="CustomerInvoicePrintInvoiceScreen" component={CustomerInvoicePrintInvoiceScreen} />
-            <Stack.Screen name="CustomerInvoicePrintInvoice2Screen" component={CustomerInvoicePrintInvoice2Screen} />
-            <Stack.Screen name="CustomerInvoicePrintTTScreen" component={CustomerInvoicePrintTTScreen} />
-            <Stack.Screen name="CustomerInvoicePrintTT2Screen" component={CustomerInvoicePrintTT2Screen} />
-            <Stack.Screen name="CustomerInvoicePIDetailScreen" component={CustomerInvoicePIDetailScreen} />
-            <Stack.Screen name="CustomerInvoiceInvDetailScreen" component={CustomerInvoiceInvDetailScreen} />
-            <Stack.Screen name="CustomerInvoiceInvLeasingDetailScreen" component={CustomerInvoiceInvLeasingDetailScreen} />
-            <Stack.Screen name="SOPrintScreen" component={SOPrintScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="SOPrintQScreen" component={SOPrintQScreen} options={{ headerShown: false }} />
+            {/* Sales Retur */}
+            <Stack.Screen
+                name="SalesReturListScreen"
+                component={SalesReturListScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="SalesReturFormScreen"
+                component={SalesReturFormScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="SalesReturEditScreen"
+                component={SalesReturEditScreen}
+                options={{ headerShown: false }}
+            />
 
-            <Stack.Screen name="PaymentList" component={PaymentListScreen} />
-            <Stack.Screen name="PaymentEdit" component={PaymentEditScreen} />
-            <Stack.Screen name="PaymentForm" component={PaymentFormScreen} />
+            {/* Purchase Requisition */}
+            <Stack.Screen
+                name="PurchaseRequisitionListScreen"
+                component={PurchaseRequisitionListScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="PurchaseRequisitionFormScreen"
+                component={PurchaseRequisitionFormScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="PurchaseRequisitionEditScreen"
+                component={PurchaseRequisitionEditScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="PurchaseRequisitionListPRScreen"
+                component={PurchaseRequisitionListPRScreen}
+                options={{ headerShown: false }} />
 
-            {/* Kas Bank In */}
-            <Stack.Screen name="KasBankInList" component={KasBankInListScreen} />
-            <Stack.Screen name="KasBankInForm" component={KasBankInFormScreen} />
-            <Stack.Screen name="ListPaymentScreen" component={ListPaymentScreen} />
-            <Stack.Screen name="ListPaymentDetailScreen" component={ListPaymentDetailScreen} />
-            <Stack.Screen name="MataUangScreen" component={MataUangScreen} />
-            <Stack.Screen name="AssestsListScreen" component={AssestsListScreen} />
-            <Stack.Screen name="AssestFormScreen" component={AssestFormScreen} />
-            <Stack.Screen name="AssestsEditScreen" component={AssestsEditScreen} />
+            {/* List SO */}
+            <Stack.Screen
+                name="ListSOScreen"
+                component={ListSOScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="ListSODetailScreen"
+                component={ListSODetailScreen}
+                options={{ headerShown: false }} />
 
-            <Stack.Screen name="LeadsFormScreen" component={require('../../features/leads/screens/LeadsFormScreen').LeadsFormScreen} />
-            <Stack.Screen name="CounterEdit" component={require('../../features/counter/screens/CounterEditScreen').CounterEditScreen} />
-            <Stack.Screen name="SettingForm" component={require('../../features/setting/screens/SettingFormScreen').SettingFormScreen} />
-            <Stack.Screen name="SettingEdit" component={require('../../features/setting/screens/SettingEditScreen').SettingEditScreen} />
-            <Stack.Screen name="InventoryCategoryForm" component={require('../../features/inventorycategory/screens/InventoryCategoryFormScreen').InventoryCategoryFormScreen} />
-            <Stack.Screen name="InventoryCategoryEdit" component={require('../../features/inventorycategory/screens/InventoryCategoryEditScreen').InventoryCategoryEditScreen} />
-            <Stack.Screen name="InventoryTypeForm" component={require('../../features/inventorytype/screens/InventoryTypeFormScreen').InventoryTypeFormScreen} />
-            <Stack.Screen name="InventoryTypeEdit" component={require('../../features/inventorytype/screens/InventoryTypeEditScreen').InventoryTypeEditScreen} />
+            {/* Leads */}
+            <Stack.Screen
+                name="LeadsScreen"
+                component={LeadsScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="LeadsFormScreen"
+                component={LeadsFormScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="LeadsEditScreen"
+                component={LeadsEditScreen}
+                options={{ headerShown: false }} />
+
+            {/* Suppliers */}
+            <Stack.Screen
+                name="SuppliersListScreen"
+                component={SuppliersListScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="SuppliersFormScreen"
+                component={SuppliersFormScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="SuppliersEditScreen"
+                component={SuppliersEditScreen}
+                options={{ headerShown: false }} />
+
+            {/* Quotations AP */}
+            <Stack.Screen
+                name="QuotationsAPListScreen"
+                component={QuotationsAPListScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="QuotationsAPFormScreen"
+                component={QuotationsAPFormScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="QuotationsAPEditScreen"
+                component={QuotationsAPEditScreen}
+                options={{ headerShown: false }} />
+
+            {/* Purchase Order */}
+            <Stack.Screen
+                name="PoListScreen"
+                component={PoListScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="PoFormScreen"
+                component={PoFormScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="PoEditScreen"
+                component={PoEditScreen}
+                options={{ headerShown: false }} />
+
+            {/* Incoming Shipment */}
+            <Stack.Screen
+                name="IncshipmentListScreen"
+                component={IncshipmentListScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="IncshipmentFormScreen"
+                component={IncshipmentFormScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="IncshipmentEditScreen"
+                component={IncshipmentEditScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="IncshipmentPrintScreen"
+                component={IncshipmentPrintScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="ApproveListScreen"
+                component={ApproveListScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="ApprovebaruListScreen"
+                component={ApprovebaruListScreen}
+                options={{ headerShown: false }} />
+
+            {/* Delivery Order */}
+            <Stack.Screen
+                name="DoListScreen"
+                component={DoListScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="DoEditScreen"
+                component={DoEditScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="DoEditSplitScreen"
+                component={DoEditSplitScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="DoPrintSjScreen"
+                component={DoPrintSjScreen}
+                options={{ headerShown: false }} />
+
+            {/* Customer Invoice */}
+            <Stack.Screen
+                name="CustomerInvoiceListScreen"
+                component={CustomerInvoiceListScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="CustomerInvoiceEditScreen"
+                component={CustomerInvoiceEditScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="CustomerInvoicePrintInvoiceScreen"
+                component={CustomerInvoicePrintInvoiceScreen}
+                options={{ headerShown: false }} />
+
+            {/* Customer Invoice Print */}
+            <Stack.Screen
+                name="CustomerInvoicePrintInvoice2Screen"
+                component={CustomerInvoicePrintInvoice2Screen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="CustomerInvoicePrintTTScreen"
+                component={CustomerInvoicePrintTTScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="CustomerInvoicePrintTT2Screen"
+                component={CustomerInvoicePrintTT2Screen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="CustomerInvoicePIDetailScreen"
+                component={CustomerInvoicePIDetailScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="CustomerInvoiceInvDetailScreen"
+                component={CustomerInvoiceInvDetailScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="CustomerInvoiceInvLeasingDetailScreen"
+                component={CustomerInvoiceInvLeasingDetailScreen}
+                options={{ headerShown: false }} />
+
+            {/* Print SO */}
+            <Stack.Screen
+                name="SOPrintScreen"
+                component={SOPrintScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="SOPrintQScreen"
+                component={SOPrintQScreen}
+                options={{ headerShown: false }} />
+
+            {/* Payment List */}
+            <Stack.Screen
+                name="PaymentList"
+                component={PaymentListScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="PaymentEdit"
+                component={PaymentEditScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="PaymentForm"
+                component={PaymentFormScreen}
+                options={{ headerShown: false }} />
+
+            {/* Penerimaan kas dan Bank */}
+            <Stack.Screen
+                name="KasBankInList"
+                component={KasBankInListScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="KasBankInForm"
+                component={KasBankInFormScreen}
+                options={{ headerShown: false }} />
+
+            {/* List Payment */}
+            <Stack.Screen
+                name="ListPaymentScreen"
+                component={ListPaymentScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="ListPaymentDetailScreen"
+                component={ListPaymentDetailScreen}
+                options={{ headerShown: false }} />
+
+            {/* Mata Uang */}
+            <Stack.Screen
+                name="MataUangScreen"
+                component={MataUangScreen}
+                options={{ headerShown: false }} />
+
+            {/* Assests */}
+            <Stack.Screen
+                name="AssestsListScreen"
+                component={AssestsListScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="AssestFormScreen"
+                component={AssestFormScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="AssestsEditScreen"
+                component={AssestsEditScreen}
+                options={{ headerShown: false }} />
+
+            {/* Counter */}
+            <Stack.Screen
+                name="CounterEdit"
+                component={CounterEditScreen}
+                options={{ headerShown: false }} />
+
+            {/* Setting */}
+            <Stack.Screen
+                name="SettingForm"
+                component={SettingFormScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="SettingEdit"
+                component={SettingEditScreen}
+                options={{ headerShown: false }} />
+
+            {/* Inventory Category */}
+            <Stack.Screen
+                name="InventoryCategoryForm"
+                component={InventoryCategoryFormScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="InventoryCategoryEdit"
+                component={InventoryCategoryEditScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="InventoryTypeForm"
+                component={InventoryTypeFormScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="InventoryTypeEdit"
+                component={InventoryTypeEditScreen}
+                options={{ headerShown: false }} />
+
+
+            {/* Approval Items */}
             <Stack.Screen
                 name="ApprovalItemsForm"
-                getComponent={() => require('../../features/approvalitems/screens/ApprovalItemsFormScreen').ApprovalItemsFormScreen}
+                component={ApprovalItemsFormScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ApprovalItemsEdit"
-                getComponent={() => require('../../features/approvalitems/screens/ApprovalItemsEditScreen').ApprovalItemsEditScreen}
+                component={ApprovalItemsEditScreen}
+                options={{ headerShown: false }}
             />
 
             {/* Approval Scheme */}
             <Stack.Screen
                 name="ApprovalSchemeList"
-                getComponent={() => require('../../features/approvalscheme/screens/ApprovalSchemeListScreen').ApprovalSchemeListScreen}
+                component={ApprovalSchemeListScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ApprovalSchemeForm"
-                getComponent={() => require('../../features/approvalscheme/screens/ApprovalSchemeFormScreen').ApprovalSchemeFormScreen}
+                component={ApprovalSchemeFormScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ApprovalSchemeEdit"
-                getComponent={() => require('../../features/approvalscheme/screens/ApprovalSchemeEditScreen').ApprovalSchemeEditScreen}
+                component={ApprovalSchemeEditScreen}
+                options={{ headerShown: false }}
             />
 
             {/* Employee */}
             <Stack.Screen
                 name="EmployeeList"
-                getComponent={() => require('../../features/employee/screens/EmployeeListScreen').EmployeeListScreen}
+                component={EmployeeListScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="EmployeeForm"
-                getComponent={() => require('../../features/employee/screens/EmployeeFormScreen').EmployeeFormScreen}
+                component={EmployeeFormScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="EmployeeEdit"
-                getComponent={() => require('../../features/employee/screens/EmployeeEditScreen').EmployeeEditScreen}
+                component={EmployeeEditScreen}
+                options={{ headerShown: false }}
             />
 
             {/* Employee Divisi */}
             <Stack.Screen
                 name="EmployeeDivisiForm"
-                getComponent={() => require('../../features/employeedivisi/screens/EmployeeDivisiFormScreen').EmployeeDivisiFormScreen}
+                component={EmployeeDivisiFormScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="EmployeeDivisiEdit"
-                getComponent={() => require('../../features/employeedivisi/screens/EmployeeDivisiEditScreen').EmployeeDivisiEditScreen}
+                component={EmployeeDivisiEditScreen}
+                options={{ headerShown: false }}
             />
 
             {/* Employee Posisi */}
             <Stack.Screen
                 name="EmployeePosisiList"
-                getComponent={() => require('../../features/employeeposisi/screens/EmployeePosisiScreen').EmployeePosisiScreen}
+                component={EmployeePosisiScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="EmployeePosisiForm"
-                getComponent={() => require('../../features/employeeposisi/screens/EmployeePosisiFormScreen').EmployeePosisiFormScreen}
+                component={EmployeePosisiFormScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="EmployeePosisiEdit"
-                getComponent={() => require('../../features/employeeposisi/screens/EmployeePosisiEditScreen').EmployeePosisiEditScreen}
+                component={EmployeePosisiEditScreen}
+                options={{ headerShown: false }}
             />
 
             {/* Customers */}
             <Stack.Screen
                 name="CustomerList"
-                getComponent={() => require('../../features/customers/screens/CustomerListScreen').CustomerListScreen}
+                component={CustomerListScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="CustomerForm"
-                getComponent={() => require('../../features/customers/screens/CustomerFormScreen').CustomerFormScreen}
+                component={CustomerFormScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="CustomerEdit"
-                getComponent={() => require('../../features/customers/screens/CustomerEditScreen').CustomerEditScreen}
+                component={CustomerEditScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="CustomerContactForm"
-                getComponent={() => require('../../features/customercontacts/screens/CustomerContactFormScreen').CustomerContactFormScreen}
+                component={CustomerContactFormScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="CustomerContactEdit"
-                getComponent={() => require('../../features/customercontacts/screens/CustomerContactEditScreen').CustomerContactEditScreen}
+                component={CustomerContactEditScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ProductList"
-                getComponent={() => require('../../features/products/screens/ProductListScreen').ProductListScreen}
+                component={ProductListScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ProductUpload"
-                getComponent={() => require('../../features/products/screens/ProductUploadScreen').ProductUploadScreen}
+                component={ProductUploadScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ProductForm"
-                getComponent={() => require('../../features/products/screens/ProductFormScreen').ProductFormScreen}
+                component={ProductFormScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ProductEdit"
-                getComponent={() => require('../../features/products/screens/ProductEditScreen').ProductEditScreen}
+                component={ProductEditScreen}
+                options={{ headerShown: false }}
             />
             {/* Product Categories */}
             <Stack.Screen
                 name="ProductCategoryList"
-                getComponent={() => require('../../features/productcategory/screens/ProductCategoryListScreen').ProductCategoryListScreen}
+                component={ProductCategoryListScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ProductCategoryForm"
-                getComponent={() => require('../../features/productcategory/screens/ProductCategoryFormScreen').ProductCategoryFormScreen}
+                component={ProductCategoryFormScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ProductCategoryEdit"
-                getComponent={() => require('../../features/productcategory/screens/ProductCategoryEditScreen').ProductCategoryEditScreen}
+                component={ProductCategoryEditScreen}
+                options={{ headerShown: false }}
             />
             {/* Product Sub Categories */}
             <Stack.Screen
                 name="ProductSubCategoryList"
-                getComponent={() => require('../../features/productsubcategory/screens/ProductSubCategoryListScreen').ProductSubCategoryListScreen}
+                component={ProductSubCategoryListScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ProductSubCategoryForm"
-                getComponent={() => require('../../features/productsubcategory/screens/ProductSubCategoryFormScreen').ProductSubCategoryFormScreen}
+                component={ProductSubCategoryFormScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ProductSubCategoryEdit"
-                getComponent={() => require('../../features/productsubcategory/screens/ProductSubCategoryEditScreen').ProductSubCategoryEditScreen}
+                component={ProductSubCategoryEditScreen}
+                options={{ headerShown: false }}
             />
             {/* Product Brand */}
             <Stack.Screen
                 name="ProductBrandForm"
                 component={ProductBrandFormScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ProductBrandEdit"
                 component={ProductBrandEditScreen}
+                options={{ headerShown: false }}
             />
             {/* Product Unit */}
             <Stack.Screen
                 name="ProductUnitForm"
                 component={ProductUnitFormScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ProductUnitEdit"
                 component={ProductUnitEditScreen}
+                options={{ headerShown: false }}
             />
             {/* Product Price */}
             <Stack.Screen
                 name="ProductPriceList"
-                getComponent={() => require('../../features/productprice/screens/ProductPriceListScreen').ProductPriceListScreen}
+                component={ProductPriceListScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ProductPriceForm"
-                getComponent={() => require('../../features/productprice/screens/ProductPriceFormScreen').ProductPriceFormScreen}
+                component={ProductPriceFormScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ProductPriceEdit"
-                getComponent={() => require('../../features/productprice/screens/ProductPriceEditScreen').ProductPriceEditScreen}
+                component={ProductPriceEditScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ProductPriceMultiple"
-                getComponent={() => require('../../features/productprice/screens/ProductPriceMultipleScreen').ProductPriceMultipleScreen}
+                component={ProductPriceMultipleScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ProductPriceUpload"
-                getComponent={() => require('../../features/productprice/screens/ProductPriceUploadScreen').ProductPriceUploadScreen}
+                component={ProductPriceUploadScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ProductPriceMktDetailScreen"
-                getComponent={() => require('../../features/productpricemkt/screens/ProductPriceMktDetailScreen').ProductPriceMktDetailScreen}
+                component={ProductPriceMktDetailScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="ProductPriceAgentDetailScreen"
                 component={ProductPriceAgentDetailScreen}
+                options={{ headerShown: false }}
             />
             {/* Product Price Requests */}
             <Stack.Screen
@@ -429,105 +785,134 @@ export function MainNavigator() {
                 options={{ headerShown: false }}
             />
             {/* Logbook Product */}
-            <Stack.Screen name="LogbookProductListScreen" component={LogbookProductListScreen} />
-            <Stack.Screen name="LogbookProductFormScreen" component={LogbookProductFormScreen} />
-            <Stack.Screen name="LogbookProductEditScreen" component={LogbookProductEditScreen} />
+            <Stack.Screen
+                name="LogbookProductListScreen"
+                component={LogbookProductListScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="LogbookProductFormScreen"
+                component={LogbookProductFormScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="LogbookProductEditScreen"
+                component={LogbookProductEditScreen}
+                options={{ headerShown: false }} />
 
             {/* Logbook Customers */}
-            <Stack.Screen name="LogbookCustomersListScreen" component={LogbookCustomersListScreen} />
-            <Stack.Screen name="LogbookCustomersFormScreen" component={LogbookCustomersFormScreen} />
-            <Stack.Screen name="LogbookCustomersEditScreen" component={LogbookCustomersEditScreen} />
+            <Stack.Screen
+                name="LogbookCustomersListScreen"
+                component={LogbookCustomersListScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="LogbookCustomersFormScreen"
+                component={LogbookCustomersFormScreen}
+                options={{ headerShown: false }} />
+            <Stack.Screen
+                name="LogbookCustomersEditScreen"
+                component={LogbookCustomersEditScreen}
+                options={{ headerShown: false }} />
 
             {/* Quotations */}
             <Stack.Screen
                 name="QuotationForm"
-                getComponent={() => require('../../features/quotations/screens/QuotationFormScreen').QuotationFormScreen}
+                component={QuotationFormScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="QuotationEdit"
-                getComponent={() => require('../../features/quotations/screens/QuotationEditScreen').QuotationEditScreen}
+                component={QuotationEditScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="QuotationEditSurvey"
-                getComponent={() => require('../../features/quotations/screens/QuotationEditSurveyScreen').QuotationEditSurveyScreen}
+                component={QuotationEditSurveyScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="QuotationEditPdf"
-                getComponent={() => require('../../features/quotations/screens/QuotationEditPdfScreen').QuotationEditPdfScreen}
+                component={QuotationEditPdfScreen}
+                options={{ headerShown: false }}
             />
 
             {/* Sales Orders */}
             <Stack.Screen
                 name="SOEdit"
-                getComponent={() => require('../../features/so/screens/SOEditScreen').SOEditScreen}
+                component={SOEditScreen}
+                options={{ headerShown: false }}
             />
 
             {/* Sales Contract */}
             <Stack.Screen
                 name="SalesContractForm"
-                getComponent={() => require('../../features/salescontract/screens/SalesContractFormScreen').SalesContractFormScreen}
+                component={SalesContractFormScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="SalesContractEdit"
-                getComponent={() => require('../../features/salescontract/screens/SalesContractEditScreen').SalesContractEditScreen}
+                component={SalesContractEditScreen}
+                options={{ headerShown: false }}
             />
 
             {/* Sales Retur */}
             <Stack.Screen
                 name="SalesReturForm"
-                getComponent={() => require('../../features/salesretur/screens/SalesReturFormScreen').SalesReturFormScreen}
+                component={SalesReturFormScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="SalesReturEdit"
-                getComponent={() => require('../../features/salesretur/screens/SalesReturEditScreen').SalesReturEditScreen}
+                component={SalesReturEditScreen}
+                options={{ headerShown: false }}
             />
 
             {/* Survey */}
             <Stack.Screen
                 name="SurveyForm"
-                getComponent={() => require('../../features/survey/screens/SurveyFormScreen').SurveyFormScreen}
+                component={SurveyFormScreen}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="SurveyEdit"
-                getComponent={() => require('../../features/survey/screens/SurveyEditScreen').SurveyEditScreen}
+                component={SurveyEditScreen}
+                options={{ headerShown: false }}
             />
 
             {/* Inventory Schedule */}
             <Stack.Screen
                 name="InventoryScheduleListScreen"
-                getComponent={() => require('../../features/inventoryschedule/screens/InventoryScheduleListScreen').InventoryScheduleListScreen}
+                component={InventoryScheduleListScreen}
                 options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="InventoryScheduleFormScreen"
-                getComponent={() => require('../../features/inventoryschedule/screens/InventoryScheduleFormScreen').InventoryScheduleFormScreen}
+                component={InventoryScheduleFormScreen}
                 options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="InventoryScheduleEditScreen"
-                getComponent={() => require('../../features/inventoryschedule/screens/InventoryScheduleEditScreen').InventoryScheduleEditScreen}
+                component={InventoryScheduleEditScreen}
                 options={{ headerShown: false }}
             />
 
             {/* SOP */}
             <Stack.Screen
                 name="SopDivisionScreen"
-                getComponent={() => require('../../features/sop/screens/SopDivisionScreen').SopDivisionScreen}
+                component={SopDivisionScreen}
                 options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="SopListScreen"
-                getComponent={() => require('../../features/sop/screens/SopListScreen').SopListScreen}
+                component={SopListScreen}
                 options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="SopFormScreen"
-                getComponent={() => require('../../features/sop/screens/SopFormScreen').SopFormScreen}
+                component={SopFormScreen}
                 options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="SopEditScreen"
-                getComponent={() => require('../../features/sop/screens/SopEditScreen').SopEditScreen}
+                component={SopEditScreen}
                 options={{ headerShown: false }}
             />
 
