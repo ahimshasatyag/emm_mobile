@@ -29,19 +29,18 @@ export const customersApi = {
         }
     },
 
-    fetchCustomerById: async (id: string): Promise<{ success: boolean; data?: CustomerDetailResponse; message?: string }> => {
+    fetchCustomerById: async (id: string): Promise<CustomerDetailResponse> => {
         try {
             const response = await api.get(`/customers/${id}`);
             return {
                 success: true,
                 data: {
-                    customer: response.data.data.customer,
-                    contacts: response.data.data.customer.contacts || [],
-                    so_list: response.data.data.so_list || []
+                    header: response.data.data.customer,
+                    items: response.data.data.customer.contacts || [],
                 }
             };
         } catch (error: any) {
-            return { success: false, message: error.response?.data?.message || 'Gagal mengambil detail pelanggan' };
+            return { success: false, message: error.response?.data?.message || 'Gagal mengambil detail pelanggan', data: { header: {} as any, items: [] } };
         }
     },
 
