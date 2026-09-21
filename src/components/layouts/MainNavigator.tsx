@@ -788,29 +788,35 @@ export function MainNavigator() {
             <Stack.Screen
                 name="LogbookProductListScreen"
                 component={LogbookProductListScreen}
-                options={{ headerShown: false }} />
+                options={{ headerShown: false }}
+            />
             <Stack.Screen
                 name="LogbookProductFormScreen"
                 component={LogbookProductFormScreen}
-                options={{ headerShown: false }} />
+                options={{ headerShown: false }}
+            />
             <Stack.Screen
                 name="LogbookProductEditScreen"
                 component={LogbookProductEditScreen}
-                options={{ headerShown: false }} />
+                options={{ headerShown: false }}
+            />
 
             {/* Logbook Customers */}
             <Stack.Screen
                 name="LogbookCustomersListScreen"
                 component={LogbookCustomersListScreen}
-                options={{ headerShown: false }} />
+                options={{ headerShown: false }}
+            />
             <Stack.Screen
                 name="LogbookCustomersFormScreen"
                 component={LogbookCustomersFormScreen}
-                options={{ headerShown: false }} />
+                options={{ headerShown: false }}
+            />
             <Stack.Screen
                 name="LogbookCustomersEditScreen"
                 component={LogbookCustomersEditScreen}
-                options={{ headerShown: false }} />
+                options={{ headerShown: false }}
+            />
 
             {/* Quotations */}
             <Stack.Screen
