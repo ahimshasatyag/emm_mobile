@@ -3,6 +3,7 @@ import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { addSop, updateSop, fetchSopById, clearCurrentSop, confirmSop } from '../stores/sopSlice';
 import { getLegacyDivisiCode } from '../api/sopApi';
+import { notificationService } from '../../../services/notification/notificationService';
 
 interface SopFormData {
     divisi: string;
@@ -14,6 +15,7 @@ interface SopFormData {
 export const useSopForm = (sopId?: string, defaultDivisi?: string) => {
     const dispatch = useAppDispatch();
     const { currentSop, loading } = useAppSelector(state => state.sop);
+    const authUser = useAppSelector(state => state.auth.user);
     
     const [formData, setFormData] = useState<SopFormData>({
         divisi: defaultDivisi || '',
@@ -113,10 +115,31 @@ export const useSopForm = (sopId?: string, defaultDivisi?: string) => {
                 }
                 const response = await dispatch(updateSop(formDataToSubmit)).unwrap();
                 await dispatch(fetchSopById(sopId)).unwrap(); // Reload updated data
+                
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'SOP',
+                    judul: 'SOP Diperbarui',
+                    pesan: `SOP ${formData.nm_sop} berhasil diperbarui oleh ${authUser?.nm_users}`,
+                    action: 'Update'
+                }).catch(() => {});
+                
                 if (onSuccess) onSuccess(sopId);
             } else {
                 const response = await dispatch(addSop(formDataToSubmit)).unwrap();
-                if (response?.status && onSuccess) onSuccess(response.kode);
+                
+                if (response?.status) {
+                    await notificationService.store({
+                        user_id: authUser?.id_user ?? 1,
+                        id_users_level: authUser?.id_users_level ?? 1,
+                        kode_trans: 'SOP',
+                        judul: 'SOP Baru',
+                        pesan: `SOP ${formData.nm_sop} berhasil ditambahkan oleh ${authUser?.nm_users}`,
+                        action: 'Create'
+                    }).catch(() => {});
+                    if (onSuccess) onSuccess(response.kode);
+                }
             }
         } catch (error: any) {
             throw error;
@@ -131,6 +154,16 @@ export const useSopForm = (sopId?: string, defaultDivisi?: string) => {
         try {
             await dispatch(confirmSop(sopId)).unwrap();
             await dispatch(fetchSopById(sopId)).unwrap(); // Reload data to get FINALIZE status
+            
+            await notificationService.store({
+                user_id: authUser?.id_user ?? 1,
+                id_users_level: authUser?.id_users_level ?? 1,
+                kode_trans: 'SOP',
+                judul: 'SOP Dikonfirmasi',
+                pesan: `SOP berhasil dikonfirmasi oleh ${authUser?.nm_users}`,
+                action: 'Confirm'
+            }).catch(() => {});
+            
             if (onSuccess) onSuccess();
         } catch (error: any) {
             throw error;

@@ -8,10 +8,12 @@ import {
     setFilter, clearCurrentLkt
 } from '../stores/lktSlice';
 import { LktFilter } from '../types/lkt.types';
+import { notificationService } from '../../../services/notification/notificationService';
 
 export const useLkt = () => {
     const dispatch = useDispatch<any>();
     const { items, currentLkt, teknisiOptions, isLoading, error, filter } = useSelector((state: RootState) => state.lkt);
+    const authUser = useSelector((state: RootState) => state.auth.user);
 
     // ===== LKT List =====
     const loadLkts = useCallback(async (currentFilter?: LktFilter) => {
@@ -30,6 +32,14 @@ export const useLkt = () => {
         try {
             const result = await dispatch(createLkt(payload)).unwrap();
             if (result?.status) {
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'LKT',
+                    judul: 'LKT Baru',
+                    pesan: `LKT berhasil dibuat oleh ${authUser?.nm_users}`,
+                    action: 'Create'
+                }).catch(() => {});
                 return { success: true, lkt_code: result.lkt_code };
             }
             return { success: false, message: result?.message || 'Gagal membuat LKT' };
@@ -42,6 +52,16 @@ export const useLkt = () => {
     const handleUpdateLkt = async (id: string, payload: any): Promise<{ success: boolean; message?: string }> => {
         try {
             const result = await dispatch(updateLkt({ id, payload })).unwrap();
+            if (result?.status) {
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'LKT',
+                    judul: 'LKT Diperbarui',
+                    pesan: `LKT ${id} berhasil diperbarui oleh ${authUser?.nm_users}`,
+                    action: 'Update'
+                }).catch(() => {});
+            }
             return { success: result?.status === true, message: result?.message };
         } catch (err: any) {
             return { success: false, message: err?.message || 'Terjadi kesalahan' };
@@ -52,6 +72,16 @@ export const useLkt = () => {
     const handleDoneLkt = async (id: string, payload: any): Promise<{ success: boolean; message?: string }> => {
         try {
             const result = await dispatch(doneLkt({ id, payload })).unwrap();
+            if (result?.status) {
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'LKT',
+                    judul: 'LKT Selesai',
+                    pesan: `LKT ${id} berhasil diselesaikan oleh ${authUser?.nm_users}`,
+                    action: 'Update'
+                }).catch(() => {});
+            }
             return { success: result?.status === true, message: result?.message };
         } catch (err: any) {
             return { success: false, message: err?.message || 'Terjadi kesalahan' };
@@ -62,6 +92,16 @@ export const useLkt = () => {
     const handleCancelLkt = async (id: string, payload: any): Promise<{ success: boolean; message?: string }> => {
         try {
             const result = await dispatch(cancelLkt({ id, payload })).unwrap();
+            if (result?.status) {
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'LKT',
+                    judul: 'LKT Dibatalkan',
+                    pesan: `LKT ${id} dibatalkan oleh ${authUser?.nm_users}`,
+                    action: 'Cancel'
+                }).catch(() => {});
+            }
             return { success: result?.status === true, message: result?.message };
         } catch (err: any) {
             return { success: false, message: err?.message || 'Terjadi kesalahan' };
@@ -78,6 +118,14 @@ export const useLkt = () => {
         try {
             const result = await dispatch(createRealisasi({ lktId, payload })).unwrap();
             if (result?.status) {
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'REALISASI',
+                    judul: 'Realisasi Baru',
+                    pesan: `Realisasi visit berhasil dibuat oleh ${authUser?.nm_users}`,
+                    action: 'Create'
+                }).catch(() => {});
                 return { success: true, lkt_sub_code: result.lkt_sub_code };
             }
             return { success: false, message: result?.message || 'Gagal membuat visit' };
@@ -90,6 +138,16 @@ export const useLkt = () => {
     const handleUpdateRealisasi = async (lktSubCode: string, payload: any): Promise<{ success: boolean; message?: string }> => {
         try {
             const result = await dispatch(updateRealisasi({ lktSubCode, payload })).unwrap();
+            if (result?.status) {
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'REALISASI',
+                    judul: 'Realisasi Diperbarui',
+                    pesan: `Realisasi visit diperbarui oleh ${authUser?.nm_users}`,
+                    action: 'Update'
+                }).catch(() => {});
+            }
             return { success: result?.status === true, message: result?.message };
         } catch (err: any) {
             return { success: false, message: err?.message || 'Terjadi kesalahan' };
@@ -100,6 +158,16 @@ export const useLkt = () => {
     const handleConfirmRealisasi = async (lktSubCode: string, payload?: any): Promise<{ success: boolean; message?: string }> => {
         try {
             const result = await dispatch(confirmRealisasi({ lktSubCode, payload })).unwrap();
+            if (result?.status) {
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'REALISASI',
+                    judul: 'Realisasi Dikonfirmasi',
+                    pesan: `Realisasi visit dikonfirmasi oleh ${authUser?.nm_users}`,
+                    action: 'Confirm'
+                }).catch(() => {});
+            }
             return { success: result?.status === true, message: result?.message };
         } catch (err: any) {
             return { success: false, message: err?.message || 'Terjadi kesalahan' };
@@ -110,6 +178,16 @@ export const useLkt = () => {
     const handleCloseRealisasi = async (lktSubCode: string, payload?: any): Promise<{ success: boolean; message?: string }> => {
         try {
             const result = await dispatch(closeRealisasi({ lktSubCode, payload })).unwrap();
+            if (result?.status) {
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'REALISASI',
+                    judul: 'Realisasi Ditutup',
+                    pesan: `Realisasi visit ditutup oleh ${authUser?.nm_users}`,
+                    action: 'Update'
+                }).catch(() => {});
+            }
             return { success: result?.status === true, message: result?.message };
         } catch (err: any) {
             return { success: false, message: err?.message || 'Terjadi kesalahan' };
@@ -120,6 +198,16 @@ export const useLkt = () => {
     const handleCancelRealisasi = async (lktSubCode: string, payload?: any): Promise<{ success: boolean; message?: string }> => {
         try {
             const result = await dispatch(cancelRealisasi({ lktSubCode, payload })).unwrap();
+            if (result?.status) {
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'REALISASI',
+                    judul: 'Realisasi Dibatalkan',
+                    pesan: `Realisasi visit dibatalkan oleh ${authUser?.nm_users}`,
+                    action: 'Cancel'
+                }).catch(() => {});
+            }
             return { success: result?.status === true, message: result?.message };
         } catch (err: any) {
             return { success: false, message: err?.message || 'Terjadi kesalahan' };
@@ -130,6 +218,16 @@ export const useLkt = () => {
     const handleRejectRealisasi = async (lktSubCode: string, payload?: any): Promise<{ success: boolean; message?: string }> => {
         try {
             const result = await dispatch(rejectRealisasi({ lktSubCode, payload })).unwrap();
+            if (result?.status) {
+                await notificationService.store({
+                    user_id: authUser?.id_user ?? 1,
+                    id_users_level: authUser?.id_users_level ?? 1,
+                    kode_trans: 'REALISASI',
+                    judul: 'Realisasi Ditolak',
+                    pesan: `Realisasi visit ditolak oleh ${authUser?.nm_users}`,
+                    action: 'Update'
+                }).catch(() => {});
+            }
             return { success: result?.status === true, message: result?.message };
         } catch (err: any) {
             return { success: false, message: err?.message || 'Terjadi kesalahan' };
