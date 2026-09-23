@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { createDrawerNavigator, DrawerContentComponentProps } from '@react-navigation/drawer';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, interpolate, Extrapolate } from 'react-native-reanimated';
@@ -9,8 +9,9 @@ import {
 } from 'lucide-react-native';
 import { BottomBarNavigator } from './BottomBarNavigator';
 import { theme } from '../../theme/theme';
-import { useAppDispatch } from '../../hooks/useAppDispatch';
+import { useAppDispatch, useAppSelector } from '../../hooks/useAppDispatch';
 import { logout as logoutAction } from '../../features/auth/store/authSlice';
+import { getMyMenusApi } from '../../features/auth/api/menu.api';
 import { UserListScreen } from '../../features/users/screens/UserListScreen';
 import { UsersLogListScreen } from '../../features/userslog/screens/UsersLogListScreen';
 import { UsersLevelListScreen } from '../../features/userslevel/screens/UsersLevelListScreen';
@@ -215,6 +216,36 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
     const logout = () => dispatch(logoutAction());
     const currentRouteName = props.state.routeNames[props.state.index];
     const isDashboardActive = currentRouteName === 'MainTabs';
+
+    const [userMenus, setUserMenus] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchMenus = async () => {
+            try {
+                const res = await getMyMenusApi();
+                if (res && res.data) {
+                    setUserMenus(res.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch menus", error);
+            }
+        };
+        fetchMenus();
+    }, []);
+
+    const filteredMenus = React.useMemo(() => {
+        if (!userMenus || userMenus.length === 0) return SIDEBAR_MENUS;
+        const allowedMenuTitles = new Set(userMenus.map((m: any) => m.nm_menu));
+        const allowedParentIds = new Set(userMenus.map((m: any) => m.id_parent));
+
+        return SIDEBAR_MENUS.map(menu => ({
+            ...menu,
+            subMenus: menu.subMenus.filter(sub => allowedMenuTitles.has(sub))
+        })).filter(menu => {
+            return allowedParentIds.has(menu.id) || menu.subMenus.length > 0;
+        });
+    }, [userMenus]);
+
     const getActiveSubMenu = (route: string) => {
         if (route === 'UserList') return 'Users';
         if (route === 'UsersLogList') return 'Users Log';
@@ -276,7 +307,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         return null;
     };
     const activeSubMenu = getActiveSubMenu(currentRouteName);
-    const activeMenuId = SIDEBAR_MENUS.find(menu => activeSubMenu && menu.subMenus.includes(activeSubMenu))?.id || null;
+    const activeMenuId = filteredMenus.find(menu => activeSubMenu && menu.subMenus.includes(activeSubMenu))?.id || null;
     const [expandedMenuId, setExpandedMenuId] = useState<string | null>(activeMenuId);
     React.useEffect(() => {
         setExpandedMenuId(activeMenuId);
@@ -306,7 +337,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                     </View>
                     <Text className="font-bold text-[13px]" style={{ color: isDashboardActive ? theme.colors.primary : '#4b5563' }}>Dashboard</Text>
                 </TouchableOpacity>
-                {SIDEBAR_MENUS.map((menu) => {
+                {filteredMenus.map((menu) => {
                     const IconComponent = iconMap[menu.iconName];
                     const isActiveParent = activeSubMenu ? menu.subMenus.includes(activeSubMenu) : false;
                     return (
@@ -643,3 +674,5 @@ export function SideBarNavigator() {
         </Drawer.Navigator>
     );
 }
+
+

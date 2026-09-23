@@ -1,121 +1,27 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
-import { ScrollView, View, RefreshControl } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, Easing, FadeIn, FadeOut } from 'react-native-reanimated';
-import { useHomeData } from '../hooks/useHomeData';
-import { fetchHomeDataApi } from '../api/home.api';
-import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { setData, setLoading, setError } from '../store/homeSlice';
-import { theme } from '../../../theme/theme';
-import { HomeHeader } from '../components/HomeHeader';
-import { DashboardRequestStats } from '../components/DashboardRequestStats';
-import { DashboardAvailability } from '../components/DashboardAvailability';
-import { DashboardLktTable } from '../components/DashboardLktTable';
-import { DashboardProductStats } from '../components/DashboardProductStats';
-import { DashboardSkeleton } from '../skeleton/DashboardSkeleton';
-import { ErrorState } from '../../../components/shared/ErrorState';
-import { EmptyState } from '../../../components/shared/EmptyState';
+﻿import React from 'react';
+import { useAppSelector } from '../../../hooks/useAppSelector';
+import { HomeScreen as Home1Screen } from './Home1Screen';
+import { Home2Screen } from './Home2Screen';
+import { Home3Screen } from './Home3Screen';
+import { Home4Screen } from './Home4Screen';
 
 export function HomeScreen() {
-    const { data, isLoading, error } = useHomeData();
-    const dispatch = useAppDispatch();
+    // Ambil data user dari Redux store
+    const user = useAppSelector((state) => state.auth.user);
 
-    const [isInitializing, setIsInitializing] = useState(true);
+    // Default ke Home1Screen.tsx jika tidak ada info
+    const dashboardType = user?.dashboard_file;
 
-    const handleRefresh = useCallback(async () => {
-        dispatch(setLoading(true));
-        try {
-            const result = await fetchHomeDataApi();
-            dispatch(setData(result));
-        } catch (e: any) {
-            dispatch(setError(e.message));
-        }
-    }, [dispatch]);
-
-    useFocusEffect(
-        useCallback(() => {
-            let isActive = true;
-
-            const initialize = async () => {
-                setIsInitializing(true);
-                try {
-                    await Promise.all([
-                        handleRefresh(),
-                        new Promise(resolve => setTimeout(resolve, 800))
-                    ]);
-                } catch (error) {
-                    // console.error("Failed to load:", error);
-                } finally {
-                    if (isActive) {
-                        setIsInitializing(false);
-                    }
-                }
-            };
-
-            initialize();
-
-            return () => {
-                isActive = false;
-                setIsInitializing(true);
-            };
-        }, [handleRefresh])
-    );
-
-    // Animation Values for the entire screen
-    const opacity = useSharedValue(0);
-    const translateY = useSharedValue(30);
-
-    useEffect(() => {
-        opacity.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.exp) });
-        translateY.value = withTiming(0, { duration: 600, easing: Easing.out(Easing.exp) });
-    }, []);
-
-    const animatedStyle = useAnimatedStyle(() => ({
-        opacity: opacity.value,
-        transform: [{ translateY: translateY.value }],
-    }));
-
-    return (
-        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-            <HomeHeader isLoading={isLoading} />
-
-            <ScrollView
-                contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
-                showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
-                }
-            >
-                <Animated.View style={animatedStyle}>
-                    {error ? (
-                        <ErrorState
-                            title="Gagal Memuat"
-                            message={error}
-                            onRetry={handleRefresh}
-                            fullScreen={false}
-                        />
-                    ) : (isLoading || isInitializing) ? (
-                        <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
-                            <DashboardSkeleton />
-                        </Animated.View>
-                    ) : !data ? (
-                        <EmptyState
-                            title="Data Kosong"
-                            message="Tidak ada data untuk ditampilkan di dashboard."
-                            fullScreen={false}
-                        />
-                    ) : (
-                        <Animated.View key="content" entering={FadeIn.duration(600)}>
-                            <DashboardRequestStats />
-                            <DashboardAvailability />
-                            {/* <DashboardWorkload /> */}
-                            <DashboardLktTable />
-
-                            <DashboardProductStats />
-                        </Animated.View>
-                    )}
-                </Animated.View>
-            </ScrollView>
-        </View>
-    );
+    switch (dashboardType) {
+        case 'Home1Screen.tsx':
+            return <Home1Screen />;
+        case 'Home2Screen.tsx':
+            return <Home2Screen />;
+        case 'Home3Screen.tsx':
+            return <Home3Screen />;
+        case 'Home4Screen.tsx':
+            return <Home4Screen />;
+        default:
+            return <Home1Screen />;
+    }
 }
