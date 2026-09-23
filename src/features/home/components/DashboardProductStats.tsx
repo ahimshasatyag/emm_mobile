@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, TextInput, Platform } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import Svg, { Circle, G, Text as SvgText } from 'react-native-svg';
 import { useHomeData } from '../hooks/useHomeData';
 import { theme } from '../../../theme/theme';
@@ -17,6 +18,8 @@ export function DashboardProductStats() {
     };
 
     const [periode, setPeriode] = useState('09-2026'); // Can be synced with a global state later
+    const [filterDate, setFilterDate] = useState(new Date());
+    const [showDatePicker, setShowDatePicker] = useState(false);
     const [pricePage, setPricePage] = useState(1);
     const [quotationPage, setQuotationPage] = useState(1);
     const itemsPerPage = 5;
@@ -41,31 +44,44 @@ export function DashboardProductStats() {
     return (
         <View className="px-6 mb-6">
             <View className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                {/* Filter */}
-                <View className="bg-gray-50 p-4 rounded-xl mb-6 flex-row items-end justify-between hidden">
-                    <View className="flex-1 mr-4">
-                        <Text className="text-xs font-bold text-gray-500 mb-1">Filter Periode:</Text>
-                        <TextInput 
-                            value={periode}
-                            onChangeText={setPeriode}
-                            className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-gray-700"
-                            placeholder="MM-YYYY"
-                        />
-                    </View>
-                    <TouchableOpacity 
-                        className="rounded-lg py-2 px-6 items-center justify-center"
-                        style={{ backgroundColor: theme.colors.primary }}
-                        onPress={() => Alert.alert('Filter', `Searching stats for ${periode}...`)}
-                    >
-                        <Text className="text-white font-bold text-xs">Search</Text>
-                    </TouchableOpacity>
-                </View>
-
                 {/* Top Price Check Products */}
                 <View className="mb-8">
                     <Text className="text-xs font-extrabold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2 mb-3">
                         Top Price Check Products
                     </Text>
+
+                    {/* Filter */}
+                    <View className="bg-gray-50 p-4 rounded-xl mb-4 flex-row items-end justify-between">
+                        <View className="flex-1 mr-4">
+                            <Text className="text-xs font-bold text-gray-500 mb-1">Periode:</Text>
+                            <TouchableOpacity
+                                onPress={() => setShowDatePicker(true)}
+                                className="bg-white border border-gray-200 rounded-lg px-3 py-2.5"
+                            >
+                                <Text className="text-xs font-semibold text-gray-700">
+                                    {filterDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                                </Text>
+                            </TouchableOpacity>
+                            {showDatePicker && (
+                                <DateTimePicker
+                                    value={filterDate}
+                                    mode="date"
+                                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                    onChange={(event, selectedDate) => {
+                                        setShowDatePicker(Platform.OS === 'ios');
+                                        if (selectedDate) setFilterDate(selectedDate);
+                                    }}
+                                />
+                            )}
+                        </View>
+                        <TouchableOpacity
+                            className="rounded-lg py-2.5 px-6 items-center justify-center"
+                            style={{ backgroundColor: theme.colors.primary }}
+                            onPress={() => Alert.alert('Filter', `Searching stats for ${filterDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}...`)}
+                        >
+                            <Text className="text-white font-bold text-xs">Search</Text>
+                        </TouchableOpacity>
+                    </View>
                     <View className="flex-row border-b border-gray-200 pb-2 mb-2">
                         <Text className="w-8 text-center text-[11px] font-bold text-gray-500">No</Text>
                         <Text className="flex-1 text-left text-[11px] font-bold text-gray-500 ml-2">Product Name</Text>
@@ -86,7 +102,7 @@ export function DashboardProductStats() {
                     {/* Pagination */}
                     {topPriceCheckProducts.length > 0 && (
                         <View className="flex-row justify-between items-center mt-3 pt-2 border-t border-gray-100">
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 disabled={pricePage === 1}
                                 onPress={() => setPricePage(p => p - 1)}
                                 className={`px-3 py-1 bg-gray-100 rounded ${pricePage === 1 ? 'opacity-50' : ''}`}
@@ -94,7 +110,7 @@ export function DashboardProductStats() {
                                 <Text className="text-[10px] font-semibold text-gray-700">Prev</Text>
                             </TouchableOpacity>
                             <Text className="text-[10px] text-gray-500">Page <Text className="font-bold text-gray-700">{pricePage}</Text> of {totalPricePages}</Text>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 disabled={pricePage >= totalPricePages}
                                 onPress={() => setPricePage(p => p + 1)}
                                 className={`px-3 py-1 bg-gray-100 rounded ${pricePage >= totalPricePages ? 'opacity-50' : ''}`}
@@ -129,7 +145,7 @@ export function DashboardProductStats() {
                     )}
                     {topQuotationProducts.length > 0 && (
                         <View className="flex-row justify-between items-center mt-3 pt-2 border-t border-gray-100">
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 disabled={quotationPage === 1}
                                 onPress={() => setQuotationPage(p => p - 1)}
                                 className={`px-3 py-1 bg-gray-100 rounded ${quotationPage === 1 ? 'opacity-50' : ''}`}
@@ -137,7 +153,7 @@ export function DashboardProductStats() {
                                 <Text className="text-[10px] font-semibold text-gray-700">Prev</Text>
                             </TouchableOpacity>
                             <Text className="text-[10px] text-gray-500">Page <Text className="font-bold text-gray-700">{quotationPage}</Text> of {totalQuotationPages}</Text>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 disabled={quotationPage >= totalQuotationPages}
                                 onPress={() => setQuotationPage(p => p + 1)}
                                 className={`px-3 py-1 bg-gray-100 rounded ${quotationPage >= totalQuotationPages ? 'opacity-50' : ''}`}

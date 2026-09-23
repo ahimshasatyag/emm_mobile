@@ -235,12 +235,16 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
     const filteredMenus = React.useMemo(() => {
         if (!userMenus || userMenus.length === 0) return SIDEBAR_MENUS;
-        const allowedMenuTitles = new Set(userMenus.map((m: any) => m.nm_menu));
+        const allowedSubMenuTitles = new Set(
+            userMenus
+                .filter((m: any) => m.id_parent && m.id_parent !== '0' && m.id_parent !== 0)
+                .map((m: any) => m.nm_menu)
+        );
         const allowedParentIds = new Set(userMenus.map((m: any) => m.id_parent));
 
         return SIDEBAR_MENUS.map(menu => ({
             ...menu,
-            subMenus: menu.subMenus.filter(sub => allowedMenuTitles.has(sub))
+            subMenus: menu.subMenus.filter(sub => allowedSubMenuTitles.has(sub))
         })).filter(menu => {
             return allowedParentIds.has(menu.id) || menu.subMenus.length > 0;
         });

@@ -34,7 +34,7 @@ export function HomeHeader({ isLoading }: HomeHeaderProps) {
                     withTiming(0, { duration: 50 })
                 );
             };
-            
+
             const interval = setInterval(jiggle, 5000);
             return () => clearInterval(interval);
         }
@@ -57,26 +57,26 @@ export function HomeHeader({ isLoading }: HomeHeaderProps) {
 
 
     return (
-        <Animated.View 
-            entering={FadeInDown.duration(600).springify()} 
-            className="bg-white" 
-            style={{ 
+        <Animated.View
+            entering={FadeInDown.duration(600).springify()}
+            className="bg-white"
+            style={{
                 paddingTop: insets.top > 0 ? insets.top + 10 : 20,
                 borderBottomLeftRadius: 32,
                 borderBottomRightRadius: 32,
-                elevation: 8, 
-                shadowColor: '#000', 
-                shadowOffset: { width: 0, height: 4 }, 
-                shadowOpacity: 0.08, 
-                shadowRadius: 8, 
+                elevation: 8,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.08,
+                shadowRadius: 8,
                 paddingBottom: 4,
                 zIndex: 10
             }}
         >
             {/* Bagian Atas: Menu, Jam & Tanggal, Notifikasi */}
             <View className="flex-row justify-between items-center px-6 pt-4 pb-2">
-                <TouchableOpacity 
-                    className="p-2.5 bg-gray-50 rounded-xl border border-gray-100" 
+                <TouchableOpacity
+                    className="p-2.5 bg-gray-50 rounded-xl border border-gray-100"
                     onPress={() => navigation.openDrawer()}
                     activeOpacity={0.7}
                 >
@@ -89,7 +89,7 @@ export function HomeHeader({ isLoading }: HomeHeaderProps) {
                     </Text>
                 </View>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                     activeOpacity={0.7}
                     onPress={() => setIsNotificationVisible(true)}
                 >
@@ -98,9 +98,9 @@ export function HomeHeader({ isLoading }: HomeHeaderProps) {
                             <Bell color={theme.colors.text} size={22} strokeWidth={2.5} />
                         </Animated.View>
                         {!isLoading && (
-                            <Animated.View 
+                            <Animated.View
                                 entering={FadeInDown.delay(600).springify()}
-                                className="absolute top-2.5 right-2.5 w-3 h-3 bg-red-500 rounded-full border-2 border-white" 
+                                className="absolute top-2.5 right-2.5 w-3 h-3 bg-red-500 rounded-full border-2 border-white"
                             />
                         )}
                     </View>
@@ -114,7 +114,7 @@ export function HomeHeader({ isLoading }: HomeHeaderProps) {
                 ) : (
                     <Animated.Image
                         entering={FadeInDown.delay(200).duration(500).springify()}
-                        source={{ uri: user?.link_foto || 'https://ui-avatars.com/api/?name=' + (user?.name || 'User') + '&background=random' }}
+                        source={{ uri: user?.link_foto || 'https://ui-avatars.com/api/?name=' + (user?.nm_users || 'User') + '&background=random' }}
                         className="w-14 h-14 rounded-full mr-4 border-2"
                         style={{ borderColor: theme.colors.primary }}
                     />
@@ -128,7 +128,7 @@ export function HomeHeader({ isLoading }: HomeHeaderProps) {
                     ) : (
                         <Animated.View entering={FadeInDown.delay(300).duration(500).springify()}>
                             <Text className="text-gray-500 text-xs font-bold tracking-wider uppercase mb-1">{getGreeting()} 👋</Text>
-                            <Text className="text-gray-900 text-2xl font-black tracking-tight" numberOfLines={1}>{user?.name || 'Pengguna'}</Text>
+                            <Text className="text-gray-900 text-2xl font-black tracking-tight" numberOfLines={1}>{user?.nm_users}</Text>
                         </Animated.View>
                     )}
                 </View>

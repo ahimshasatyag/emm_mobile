@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Dropdown } from 'react-native-element-dropdown';
@@ -52,7 +52,7 @@ export const PaymentFormScreen = () => {
         } finally {
             setIsRefreshing(false);
         }
-    }, [loadSupportData]);
+    }, []);
 
     useEffect(() => {
         loadData();
