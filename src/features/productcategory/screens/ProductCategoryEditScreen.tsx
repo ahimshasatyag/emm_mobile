@@ -99,7 +99,7 @@ export function ProductCategoryEditScreen() {
     return (
         <View className="flex-1 bg-gray-50">
             <HeaderNavigator
-                title={isInitializing || isLoading ? "MEMUAT DATA..." : (isEditing ? "EDIT KATEGORI" : "DETAIL KATEGORI")}
+                title={isInitializing || isLoading ? "MEMUAT DATA..." : (isEditing ? "EDIT CATEGORY" : "DETAIL CATEGORY")}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
             />

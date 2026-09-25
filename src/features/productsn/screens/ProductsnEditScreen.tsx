@@ -127,7 +127,7 @@ export function ProductsnEditScreen() {
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-gray-50">
             <HeaderNavigator
-                title={isInitializing || isRefreshing ? "MEMUAT DATA..." : "DETAIL PRODUCT SN"}
+                title={isInitializing || isRefreshing ? "MEMUAT DATA..." : "DETAIL SERIAL NUMBER"}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
             />
@@ -143,7 +143,7 @@ export function ProductsnEditScreen() {
             <ModalConfirm
                 visible={isModalConfirmVisible}
                 title="Konfirmasi Edit"
-                message="Apakah Anda yakin ingin menyimpan perubahan pada Product SN ini?"
+                message="Apakah Anda yakin ingin menyimpan perubahan pada Serial Number ini?"
                 confirmText="Ya, Simpan"
                 cancelText="Batal"
                 onCancel={() => setIsModalConfirmVisible(false)}
@@ -153,7 +153,7 @@ export function ProductsnEditScreen() {
             <ModalConfirm
                 visible={isModalDeleteVisible}
                 title="Konfirmasi Hapus"
-                message="Apakah Anda yakin ingin menghapus Product SN ini? Data yang dihapus tidak dapat dikembalikan."
+                message="Apakah Anda yakin ingin menghapus Serial Number ini? Data yang dihapus tidak dapat dikembalikan."
                 confirmText="Hapus"
                 cancelText="Batal"
                 onCancel={() => setIsModalDeleteVisible(false)}

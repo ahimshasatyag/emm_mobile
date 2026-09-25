@@ -76,7 +76,7 @@ export function EmployeeListScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator title="DATA KARYAWAN" />
+            <HeaderNavigator title="EMPLOYEE" />
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
                 <View className="bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2 shadow-sm">

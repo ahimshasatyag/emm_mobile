@@ -70,7 +70,7 @@ export const useSO = () => {
             kode_trans: 'SO',
             judul: 'Sales Order Dikonfirmasi',
             pesan: `Sales Order berhasil dikonfirmasi oleh ${authUser?.nm_users}`,
-            action: 'Confirm'
+            action: 'Update'
         }).catch(() => {});
         return result;
     }, [dispatch, authUser]);
@@ -96,7 +96,7 @@ export const useSO = () => {
             kode_trans: 'SO',
             judul: 'Sales Order Dibatalkan',
             pesan: `Sales Order dibatalkan oleh ${authUser?.nm_users} karena: ${alasan}`,
-            action: 'Cancel'
+            action: 'Update'
         }).catch(() => {});
         return result;
     }, [dispatch, authUser]);

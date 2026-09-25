@@ -14,11 +14,11 @@ import { formatRp } from '../../../utils/helpers/money';
 import { PaymentFormSkeleton } from '../skeleton/PaymentFormSkeleton';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { usePayment } from '../hooks/usePayment';
-import { PaymentSupportData, InvoiceCustomer, Bank } from '../types/payment';
+import { PaymentSupportData } from '../types/payment';
 
 export const PaymentFormScreen = () => {
     const navigation = useNavigation<any>();
-    const { validateForm, loadSupportData, fetchCustomerDetailByInvoice, createNewPayment } = usePayment();
+    const { loadSupportData, fetchCustomerDetailByInvoice, createNewPayment } = usePayment();
     const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({ visible: false, message: '', type: 'error' });
     const [customer, setCustomer] = useState('');
     const [invoice, setInvoice] = useState('');
@@ -115,11 +115,7 @@ export const PaymentFormScreen = () => {
         setIsConfirmModalVisible(false);
         setIsSaving(true);
         try {
-            // Map paymentDetails ke format payload yang diharapkan backend
             const paymentsPayload = paymentDetails.map(d => {
-                // paymentMethod di modal saat ini string TUNAI/TRANSFER/GIRO. Di backend butuh ID.
-                // Idealnya modal pakai id_payment_method dari supportData, tapi untuk sekarang kita map manual
-                // atau asumsikan kita ubah dropdown modal nanti. Jika dropdown modal = 'TUNAI', id = 1, dsb.
                 let id_pm = d.paymentMethod;
                 if (id_pm === 'TUNAI') id_pm = '1';
                 else if (id_pm === 'GIRO') id_pm = '2';
@@ -129,10 +125,10 @@ export const PaymentFormScreen = () => {
                     id_payment_method: id_pm,
                     date_payment: d.date,
                     v_amount: d.amount,
-                    payment_ref: d.keterangan, // asumsikan keterangan = payment_ref
+                    payment_ref: d.keterangan,
                     no_giro: d.noGiro,
-                    bank_giro_id: null, // modal saat ini blm support pilih bank giro
-                    nkurs: 1, // default
+                    bank_giro_id: null,
+                    nkurs: 1,
                     dp: d.dp ? '1' : '0'
                 };
             });

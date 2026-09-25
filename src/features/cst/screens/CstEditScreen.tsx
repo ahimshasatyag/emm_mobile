@@ -10,6 +10,7 @@ import { theme } from '../../../theme/theme';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ModalCancel } from '../../../components/ui/ModalCancel';
+import { ImageModal } from '../components/ImageModal';
 import { getAfsImageUrl } from '../../../utils/helpers/image';
 import { formatDate } from '../../../utils/helpers/date';
 
@@ -21,6 +22,7 @@ export function CstEditScreen() {
     const { currentCst, isLoading, loadCstDetail, handleCloseCst, handleCancelCst, resetCurrentCst } = useCst();
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState<'lkt' | 'expense'>('lkt');
+    const [isImageModalVisible, setIsImageModalVisible] = useState(false);
 
     const [toast, setToast] = useState<{ visible: boolean; type: ToastType; message: string }>({
         visible: false,
@@ -157,6 +159,12 @@ export function CstEditScreen() {
                 onCancel={() => setModalCancelConfig(prev => ({ ...prev, visible: false }))}
             />
 
+            <ImageModal
+                visible={isImageModalVisible}
+                onClose={() => setIsImageModalVisible(false)}
+                imageUrl={currentCst?.image ? getAfsImageUrl(currentCst.image) : null}
+            />
+
             <HeaderNavigator
                 title={isLoading ? "MEMUAT DATA..." : "DETAIL CST"}
                 showBackButton={true}
@@ -245,7 +253,7 @@ export function CstEditScreen() {
                                 <View className="flex-row">
                                     <Text className="w-1/3 text-xs text-gray-500 font-medium">Date Request</Text>
                                     <Text className="w-4 text-xs text-gray-500">:</Text>
-                                    <Text className="flex-1 text-xs text-gray-800">{currentCst.csr_date}</Text>
+                                    <Text className="flex-1 text-xs text-gray-800">{currentCst.csr_date ? formatDate(new Date(currentCst.csr_date)) : '-'}</Text>
                                 </View>
                                 <View className="flex-row">
                                     <Text className="w-1/3 text-xs text-gray-500 font-medium">Lokasi</Text>
@@ -256,7 +264,7 @@ export function CstEditScreen() {
                                     <Text className="w-1/3 text-xs text-gray-500 font-medium">Sts Pemasangan</Text>
                                     <Text className="w-4 text-xs text-gray-500">:</Text>
                                     <Text className="flex-1 text-xs font-semibold text-gray-800">
-                                        {currentCst.sts_pasang === '1' ? 'Pasang Baru' : 'Service'}
+                                        {currentCst.sts_pasang === '1' ? 'Service' : 'Pasang Baru'}
                                     </Text>
                                 </View>
                             </View>
@@ -279,7 +287,12 @@ export function CstEditScreen() {
                                     <Text className="text-xs text-gray-500 font-medium mb-1">Images :</Text>
                                     <View className="h-32 w-full bg-gray-100 rounded-lg border border-gray-200 items-center justify-center overflow-hidden">
                                         {currentCst.image ? (
-                                            <Image source={{ uri: getAfsImageUrl(currentCst.image) }} className="w-full h-full" resizeMode="cover" />
+                                            <TouchableOpacity 
+                                                className="w-full h-full"
+                                                onPress={() => setIsImageModalVisible(true)}
+                                            >
+                                                <Image source={{ uri: getAfsImageUrl(currentCst.image) }} className="w-full h-full" resizeMode="cover" />
+                                            </TouchableOpacity>
                                         ) : (
                                             <View className="items-center">
                                                 <ImageIcon color="#9CA3AF" size={32} />
@@ -321,7 +334,7 @@ export function CstEditScreen() {
                                 <View className="flex-row">
                                     <Text className="w-1/3 text-xs text-gray-500 font-medium">Warranty Start</Text>
                                     <Text className="w-4 text-xs text-gray-500">:</Text>
-                                    <Text className="flex-1 text-xs text-gray-800">{currentCst.waranty_start}</Text>
+                                    <Text className="flex-1 text-xs text-gray-800">{currentCst.waranty_start ? formatDate(new Date(currentCst.waranty_start)) : '-'}</Text>
                                 </View>
                                 <View className="flex-row">
                                     <Text className="w-1/3 text-xs text-gray-500 font-medium">Warranty Time</Text>
@@ -331,7 +344,7 @@ export function CstEditScreen() {
                                 <View className="flex-row">
                                     <Text className="w-1/3 text-xs text-gray-500 font-medium">Warranty End</Text>
                                     <Text className="w-4 text-xs text-gray-500">:</Text>
-                                    <Text className="flex-1 text-xs text-gray-800">{currentCst.waranty_end}</Text>
+                                    <Text className="flex-1 text-xs text-gray-800">{currentCst.waranty_end ? formatDate(new Date(currentCst.waranty_end)) : '-'}</Text>
                                 </View>
                                 <View className="flex-row">
                                     <Text className="w-1/3 text-xs text-gray-500 font-medium">Warranty Status</Text>

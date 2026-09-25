@@ -76,7 +76,7 @@ export function ProductsnFormScreen() {
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-gray-50">
             <HeaderNavigator
-                title={isLoading ? "MEMUAT DATA..." : "TAMBAH PRODUCT SN"}
+                title={isLoading ? "MEMUAT DATA..." : "TAMBAH SERIAL NUMBER"}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
             />
@@ -115,7 +115,7 @@ export function ProductsnFormScreen() {
                     <Animated.View key="content" entering={FadeIn.duration(600)}>
                         <Animated.View entering={FadeInUp.delay(50)} layout={LinearTransition.springify()}>
                             <View className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6">
-                                
+
                                 {/* PRODUCT DROPDOWN */}
                                 <View className="mb-5">
                                     <Text className="text-sm font-bold text-gray-700 mb-2">Product <Text className="text-red-500">*</Text></Text>

@@ -9,7 +9,7 @@ import {
 } from 'lucide-react-native';
 import { BottomBarNavigator } from './BottomBarNavigator';
 import { theme } from '../../theme/theme';
-import { useAppDispatch, useAppSelector } from '../../hooks/useAppDispatch';
+import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { logout as logoutAction } from '../../features/auth/store/authSlice';
 import { getMyMenusApi } from '../../features/auth/api/menu.api';
 import { UserListScreen } from '../../features/users/screens/UserListScreen';

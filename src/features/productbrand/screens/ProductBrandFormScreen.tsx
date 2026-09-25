@@ -60,7 +60,7 @@ export function ProductBrandFormScreen() {
             className="flex-1 bg-gray-50"
         >
             <HeaderNavigator
-                title={isLoading ? "MEMUAT DATA..." : "TAMBAH MEREK"}
+                title={isLoading ? "MEMUAT DATA..." : "TAMBAH BRAND"}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
             />

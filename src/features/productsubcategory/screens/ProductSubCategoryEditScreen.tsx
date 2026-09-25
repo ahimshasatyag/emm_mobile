@@ -5,7 +5,6 @@ import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Save, Edit2, X, ArrowLeft } from 'lucide-react-native';
 import { theme } from '../../../theme/theme';
 import { useProductSubCategories } from '../hooks/useProductSubCategories';
-import { ProductSubCategoryFormData } from '../types/productsubcategory.types';
 import Animated, { FadeInUp, LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Button } from '../../../components/ui/button';
 import { Dropdown } from 'react-native-element-dropdown';
@@ -133,7 +132,7 @@ export function ProductSubCategoryEditScreen() {
             className="flex-1 bg-gray-50"
         >
             <HeaderNavigator
-                title={isInitializing || isLoading ? "MEMUAT DATA..." : (isEditing ? "EDIT SUB KATEGORI" : "DETAIL SUB KATEGORI")}
+                title={isInitializing || isLoading ? "MEMUAT DATA..." : (isEditing ? "EDIT SUB CATEGORY" : "DETAIL SUB CATEGORY")}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
             />
@@ -223,43 +222,43 @@ export function ProductSubCategoryEditScreen() {
                         layout={LinearTransition.springify()}
                         className="flex-row mt-4 gap-3"
                     >
-                            {!isEditing ? (
+                        {!isEditing ? (
+                            <Button
+                                onPress={() => setIsEditing(true)}
+                                className="flex-1 h-14 rounded-xl flex-row items-center justify-center"
+                                style={{ elevation: 2, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
+                            >
+                                <Edit2 color="white" size={20} className="mr-2" />
+                                <Text className="text-white font-bold text-lg">Edit Sub Kategori</Text>
+                            </Button>
+                        ) : (
+                            <>
                                 <Button
-                                    onPress={() => setIsEditing(true)}
+                                    variant="outline"
+                                    onPress={handleCancel}
+                                    className="flex-1 h-14 rounded-xl flex-row items-center justify-center"
+                                >
+                                    <X color={theme.colors.primary} size={20} className="mr-2" />
+                                    <Text className="font-bold text-lg" style={{ color: theme.colors.primary }}>Batal</Text>
+                                </Button>
+
+                                <Button
+                                    onPress={handleSavePress}
+                                    disabled={isLoading}
                                     className="flex-1 h-14 rounded-xl flex-row items-center justify-center"
                                     style={{ elevation: 2, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
                                 >
-                                    <Edit2 color="white" size={20} className="mr-2" />
-                                    <Text className="text-white font-bold text-lg">Edit Sub Kategori</Text>
+                                    {isLoading ? (
+                                        <ActivityIndicator color="white" />
+                                    ) : (
+                                        <>
+                                            <Save color="white" size={20} className="mr-2" />
+                                            <Text className="text-white font-bold text-lg">Simpan</Text>
+                                        </>
+                                    )}
                                 </Button>
-                            ) : (
-                                <>
-                                    <Button
-                                        variant="outline"
-                                        onPress={handleCancel}
-                                        className="flex-1 h-14 rounded-xl flex-row items-center justify-center"
-                                    >
-                                        <X color={theme.colors.primary} size={20} className="mr-2" />
-                                        <Text className="font-bold text-lg" style={{ color: theme.colors.primary }}>Batal</Text>
-                                    </Button>
-
-                                    <Button
-                                        onPress={handleSavePress}
-                                        disabled={isLoading}
-                                        className="flex-1 h-14 rounded-xl flex-row items-center justify-center"
-                                        style={{ elevation: 2, shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }}
-                                    >
-                                        {isLoading ? (
-                                            <ActivityIndicator color="white" />
-                                        ) : (
-                                            <>
-                                                <Save color="white" size={20} className="mr-2" />
-                                                <Text className="text-white font-bold text-lg">Simpan</Text>
-                                            </>
-                                        )}
-                                    </Button>
-                                </>
-                            )}
+                            </>
+                        )}
                     </Animated.View>
                 )}
             </ScrollView>

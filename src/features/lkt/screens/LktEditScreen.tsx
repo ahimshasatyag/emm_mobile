@@ -24,6 +24,7 @@ import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ModalCancel } from '../../../components/ui/ModalCancel';
 import { formatRp, formatInputNumber } from '../../../utils/helpers/money';
 import { getAfsImageUrl } from '../../../utils/helpers/image';
+import { formatDate } from '../../../utils/helpers/date';
 
 export function LktEditScreen() {
     const navigation = useNavigation<any>();
@@ -130,7 +131,11 @@ export function LktEditScreen() {
     const isDone = currentLkt?.flag_done === 'DONE' || currentLkt?.flag_done === 'CLOSE';
     const isLktOnProgress = currentLkt?.flag_done === 'ON PROGRESS';
     const isReadOnly = isDone || isCancelled;
-    const hasRealisasiClose = currentLkt?.realisasi_list?.some(r => r.status === 'CLOSE');
+    const hasRealisasiClose = currentLkt?.realisasi_list?.some(r => (r.status || '').toUpperCase() === 'CLOSE');
+    const hasUnfinishedRealisasi = currentLkt?.realisasi_list?.some(r => {
+        const s = (r.status || '').toUpperCase();
+        return s === 'DRAFT' || s === 'ON PROGRESS';
+    });
 
     const handleSave = async () => {
         setIsSaveModalVisible(false);
@@ -256,7 +261,7 @@ export function LktEditScreen() {
                         </>
                     )}
 
-                    {isLktOnProgress && hasRealisasiClose && (
+                    {isLktOnProgress && hasRealisasiClose && !hasUnfinishedRealisasi && (
                         <TouchableOpacity
                             className="bg-teal-500 px-3 py-2 rounded flex-row items-center mr-2"
                             onPress={() => navigation.navigate('LktEditCloseScreen', { lktCode })}
@@ -326,6 +331,13 @@ export function LktEditScreen() {
                 visible={isBastModalVisible}
                 imageUrl={bastUri}
                 onClose={() => setIsBastModalVisible(false)}
+            />
+
+            <ImageModal
+                visible={isImageModalVisible}
+                imageUrl={imageUri}
+                onClose={() => setIsImageModalVisible(false)}
+                onPickImage={isEditing ? pickImage : undefined}
             />
 
             <ModalConfirm
@@ -438,7 +450,7 @@ export function LktEditScreen() {
                                         <Text className="text-xs font-bold text-gray-700 mb-2">Images</Text>
                                         <TouchableOpacity
                                             className="bg-gray-50 border border-gray-300 border-dashed rounded-lg items-center justify-center overflow-hidden h-28"
-                                            onPress={isEditing ? pickImage : undefined}
+                                            onPress={imageUri ? () => setIsImageModalVisible(true) : (isEditing ? pickImage : undefined)}
                                         >
                                             {imageUri ? (
                                                 <View className="w-full h-full relative">
@@ -492,7 +504,7 @@ export function LktEditScreen() {
                                                 onPress={() => isEditing && setShowDatePicker(true)}
                                             >
                                                 <Calendar color="#9CA3AF" size={16} />
-                                                <Text className="ml-2 text-sm text-gray-800">{startingDate || 'Pilih'}</Text>
+                                                <Text className="ml-2 text-sm text-gray-800">{startingDate ? formatDate(new Date(startingDate)) : 'Pilih'}</Text>
                                             </TouchableOpacity>
                                             {showDatePicker && isEditing && (
                                                 <DateTimePicker

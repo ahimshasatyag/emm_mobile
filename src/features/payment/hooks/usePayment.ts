@@ -131,7 +131,7 @@ export const usePayment = () => {
                 kode_trans: 'PAYMENT',
                 judul: 'Payment Dibatalkan',
                 pesan: `Payment berhasil dibatalkan oleh ${authUser?.nm_users}`,
-                action: 'Cancel'
+                action: 'Update'
             }).catch(() => {});
             return result;
         } catch (err: any) {

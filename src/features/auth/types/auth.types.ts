@@ -1,4 +1,4 @@
-﻿export interface User {
+export interface User {
     id_user: number;
     username: string;
     nm_users: string;

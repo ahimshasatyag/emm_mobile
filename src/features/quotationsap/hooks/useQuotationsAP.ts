@@ -93,7 +93,7 @@ export function useQuotationsAP() {
             kode_trans: displayCode || id,
             judul: 'Quotation AP Dibatalkan',
             pesan: `Quotation AP ${displayCode || id} telah dibatalkan oleh ${authUser?.nm_users}`,
-            action: 'Cancel'
+            action: 'Update'
         }).catch(() => { });
         return result;
     }, [dispatch, authUser]);

@@ -161,7 +161,7 @@ export const useSopForm = (sopId?: string, defaultDivisi?: string) => {
                 kode_trans: 'SOP',
                 judul: 'SOP Dikonfirmasi',
                 pesan: `SOP berhasil dikonfirmasi oleh ${authUser?.nm_users}`,
-                action: 'Confirm'
+                action: 'Update'
             }).catch(() => {});
             
             if (onSuccess) onSuccess();

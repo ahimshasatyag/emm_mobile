@@ -62,7 +62,7 @@ export function ProductCategoryFormScreen() {
             className="flex-1 bg-gray-50"
         >
             <HeaderNavigator
-                title={isLoading ? "MEMUAT DATA..." : "TAMBAH KATEGORI"}
+                title={isLoading ? "MEMUAT DATA..." : "TAMBAH CATEGORY"}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
             />

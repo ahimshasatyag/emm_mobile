@@ -99,7 +99,7 @@ export const useLkt = () => {
                     kode_trans: 'LKT',
                     judul: 'LKT Dibatalkan',
                     pesan: `LKT ${id} dibatalkan oleh ${authUser?.nm_users}`,
-                    action: 'Cancel'
+                    action: 'Update'
                 }).catch(() => {});
             }
             return { success: result?.status === true, message: result?.message };
@@ -165,7 +165,7 @@ export const useLkt = () => {
                     kode_trans: 'REALISASI',
                     judul: 'Realisasi Dikonfirmasi',
                     pesan: `Realisasi visit dikonfirmasi oleh ${authUser?.nm_users}`,
-                    action: 'Confirm'
+                    action: 'Update'
                 }).catch(() => {});
             }
             return { success: result?.status === true, message: result?.message };
@@ -205,7 +205,7 @@ export const useLkt = () => {
                     kode_trans: 'REALISASI',
                     judul: 'Realisasi Dibatalkan',
                     pesan: `Realisasi visit dibatalkan oleh ${authUser?.nm_users}`,
-                    action: 'Cancel'
+                    action: 'Update'
                 }).catch(() => {});
             }
             return { success: result?.status === true, message: result?.message };

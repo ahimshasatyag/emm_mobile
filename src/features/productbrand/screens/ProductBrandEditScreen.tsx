@@ -99,7 +99,7 @@ export function ProductBrandEditScreen() {
             className="flex-1 bg-gray-50"
         >
             <HeaderNavigator
-                title={isInitializing || isLoading ? "MEMUAT DATA..." : (isEditing ? "EDIT MEREK" : "DETAIL MEREK")}
+                title={isInitializing || isLoading ? "MEMUAT DATA..." : (isEditing ? "EDIT BRAND" : "DETAIL BRAND")}
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
             />

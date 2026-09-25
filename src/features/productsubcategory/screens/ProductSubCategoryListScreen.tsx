@@ -14,12 +14,12 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 
 export function ProductSubCategoryListScreen() {
     const navigation = useNavigation<any>();
-    const { 
-        subCategories, 
-        isLoading, 
+    const {
+        subCategories,
+        isLoading,
         error,
-        searchQuery, 
-        setSearchQuery, 
+        searchQuery,
+        setSearchQuery,
         loadSubCategories,
         clearStatusMessages
     } = useProductSubCategories();
@@ -60,7 +60,7 @@ export function ProductSubCategoryListScreen() {
             };
         }, [])
     );
-    
+
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
@@ -97,7 +97,7 @@ export function ProductSubCategoryListScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-            <HeaderNavigator title="SUB KATEGORI PRODUK" isLoading={isLoading} />
+            <HeaderNavigator title="SUB CATEGORY" isLoading={isLoading} />
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
                 <View className="flex-row items-center justify-between">

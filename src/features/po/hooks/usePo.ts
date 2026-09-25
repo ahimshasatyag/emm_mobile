@@ -94,7 +94,7 @@ export function usePo() {
             kode_trans: displayCode || id,
             judul: 'PO Dibatalkan',
             pesan: `PO ${displayCode || id} telah dibatalkan oleh ${authUser?.nm_users}`,
-            action: 'Cancel'
+            action: 'Update'
         }).catch(() => { });
         return result;
     }, [dispatch, authUser]);

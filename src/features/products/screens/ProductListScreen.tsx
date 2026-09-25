@@ -91,22 +91,22 @@ export function ProductListScreen() {
 
                         if (product.id_product_kategori) updatePayload.id_product_kategori = product.id_product_kategori;
                         else if (product.kategori?.id_product_kategori) updatePayload.id_product_kategori = product.kategori.id_product_kategori;
-                        
+
                         if (product.id_product_sub_kategori) updatePayload.id_product_sub_kategori = product.id_product_sub_kategori;
                         else if (product.sub_kategori?.id_product_sub_kategori) updatePayload.id_product_sub_kategori = product.sub_kategori.id_product_sub_kategori;
                         else if (product.subKategori?.id_product_sub_kategori) updatePayload.id_product_sub_kategori = product.subKategori.id_product_sub_kategori;
-                        
+
                         if (product.id_product_brand) updatePayload.id_product_brand = String(product.id_product_brand);
                         else if (product.brand?.id_product_brand) updatePayload.id_product_brand = String(product.brand.id_product_brand);
                         else if (product.brand?.nm_product_brand) updatePayload.id_product_brand = String(product.brand.nm_product_brand);
-                        
+
                         if (product.id_product_satuan) updatePayload.id_product_satuan = String(product.id_product_satuan);
                         else if (product.satuan?.id_product_satuan) updatePayload.id_product_satuan = String(product.satuan.id_product_satuan);
-                        
+
                         if (product.product_deskripsi) updatePayload.product_deskripsi = product.product_deskripsi;
-                        
+
                         if (product.product_refference) updatePayload.product_refference = product.product_refference;
-                        
+
                         updatePayload.options = product.options || [];
 
                         return productsApi.updateProduct(id, updatePayload);
@@ -114,7 +114,7 @@ export function ProductListScreen() {
                     return Promise.resolve();
                 })
             );
-            
+
             refreshData();
 
             setToastMessage(`${selectedProductIds.length} produk berhasil di${modalActionWord.toLowerCase()}.`);
@@ -138,7 +138,7 @@ export function ProductListScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator title="DATA PRODUCT" />
+            <HeaderNavigator title="PRODUCT" />
 
             <ToastMessages
                 visible={toastVisible}

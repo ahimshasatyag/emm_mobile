@@ -53,7 +53,7 @@ export function ProductsnListScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator title="PRODUCT SN" />
+            <HeaderNavigator title="SERIAL NUMBER" />
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
                 <View className="flex-row items-center justify-between">

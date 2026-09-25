@@ -99,7 +99,7 @@ export const useSalesRetur = () => {
                 kode_trans: 'SALES RETUR',
                 judul: 'Sales Retur Confirmed',
                 pesan: `Sales Retur berhasil disetujui oleh ${authUser?.nm_users || 'User'}`,
-                action: 'Confirm'
+                action: 'Update'
             }).catch(() => {});
         }
         return result;
@@ -114,7 +114,7 @@ export const useSalesRetur = () => {
                 kode_trans: 'SALES RETUR',
                 judul: 'Sales Retur Dibatalkan',
                 pesan: `Sales Retur dibatalkan oleh ${authUser?.nm_users || 'User'}`,
-                action: 'Cancel'
+                action: 'Update'
             }).catch(() => {});
         }
         return result;

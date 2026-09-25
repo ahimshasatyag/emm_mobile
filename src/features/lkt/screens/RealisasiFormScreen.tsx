@@ -13,8 +13,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
+import { ImageModal } from '../components/ImageModal';
 import { useLkt } from '../hooks/useLkt';
 import { formatInputNumber } from '../../../utils/helpers/money';
+import { formatDate } from '../../../utils/helpers/date';
 
 export function RealisasiFormScreen() {
     const navigation = useNavigation<any>();
@@ -33,6 +35,7 @@ export function RealisasiFormScreen() {
     });
     const [isSaveModalVisible, setIsSaveModalVisible] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [isImageModalVisible, setIsImageModalVisible] = useState(false);
 
     // Image
     const [imageUri, setImageUri] = useState<string | null>(null);
@@ -151,6 +154,16 @@ export function RealisasiFormScreen() {
                 onCancel={() => setIsSaveModalVisible(false)}
             />
 
+            <ImageModal 
+                visible={isImageModalVisible}
+                onClose={() => setIsImageModalVisible(false)}
+                imageUrl={imageUri}
+                onPickImage={() => {
+                    setIsImageModalVisible(false);
+                    pickImage();
+                }}
+            />
+
             <HeaderNavigator
                 title="TAMBAH LAPORAN VISIT"
                 showBackButton
@@ -220,7 +233,7 @@ export function RealisasiFormScreen() {
                             <Text className="text-xs font-bold text-gray-700 mb-1">Images</Text>
                             <TouchableOpacity
                                 className="bg-white border border-gray-300 border-dashed rounded-lg overflow-hidden h-24 items-center justify-center"
-                                onPress={imageUri ? () => setImageUri(null) : pickImage}
+                                onPress={imageUri ? () => setIsImageModalVisible(true) : pickImage}
                             >
                                 {imageUri ? (
                                     <View className="w-full h-full relative">
@@ -293,7 +306,7 @@ export function RealisasiFormScreen() {
                                     onPress={() => setShowDatePicker(true)}
                                 >
                                     <Calendar color="#9CA3AF" size={16} />
-                                    <Text className="ml-2 text-sm text-gray-800">{actualStartingDate}</Text>
+                                    <Text className="ml-2 text-sm text-gray-800">{actualStartingDate ? formatDate(new Date(actualStartingDate)) : 'Pilih'}</Text>
                                 </TouchableOpacity>
                                 {showDatePicker && (
                                     <DateTimePicker

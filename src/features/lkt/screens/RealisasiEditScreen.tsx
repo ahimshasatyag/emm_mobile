@@ -3,9 +3,9 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, Switch, RefreshCon
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../stores';
-import { CornerDownLeft, Save, UploadCloud, Check, X, Pencil, Plus, Trash2 } from 'lucide-react-native';
+import { CornerDownLeft, Save, UploadCloud, Check, X, Pencil, Calendar } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Dropdown, MultiSelect } from "react-native-element-dropdown";
+import { MultiSelect } from "react-native-element-dropdown";
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
@@ -526,7 +526,8 @@ export function RealisasiEditScreen() {
                                         className={`border border-gray-300 rounded-lg h-[42px] flex-row items-center px-3 ${!isEditing ? 'bg-gray-100' : 'bg-white'}`}
                                         onPress={() => isEditing && setShowDatePicker(true)}
                                     >
-                                        <Text className="text-sm text-gray-800">{startingDate || 'Pilih Tanggal'}</Text>
+                                        <Calendar color="#9CA3AF" size={16} />
+                                        <Text className="ml-2 text-sm text-gray-800">{startingDate ? formatDate(new Date(startingDate)) : 'Pilih Tanggal'}</Text>
                                     </TouchableOpacity>
                                     {showDatePicker && isEditing && (
                                         <DateTimePicker

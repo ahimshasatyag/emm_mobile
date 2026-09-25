@@ -29,7 +29,7 @@ export function CustomerListScreen() {
     const filteredData = useMemo(() => {
         if (!searchQuery) return customers;
         const query = searchQuery.toLowerCase();
-        return customers.filter(item => 
+        return customers.filter(item =>
             (item.nm_customers && item.nm_customers.toLowerCase().includes(query)) ||
             (item.code_customers && item.code_customers.toLowerCase().includes(query)) ||
             (item.customers_phone && item.customers_phone.toLowerCase().includes(query)) ||
@@ -91,7 +91,7 @@ export function CustomerListScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
-            <HeaderNavigator title="DATA PELANGGAN" />
+            <HeaderNavigator title="COMPANY" />
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
                 <View className="bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2 shadow-sm">

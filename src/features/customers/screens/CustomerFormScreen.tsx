@@ -64,7 +64,7 @@ export function CustomerFormScreen() {
         setConfirmModalVisible(false);
         const result = await save();
         if (result && result.id_customers) {
-            (navigation as any).replace('CustomerEdit', { 
+            (navigation as any).replace('CustomerEdit', {
                 id: result.id_customers,
                 toastMessage: 'Data pelanggan berhasil ditambahkan!',
                 toastType: 'success'
@@ -90,7 +90,7 @@ export function CustomerFormScreen() {
             const newContacts = [...formData.contacts];
             newContacts[selectedContactIndex] = contact;
             setFormData({ ...formData, contacts: newContacts });
-            
+
             setToastMsg('Kontak berhasil diperbarui');
         } else {
             // Add
@@ -98,10 +98,10 @@ export function CustomerFormScreen() {
                 ...formData,
                 contacts: [...formData.contacts, { ...contact, id_contact: Date.now().toString() }]
             });
-            
+
             setToastMsg('Kontak baru berhasil ditambahkan');
         }
-        
+
         setToastTitle('Sukses');
         setToastType('success');
         setToastVisible(true);
@@ -116,18 +116,18 @@ export function CustomerFormScreen() {
     };
 
     return (
-        <KeyboardAvoidingView 
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={{ flex: 1, backgroundColor: theme.colors.background }}
         >
-            <HeaderNavigator 
-                title={!initialLoadDone ? "MEMUAT DATA..." : "TAMBAH PELANGGAN"}
-                showBackButton 
-                onBackPress={() => navigation.goBack()} 
+            <HeaderNavigator
+                title={!initialLoadDone ? "MEMUAT DATA..." : "TAMBAH COMPANY"}
+                showBackButton
+                onBackPress={() => navigation.goBack()}
             />
 
-            <ScrollView 
-                className="flex-1" 
+            <ScrollView
+                className="flex-1"
                 contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
@@ -146,234 +146,234 @@ export function CustomerFormScreen() {
                             </Animated.View>
                         )}
 
-                        <Animated.View 
-                            entering={FadeInUp.delay(50)} 
+                        <Animated.View
+                            entering={FadeInUp.delay(50)}
                             layout={LinearTransition.springify()}
-                            className="bg-white rounded-3xl border border-gray-100 mb-6 overflow-hidden" 
+                            className="bg-white rounded-3xl border border-gray-100 mb-6 overflow-hidden"
                             style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}
                         >
                             <View className="p-5">
                                 {/* 1. Company Name */}
                                 <View className="mb-4">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Company Name <Text className="text-red-500">*</Text></Text>
-                                <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
-                                    value={formData.nm_customers}
-                                    onChangeText={(t) => updateField('nm_customers', t)}
-                                    placeholder="Enter company name"
-                                />
-                            </View>
-
-                            {/* 2. Address */}
-                            <View className="mb-4">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Address <Text className="text-red-500">*</Text></Text>
-                                <TextInput
-                                    className="bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900 min-h-[96px]"
-                                    value={formData.customers_address}
-                                    onChangeText={(t) => updateField('customers_address', t)}
-                                    placeholder="Enter address"
-                                    multiline={true}
-                                    numberOfLines={4}
-                                    textAlignVertical="top"
-                                />
-                            </View>
-
-                            {/* 3. Address Invoice */}
-                            <View className="mb-4">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Address Invoice <Text className="text-red-500">*</Text></Text>
-                                <TextInput
-                                    className="bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900 min-h-[96px]"
-                                    value={formData.customers_address_invoice}
-                                    onChangeText={(t) => updateField('customers_address_invoice', t)}
-                                    placeholder="Enter address invoice"
-                                    multiline={true}
-                                    numberOfLines={4}
-                                    textAlignVertical="top"
-                                />
-                            </View>
-
-                            {/* 4 & 5. Blacklist and External Sales checkboxes */}
-                            <View className="flex-row justify-between items-center mb-4">
-                                <TouchableOpacity 
-                                    className="flex-row items-center" 
-                                    onPress={() => updateField('is_blacklist', !formData.is_blacklist)}
-                                >
-                                    {formData.is_blacklist ? <CheckSquare size={20} color="#3b82f6" /> : <Square size={20} color="#d1d5db" />}
-                                    <Text className="text-sm font-bold text-gray-700 ml-2">Blacklist</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity 
-                                    className="flex-row items-center" 
-                                    onPress={() => updateField('is_external_sales', !formData.is_external_sales)}
-                                >
-                                    {formData.is_external_sales ? <CheckSquare size={20} color="#3b82f6" /> : <Square size={20} color="#d1d5db" />}
-                                    <Text className="text-sm font-bold text-gray-700 ml-2">External Sales</Text>
-                                </TouchableOpacity>
-                            </View>
-
-                            {/* 6. Company toggle */}
-                            <View className="flex-row justify-between items-center mb-4">
-                                <Text className="text-sm font-bold text-gray-700">Company</Text>
-                                <Switch
-                                    value={formData.f_company}
-                                    onValueChange={(val) => updateField('f_company', val)}
-                                    trackColor={{ false: '#d1d5db', true: '#3b82f6' }}
-                                    thumbColor={Platform.OS === 'android' ? '#ffffff' : undefined}
-                                />
-                            </View>
-
-                            {/* If Company: Nama PIC, NIB, NPWP */}
-                            {formData.f_company && (
-                                <>
-                                    <View className="mb-4">
-                                        <Text className="text-sm font-bold text-gray-700 mb-2">Nama PIC</Text>
-                                        <TextInput
-                                            className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
-                                            value={formData.nama_lengkap}
-                                            onChangeText={(t) => updateField('nama_lengkap', t)}
-                                            placeholder="Enter Nama PIC"
-                                        />
-                                    </View>
-                                    <View className="mb-4">
-                                        <Text className="text-sm font-bold text-gray-700 mb-2">NIB</Text>
-                                        <TextInput
-                                            className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
-                                            value={formData.nib}
-                                            onChangeText={(t) => updateField('nib', t.replace(/[^0-9]/g, ''))}
-                                            placeholder="Enter NIB"
-                                            keyboardType="number-pad"
-                                        />
-                                    </View>
-                                    <View className="mb-4">
-                                        <Text className="text-sm font-bold text-gray-700 mb-2">NPWP</Text>
-                                        <TextInput
-                                            className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
-                                            value={formData.npwp}
-                                            onChangeText={(t) => updateField('npwp', t)}
-                                            placeholder="Enter NPWP"
-                                        />
-                                    </View>
-                                </>
-                            )}
-
-                            {/* 7. NIK PIC */}
-                            <View className="mb-4">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">NIK PIC</Text>
-                                <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
-                                    value={formData.nik}
-                                    onChangeText={(t) => updateField('nik', t.replace(/[^0-9]/g, ''))}
-                                    placeholder="Enter NIK PIC"
-                                    keyboardType="number-pad"
-                                    maxLength={16}
-                                />
-                            </View>
-
-                            {/* 8. Mobile */}
-                            <View className="mb-4">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Mobile <Text className="text-red-500">*</Text></Text>
-                                <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
-                                    value={formData.customers_mobile}
-                                    onChangeText={(t) => updateField('customers_mobile', t.replace(/[^0-9]/g, ''))}
-                                    placeholder="Enter mobile"
-                                    keyboardType="phone-pad"
-                                />
-                            </View>
-
-                            {/* 9. Email */}
-                            <View className="mb-4">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Email</Text>
-                                <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
-                                    value={formData.customers_email}
-                                    onChangeText={(t) => updateField('customers_email', t)}
-                                    placeholder="Enter email"
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                />
-                            </View>
-
-                            {/* 10. Fax */}
-                            <View className="mb-4">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Fax</Text>
-                                <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
-                                    value={formData.customers_fax}
-                                    onChangeText={(t) => updateField('customers_fax', t.replace(/[^0-9]/g, ''))}
-                                    placeholder="Enter fax"
-                                    keyboardType="phone-pad"
-                                />
-                            </View>
-
-                            {/* 11. Phone */}
-                            <View className="mb-4">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Phone</Text>
-                                <TextInput
-                                    className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
-                                    value={formData.customers_phone}
-                                    onChangeText={(t) => updateField('customers_phone', t.replace(/[^0-9]/g, ''))}
-                                    placeholder="Enter phone number"
-                                    keyboardType="phone-pad"
-                                />
-                            </View>
-
-                            {/* 12. Alamat PIC */}
-                            <View className="mb-4">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Alamat PIC</Text>
-                                <TextInput
-                                    className="bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900 min-h-[96px]"
-                                    value={formData.alamat}
-                                    onChangeText={(t) => updateField('alamat', t)}
-                                    placeholder="Enter Alamat PIC"
-                                    multiline={true}
-                                    numberOfLines={4}
-                                    textAlignVertical="top"
-                                />
-                            </View>
-
-                            {/* 13. Provinsi dropdown */}
-                            <View className="mb-4">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Provinsi <Text className="text-red-500">*</Text></Text>
-                                <View className="border border-gray-200 rounded-xl bg-gray-50 overflow-hidden">
-                                    <Dropdown
-                                        style={{ height: 48, paddingHorizontal: 16 }}
-                                        data={provinces.map(d => ({ label: d.nama, value: d.id }))}
-                                        labelField="label"
-                                        valueField="value"
-                                        placeholder="Pilih Provinsi"
-                                        value={formData.provinsi}
-                                        onChange={(item) => handleProvinceChange(item.value)}
-                                        search
-                                        searchPlaceholder="Cari provinsi..."
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Company Name <Text className="text-red-500">*</Text></Text>
+                                    <TextInput
+                                        className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
+                                        value={formData.nm_customers}
+                                        onChangeText={(t) => updateField('nm_customers', t)}
+                                        placeholder="Enter company name"
                                     />
                                 </View>
-                            </View>
 
-                            {/* 14. Kabupaten/Kota dropdown */}
-                            <View className="mb-4">
-                                <Text className="text-sm font-bold text-gray-700 mb-2">Kabupaten/Kota <Text className="text-red-500">*</Text></Text>
-                                <View className="border border-gray-200 rounded-xl bg-gray-50 overflow-hidden">
-                                    <Dropdown
-                                        style={{ height: 48, paddingHorizontal: 16 }}
-                                        data={regencies.map(p => ({ label: p.nama_kabupaten, value: p.id }))}
-                                        labelField="label"
-                                        valueField="value"
-                                        placeholder="Pilih Kabupaten/Kota"
-                                        value={formData.kabupaten}
-                                        onChange={(item) => updateField('kabupaten', item.value)}
-                                        search
-                                        searchPlaceholder="Cari kabupaten..."
+                                {/* 2. Address */}
+                                <View className="mb-4">
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Address <Text className="text-red-500">*</Text></Text>
+                                    <TextInput
+                                        className="bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900 min-h-[96px]"
+                                        value={formData.customers_address}
+                                        onChangeText={(t) => updateField('customers_address', t)}
+                                        placeholder="Enter address"
+                                        multiline={true}
+                                        numberOfLines={4}
+                                        textAlignVertical="top"
                                     />
                                 </View>
-                            </View>
+
+                                {/* 3. Address Invoice */}
+                                <View className="mb-4">
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Address Invoice <Text className="text-red-500">*</Text></Text>
+                                    <TextInput
+                                        className="bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900 min-h-[96px]"
+                                        value={formData.customers_address_invoice}
+                                        onChangeText={(t) => updateField('customers_address_invoice', t)}
+                                        placeholder="Enter address invoice"
+                                        multiline={true}
+                                        numberOfLines={4}
+                                        textAlignVertical="top"
+                                    />
+                                </View>
+
+                                {/* 4 & 5. Blacklist and External Sales checkboxes */}
+                                <View className="flex-row justify-between items-center mb-4">
+                                    <TouchableOpacity
+                                        className="flex-row items-center"
+                                        onPress={() => updateField('is_blacklist', !formData.is_blacklist)}
+                                    >
+                                        {formData.is_blacklist ? <CheckSquare size={20} color="#3b82f6" /> : <Square size={20} color="#d1d5db" />}
+                                        <Text className="text-sm font-bold text-gray-700 ml-2">Blacklist</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        className="flex-row items-center"
+                                        onPress={() => updateField('is_external_sales', !formData.is_external_sales)}
+                                    >
+                                        {formData.is_external_sales ? <CheckSquare size={20} color="#3b82f6" /> : <Square size={20} color="#d1d5db" />}
+                                        <Text className="text-sm font-bold text-gray-700 ml-2">External Sales</Text>
+                                    </TouchableOpacity>
+                                </View>
+
+                                {/* 6. Company toggle */}
+                                <View className="flex-row justify-between items-center mb-4">
+                                    <Text className="text-sm font-bold text-gray-700">Company</Text>
+                                    <Switch
+                                        value={formData.f_company}
+                                        onValueChange={(val) => updateField('f_company', val)}
+                                        trackColor={{ false: '#d1d5db', true: '#3b82f6' }}
+                                        thumbColor={Platform.OS === 'android' ? '#ffffff' : undefined}
+                                    />
+                                </View>
+
+                                {/* If Company: Nama PIC, NIB, NPWP */}
+                                {formData.f_company && (
+                                    <>
+                                        <View className="mb-4">
+                                            <Text className="text-sm font-bold text-gray-700 mb-2">Nama PIC</Text>
+                                            <TextInput
+                                                className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
+                                                value={formData.nama_lengkap}
+                                                onChangeText={(t) => updateField('nama_lengkap', t)}
+                                                placeholder="Enter Nama PIC"
+                                            />
+                                        </View>
+                                        <View className="mb-4">
+                                            <Text className="text-sm font-bold text-gray-700 mb-2">NIB</Text>
+                                            <TextInput
+                                                className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
+                                                value={formData.nib}
+                                                onChangeText={(t) => updateField('nib', t.replace(/[^0-9]/g, ''))}
+                                                placeholder="Enter NIB"
+                                                keyboardType="number-pad"
+                                            />
+                                        </View>
+                                        <View className="mb-4">
+                                            <Text className="text-sm font-bold text-gray-700 mb-2">NPWP</Text>
+                                            <TextInput
+                                                className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
+                                                value={formData.npwp}
+                                                onChangeText={(t) => updateField('npwp', t)}
+                                                placeholder="Enter NPWP"
+                                            />
+                                        </View>
+                                    </>
+                                )}
+
+                                {/* 7. NIK PIC */}
+                                <View className="mb-4">
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">NIK PIC</Text>
+                                    <TextInput
+                                        className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
+                                        value={formData.nik}
+                                        onChangeText={(t) => updateField('nik', t.replace(/[^0-9]/g, ''))}
+                                        placeholder="Enter NIK PIC"
+                                        keyboardType="number-pad"
+                                        maxLength={16}
+                                    />
+                                </View>
+
+                                {/* 8. Mobile */}
+                                <View className="mb-4">
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Mobile <Text className="text-red-500">*</Text></Text>
+                                    <TextInput
+                                        className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
+                                        value={formData.customers_mobile}
+                                        onChangeText={(t) => updateField('customers_mobile', t.replace(/[^0-9]/g, ''))}
+                                        placeholder="Enter mobile"
+                                        keyboardType="phone-pad"
+                                    />
+                                </View>
+
+                                {/* 9. Email */}
+                                <View className="mb-4">
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Email</Text>
+                                    <TextInput
+                                        className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
+                                        value={formData.customers_email}
+                                        onChangeText={(t) => updateField('customers_email', t)}
+                                        placeholder="Enter email"
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
+                                    />
+                                </View>
+
+                                {/* 10. Fax */}
+                                <View className="mb-4">
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Fax</Text>
+                                    <TextInput
+                                        className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
+                                        value={formData.customers_fax}
+                                        onChangeText={(t) => updateField('customers_fax', t.replace(/[^0-9]/g, ''))}
+                                        placeholder="Enter fax"
+                                        keyboardType="phone-pad"
+                                    />
+                                </View>
+
+                                {/* 11. Phone */}
+                                <View className="mb-4">
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Phone</Text>
+                                    <TextInput
+                                        className="h-12 bg-gray-50 px-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900"
+                                        value={formData.customers_phone}
+                                        onChangeText={(t) => updateField('customers_phone', t.replace(/[^0-9]/g, ''))}
+                                        placeholder="Enter phone number"
+                                        keyboardType="phone-pad"
+                                    />
+                                </View>
+
+                                {/* 12. Alamat PIC */}
+                                <View className="mb-4">
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Alamat PIC</Text>
+                                    <TextInput
+                                        className="bg-gray-50 p-4 rounded-xl border border-gray-200 focus:border-[#9e0b0f] text-gray-900 min-h-[96px]"
+                                        value={formData.alamat}
+                                        onChangeText={(t) => updateField('alamat', t)}
+                                        placeholder="Enter Alamat PIC"
+                                        multiline={true}
+                                        numberOfLines={4}
+                                        textAlignVertical="top"
+                                    />
+                                </View>
+
+                                {/* 13. Provinsi dropdown */}
+                                <View className="mb-4">
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Provinsi <Text className="text-red-500">*</Text></Text>
+                                    <View className="border border-gray-200 rounded-xl bg-gray-50 overflow-hidden">
+                                        <Dropdown
+                                            style={{ height: 48, paddingHorizontal: 16 }}
+                                            data={provinces.map(d => ({ label: d.nama, value: d.id }))}
+                                            labelField="label"
+                                            valueField="value"
+                                            placeholder="Pilih Provinsi"
+                                            value={formData.provinsi}
+                                            onChange={(item) => handleProvinceChange(item.value)}
+                                            search
+                                            searchPlaceholder="Cari provinsi..."
+                                        />
+                                    </View>
+                                </View>
+
+                                {/* 14. Kabupaten/Kota dropdown */}
+                                <View className="mb-4">
+                                    <Text className="text-sm font-bold text-gray-700 mb-2">Kabupaten/Kota <Text className="text-red-500">*</Text></Text>
+                                    <View className="border border-gray-200 rounded-xl bg-gray-50 overflow-hidden">
+                                        <Dropdown
+                                            style={{ height: 48, paddingHorizontal: 16 }}
+                                            data={regencies.map(p => ({ label: p.nama_kabupaten, value: p.id }))}
+                                            labelField="label"
+                                            valueField="value"
+                                            placeholder="Pilih Kabupaten/Kota"
+                                            value={formData.kabupaten}
+                                            onChange={(item) => updateField('kabupaten', item.value)}
+                                            search
+                                            searchPlaceholder="Cari kabupaten..."
+                                        />
+                                    </View>
+                                </View>
                             </View>
 
                             {/* SECTION: CONTACT PERSONS */}
                             <View className="border-t border-gray-100 bg-white">
                                 <View className="flex-row justify-between items-center mb-4 px-5 pt-5">
                                     <Text className="text-sm font-bold text-gray-700">Daftar Kontak</Text>
-                                    <TouchableOpacity 
+                                    <TouchableOpacity
                                         onPress={handleOpenAddContact}
                                         className="flex-row items-center px-3 py-1.5 rounded-lg"
                                         style={{ backgroundColor: `${theme.colors.primary}15` }}
@@ -383,8 +383,8 @@ export function CustomerFormScreen() {
                                     </TouchableOpacity>
                                 </View>
 
-                                <CustomerTableContact 
-                                    contacts={formData.contacts} 
+                                <CustomerTableContact
+                                    contacts={formData.contacts}
                                     onEdit={handleOpenEditContact}
                                     onDelete={handleDeleteContact}
                                 />
@@ -429,7 +429,7 @@ export function CustomerFormScreen() {
                 onClose={() => setToastVisible(false)}
             />
 
-            <CustomerModalContact 
+            <CustomerModalContact
                 visible={contactModalVisible}
                 onDismiss={() => setContactModalVisible(false)}
                 onSave={handleSaveContact}
