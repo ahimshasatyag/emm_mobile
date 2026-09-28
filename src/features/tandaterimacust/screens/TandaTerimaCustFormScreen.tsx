@@ -99,9 +99,11 @@ export const TandaTerimaCustFormScreen = () => {
                 }
             >
                 {(loading || isRefreshing) ? (
-                    <TandaTerimaCustFormSkeleton />
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                        <TandaTerimaCustFormSkeleton />
+                    </Animated.View>
                 ) : (
-                    <Animated.View entering={FadeIn.duration(600)} exiting={FadeOut}>
+                    <Animated.View key="content" entering={FadeIn.duration(600)} exiting={FadeOut}>
                         <View className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
 
                             {/* Customer */}

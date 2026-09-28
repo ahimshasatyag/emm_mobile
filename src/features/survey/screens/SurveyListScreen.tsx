@@ -109,10 +109,15 @@ export function SurveyListScreen() {
             </Animated.View>
 
             <View className="flex-1">
-                <Animated.View entering={FadeInDown} className="flex-1">
-                    <FlatList
-                        ref={flatListRef}
-                        data={(isLoading || isInitializing || isRefreshing) ? [] : filteredSurveys.slice(0, visibleCount)}
+                {(isLoading || isInitializing || isRefreshing) && filteredSurveys.length === 0 ? (
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)} className="flex-1 mt-2">
+                        <SurveyListSkeleton />
+                    </Animated.View>
+                ) : (
+                    <Animated.View key="content" entering={FadeInDown} className="flex-1">
+                        <FlatList
+                            ref={flatListRef}
+                            data={filteredSurveys.slice(0, visibleCount)}
                         keyExtractor={(item) => item.id_survey}
                         renderItem={({ item }) => (
                             <SurveyCard
@@ -151,13 +156,6 @@ export function SurveyListScreen() {
                                     />
                                 );
                             }
-                            if (isLoading || isInitializing || isRefreshing) {
-                                return (
-                                    <View style={{ marginHorizontal: -16 }}>
-                                        <SurveyListSkeleton />
-                                    </View>
-                                );
-                            }
                             return (
                                 <EmptyState
                                     title="Data Survey Kosong"
@@ -168,6 +166,7 @@ export function SurveyListScreen() {
                         }}
                     />
                 </Animated.View>
+                )}
             </View>
         </View>
     );

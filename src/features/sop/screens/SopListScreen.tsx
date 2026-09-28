@@ -52,9 +52,11 @@ export const SopListScreen = () => {
                 }
             >
                 {(loading || isRefreshing) ? (
-                    <SopListSkeleton />
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                        <SopListSkeleton />
+                    </Animated.View>
                 ) : (
-                    <Animated.View entering={FadeIn} exiting={FadeOut} className="flex-1">
+                    <Animated.View key="content" entering={FadeIn.duration(400)} className="flex-1">
                         {!loading && sops.length > 0 && (
                             <View className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 mb-4 flex-row justify-between items-center">
                                 <Text className="text-gray-600 font-medium">Total Dokumen</Text>

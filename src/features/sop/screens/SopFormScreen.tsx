@@ -85,9 +85,11 @@ export const SopFormScreen = () => {
                 }
             >
                 {(loading || isRefreshing) ? (
-                    <SopFormSkeleton />
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                        <SopFormSkeleton />
+                    </Animated.View>
                 ) : (
-                    <Animated.View entering={FadeIn.duration(600)}>
+                    <Animated.View key="content" entering={FadeIn.duration(400)}>
                         <View className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
                             {/* Divisi */}
                             <View className="mb-4">

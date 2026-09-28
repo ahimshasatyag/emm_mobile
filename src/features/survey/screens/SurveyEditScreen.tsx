@@ -282,16 +282,7 @@ export function SurveyEditScreen() {
         setFormData(prev => ({ ...prev, items: prev.items.filter((_, i) => i !== index) }));
     };
 
-    if (isFetching || !currentSurvey) {
-        return (
-            <View className="flex-1 bg-gray-50">
-                <HeaderNavigator title="MEMUAT DATA..." showBackButton onBackPress={() => navigation.goBack()} />
-                <SurveyEditSkeleton />
-            </View>
-        );
-    }
-
-    const survey = currentSurvey.data_header || currentSurvey;
+    const survey = currentSurvey?.data_header || currentSurvey;
     const detail_pelaksana = currentSurvey.data_detail_pelaksana || [];
     const detail_biaya = currentSurvey.data_detail_biaya || [];
     // Prepare dropdown options
@@ -313,7 +304,7 @@ export function SurveyEditScreen() {
 
     return (
         <KeyboardAvoidingView className="flex-1 bg-gray-50" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <HeaderNavigator title={isEditing ? "EDIT SURVEY" : "DETAIL SURVEY"} showBackButton onBackPress={() => navigation.goBack()} />
+            <HeaderNavigator title={isFetching || !currentSurvey ? "MEMUAT DATA..." : (isEditing ? "EDIT SURVEY" : "DETAIL SURVEY")} showBackButton onBackPress={() => navigation.goBack()} />
 
             <ScrollView
                 className="flex-1"
@@ -321,13 +312,18 @@ export function SurveyEditScreen() {
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={isFetching} onRefresh={fetchData} colors={[theme.colors.primary]} />}
             >
-                <Animated.View key="content" entering={FadeIn.duration(400)} className="space-y-4">
+                {(isFetching || !currentSurvey) ? (
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)} className="flex-1">
+                        <SurveyEditSkeleton />
+                    </Animated.View>
+                ) : (
+                    <Animated.View key="content" entering={FadeIn.duration(400)} className="space-y-4">
 
                     {/* SECTION: ACTION BUTTONS (TOP) */}
                     {!isEditing && (
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4" contentContainerStyle={{ flexDirection: 'row', alignItems: 'center' }}>
 
-                            {survey.survey_status?.toLowerCase() === 'draft' && (
+                            {survey?.survey_status?.toLowerCase() === 'draft' && (
                                 <>
                                     <TouchableOpacity className="bg-yellow-500 px-3 py-2 rounded flex-row items-center mr-2" onPress={handleEditStart}>
                                         <Edit size={14} color="white" />
@@ -351,10 +347,10 @@ export function SurveyEditScreen() {
                         <View className="flex-row justify-between items-center mb-4 border-b border-gray-100 pb-2">
                             <View>
                                 <Text className="text-xs font-bold text-gray-500 uppercase">Informasi Utama</Text>
-                                <Text className="text-[16px] text-gray-800 font-bold mt-1">{survey.code_survey}</Text>
+                                <Text className="text-[16px] text-gray-800 font-bold mt-1">{survey?.code_survey}</Text>
                             </View>
                             <View className="bg-gray-100 px-2 py-1 rounded">
-                                <Text className="text-xs font-bold text-gray-700">{survey.survey_status}</Text>
+                                <Text className="text-xs font-bold text-gray-700">{survey?.survey_status}</Text>
                             </View>
                         </View>
 
@@ -367,7 +363,7 @@ export function SurveyEditScreen() {
                                 onChange={(v: string) => updateField('id_karyawan', v)}
                             />
                         ) : (
-                            <TextInputStyled label="Yang Mengajukan" value={survey.nm_karyawan} editable={false} />
+                            <TextInputStyled label="Yang Mengajukan" value={survey?.nm_karyawan} editable={false} />
                         )}
 
                         <TextInputStyled label="Divisi" value={divisi} editable={false} />
@@ -383,7 +379,7 @@ export function SurveyEditScreen() {
                                 onChange={(v: string) => updateField('id_customers_contact', v)}
                             />
                         ) : (
-                            <TextInputStyled label="Contact Person" value={survey.nm_customers_contact} editable={false} />
+                            <TextInputStyled label="Contact Person" value={survey?.nm_customers_contact} editable={false} />
                         )}
 
                         <View className="mb-4">
@@ -407,8 +403,8 @@ export function SurveyEditScreen() {
                                     </TouchableOpacity>
                                 ) : (
                                     <View className="flex-row items-center opacity-70">
-                                        <View className={`w-5 h-5 rounded border mr-2 items-center justify-center ${survey.pelaksana_afs == 1 || survey.pelaksana_afs == true ? 'bg-blue-500 border-blue-500' : 'border-gray-300 bg-white'}`}>
-                                            {(survey.pelaksana_afs == 1 || survey.pelaksana_afs == true) && <Text className="text-white text-xs">✓</Text>}
+                                        <View className={`w-5 h-5 rounded border mr-2 items-center justify-center ${survey?.pelaksana_afs == 1 || survey?.pelaksana_afs == true ? 'bg-blue-500 border-blue-500' : 'border-gray-300 bg-white'}`}>
+                                            {(survey?.pelaksana_afs == 1 || survey?.pelaksana_afs == true) && <Text className="text-white text-xs">✓</Text>}
                                         </View>
                                         <Text className="text-sm text-gray-700">AFS</Text>
                                     </View>
@@ -432,7 +428,7 @@ export function SurveyEditScreen() {
                                 <View className="bg-gray-100 border border-gray-200 rounded-lg h-[42px] flex-row items-center px-3">
                                     <Calendar color="#9CA3AF" size={18} />
                                     <Text className="ml-2 text-sm text-gray-800 flex-1">
-                                        {survey.date_pelaksana ? formatDate(new Date(survey.date_pelaksana)) : '-'}
+                                        {survey?.date_pelaksana ? formatDate(new Date(survey.date_pelaksana)) : '-'}
                                     </Text>
                                 </View>
                             </View>
@@ -468,7 +464,7 @@ export function SurveyEditScreen() {
                                 <View className="bg-gray-100 border border-gray-200 rounded-lg h-[42px] flex-row items-center px-3">
                                     <Calendar color="#9CA3AF" size={18} />
                                     <Text className="ml-2 text-sm text-gray-800 flex-1">
-                                        {survey.date_request ? formatDate(new Date(survey.date_request)) : '-'}
+                                        {survey?.date_request ? formatDate(new Date(survey.date_request)) : '-'}
                                     </Text>
                                 </View>
                             </View>
@@ -519,7 +515,7 @@ export function SurveyEditScreen() {
                                     style={{ textAlignVertical: 'top' }}
                                 />
                             ) : (
-                                <Text className="text-sm text-gray-800">{survey.note_survey || '-'}</Text>
+                                <Text className="text-sm text-gray-800">{survey?.note_survey || '-'}</Text>
                             )}
                         </View>
                     {/* SECTION: PRODUK */}
@@ -723,8 +719,8 @@ export function SurveyEditScreen() {
                             </Button>
                         </Animated.View>
                     )}
-
                 </Animated.View>
+                )}
             </ScrollView>
 
             <ProductSurveyModal

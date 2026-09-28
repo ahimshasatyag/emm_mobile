@@ -106,9 +106,11 @@ export const TandaTerimaCustListScreen = () => {
                 }
             >
                 {(loading || isRefreshing) ? (
-                    <TandaTerimaCustListSkeleton />
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                        <TandaTerimaCustListSkeleton />
+                    </Animated.View>
                 ) : (
-                    <Animated.View entering={FadeIn} exiting={FadeOut} className="flex-1">
+                    <Animated.View key="content" entering={FadeIn.duration(600)} exiting={FadeOut} className="flex-1">
                         {filteredList.length === 0 ? (
                             <View className="items-center justify-center py-10">
                                 <Text className="text-gray-500">Belum ada data Tanda Terima</Text>

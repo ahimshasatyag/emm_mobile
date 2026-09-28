@@ -45,9 +45,11 @@ export const SopDivisionScreen = () => {
                 }
             >
                 {(loading || isRefreshing) ? (
-                    <SopDivisionSkeleton />
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                        <SopDivisionSkeleton />
+                    </Animated.View>
                 ) : (
-                    <Animated.View entering={FadeIn} exiting={FadeOut} className="flex-1 pt-2">
+                    <Animated.View key="content" entering={FadeIn.duration(400)} className="flex-1 pt-2">
                         <View className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4 flex-row items-center justify-between">
                             <Text className="text-gray-600 font-medium">Total Keseluruhan SOP</Text>
                             <View className="bg-blue-50 px-3 py-1 rounded-full">
