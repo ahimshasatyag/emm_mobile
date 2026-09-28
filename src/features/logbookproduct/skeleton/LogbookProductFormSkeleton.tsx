@@ -1,44 +1,67 @@
-import React from 'react';
-import { View } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import React, { useEffect, useRef } from 'react';
+import { View, Animated } from 'react-native';
+import { Card, useTheme } from 'react-native-paper';
 
 export function LogbookProductFormSkeleton() {
+    const theme = useTheme();
+    const colors = theme.colors as any;
+    const fadeAnim = useRef(new Animated.Value(0.4)).current;
+
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 800,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(fadeAnim, {
+                    toValue: 0.4,
+                    duration: 800,
+                    useNativeDriver: true,
+                }),
+            ])
+        ).start();
+    }, [fadeAnim]);
+
     return (
-        <Animated.View
-            entering={FadeIn.duration(400)}
-            exiting={FadeOut.duration(400)}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4"
-        >
-            <View className="space-y-4">
-                <View>
-                    <View className="h-4 w-1/4 bg-gray-200 rounded animate-pulse mb-2" />
-                    <View className="h-12 w-full bg-gray-100 rounded-lg animate-pulse" />
-                </View>
-                <View>
-                    <View className="h-4 w-1/3 bg-gray-200 rounded animate-pulse mb-2" />
-                    <View className="h-12 w-full bg-gray-100 rounded-lg animate-pulse" />
-                </View>
-                <View>
-                    <View className="h-4 w-1/4 bg-gray-200 rounded animate-pulse mb-2" />
-                    <View className="h-12 w-full bg-gray-100 rounded-lg animate-pulse" />
-                </View>
+        <Animated.View style={{ opacity: fadeAnim }}>
+            <Card
+                className="rounded-xl shadow-sm border border-gray-200 mb-4"
+                style={{ backgroundColor: colors.surface }}
+            >
+                <Card.Content className="p-4">
+                    <View className="space-y-4">
+                        <View>
+                            <View className="h-4 w-1/4 bg-gray-200 rounded mb-2" />
+                            <View className="h-12 w-full bg-gray-100 rounded-lg" />
+                        </View>
+                        <View>
+                            <View className="h-4 w-1/3 bg-gray-200 rounded mb-2" />
+                            <View className="h-12 w-full bg-gray-100 rounded-lg" />
+                        </View>
+                        <View>
+                            <View className="h-4 w-1/4 bg-gray-200 rounded mb-2" />
+                            <View className="h-12 w-full bg-gray-100 rounded-lg" />
+                        </View>
 
-                <View className="h-px bg-gray-200 my-2" />
+                        <View className="h-px bg-gray-200 my-2" />
 
-                <View>
-                    <View className="h-4 w-1/4 bg-gray-200 rounded animate-pulse mb-2" />
-                    <View className="h-24 w-full bg-gray-100 rounded-lg animate-pulse" />
-                </View>
-                <View>
-                    <View className="h-4 w-1/4 bg-gray-200 rounded animate-pulse mb-2" />
-                    <View className="h-24 w-full bg-gray-100 rounded-lg animate-pulse" />
-                </View>
-                <View>
-                    <View className="h-4 w-1/4 bg-gray-200 rounded animate-pulse mb-2" />
-                    <View className="h-24 w-full bg-gray-100 rounded-lg animate-pulse" />
-                </View>
-            </View>
-
+                        <View>
+                            <View className="h-4 w-1/4 bg-gray-200 rounded mb-2" />
+                            <View className="h-24 w-full bg-gray-100 rounded-lg" />
+                        </View>
+                        <View>
+                            <View className="h-4 w-1/4 bg-gray-200 rounded mb-2" />
+                            <View className="h-24 w-full bg-gray-100 rounded-lg" />
+                        </View>
+                        <View>
+                            <View className="h-4 w-1/4 bg-gray-200 rounded mb-2" />
+                            <View className="h-24 w-full bg-gray-100 rounded-lg" />
+                        </View>
+                    </View>
+                </Card.Content>
+            </Card>
         </Animated.View>
     );
 }

@@ -3,7 +3,7 @@ import { View, Text, TextInput, Animated as RNAnimated, RefreshControl, Activity
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Search } from 'lucide-react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { RootState, AppDispatch } from '../../../stores';
 import { fetchLogbookCustomers } from '../stores/logbookcustomersSlice';
@@ -130,60 +130,58 @@ export function LogbookCustomersListScreen() {
             <View className="flex-1">
                 {error && <ErrorState onRetry={loadData} />}
 
-                <Animated.FlatList
-                    ref={flatListRef}
-                    data={(isLoading || isInitializing) ? [] : displayData}
-                    keyExtractor={item => item.id_log_book}
-                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
-                    showsVerticalScrollIndicator={false}
-                    refreshControl={
-                        <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
-                    }
-                    onEndReached={handleLoadMore}
-                    onEndReachedThreshold={0.5}
-                    ListFooterComponent={() => {
-                        if (visibleCount < filteredData.length && !isLoading && !isInitializing) {
-                            return (
-                                <View style={{ paddingVertical: 20, alignItems: 'center' }}>
-                                    <ActivityIndicator size="small" color={theme.colors.primary} />
-                                </View>
-                            );
-                        }
-                        return null;
-                    }}
-                    ListEmptyComponent={() => {
-                        if (error) {
-                            return (
-                                <ErrorState
-                                    title="Gagal Memuat Logbook"
-                                    message={error}
-                                    onRetry={loadData}
-                                    fullScreen={true}
-                                />
-                            );
-                        }
-                        if (isLoading || isInitializing) {
-                            return (
-                                <View style={{ marginHorizontal: -16 }}>
-                                    <LogbookCustomersListSkeleton />
-                                </View>
-                            );
-                        }
-                        return (
-                            <EmptyState
-                                title="Data Kosong"
-                                message={searchQuery ? "Data tidak ditemukan" : "Belum ada logbook customer."}
-                                fullScreen={true}
-                            />
-                        );
-                    }}
-                    renderItem={({ item, index }) => {
-                        if (isInitializing || isLoading) return null;
-                        return (
-                            <LogbookCustomersCard logbook={item} index={index} />
-                        );
-                    }}
-                />
+                {isLoading || isInitializing ? (
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                        <LogbookCustomersListSkeleton />
+                    </Animated.View>
+                ) : (
+                    <Animated.View key="content" entering={FadeIn.duration(600)} className="flex-1">
+                        <Animated.FlatList
+                            ref={flatListRef}
+                            data={displayData}
+                            keyExtractor={item => item.id_log_book}
+                            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
+                            showsVerticalScrollIndicator={false}
+                            refreshControl={
+                                <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
+                            }
+                            onEndReached={handleLoadMore}
+                            onEndReachedThreshold={0.5}
+                            ListFooterComponent={() => {
+                                if (visibleCount < filteredData.length && !isLoading && !isInitializing) {
+                                    return (
+                                        <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                                        </View>
+                                    );
+                                }
+                                return null;
+                            }}
+                            ListEmptyComponent={() => {
+                                if (error) {
+                                    return (
+                                        <ErrorState
+                                            title="Gagal Memuat Logbook"
+                                            message={error}
+                                            onRetry={loadData}
+                                            fullScreen={true}
+                                        />
+                                    );
+                                }
+                                return (
+                                    <EmptyState
+                                        title="Data Kosong"
+                                        message={searchQuery ? "Data tidak ditemukan" : "Belum ada logbook customer."}
+                                        fullScreen={true}
+                                    />
+                                );
+                            }}
+                            renderItem={({ item, index }) => (
+                                <LogbookCustomersCard logbook={item} index={index} />
+                            )}
+                        />
+                    </Animated.View>
+                )}
             </View>
 
             {(!isLoading && !isInitializing) && !error && (

@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TextInput, RefreshControl } from 'react-native'
 import { useNavigation } from '@react-navigation/native';
 import { Save } from 'lucide-react-native';
 import { Dropdown } from "react-native-element-dropdown";
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { Button } from '../../../components/ui/button';
 import { theme } from '../../../theme/theme';
@@ -108,9 +108,11 @@ export function LogbookCustomersFormScreen() {
                     }
                 >
                     {(isLoading || isRefreshing) ? (
-                        <LogbookCustomersFormSkeleton />
+                        <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                            <LogbookCustomersFormSkeleton />
+                        </Animated.View>
                     ) : (
-                        <View className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
+                        <Animated.View key="content" entering={FadeIn.duration(600)} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
 
                             <View className="mb-5">
                                 <Text className="text-xs font-bold text-gray-700 mb-2">Customer <Text className="text-red-500">*</Text></Text>

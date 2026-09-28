@@ -3,7 +3,7 @@ import { View, TextInput, RefreshControl, ActivityIndicator } from 'react-native
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Plus, Search } from 'lucide-react-native';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { fetchLogbookProducts } from '../stores/logbookproductSlice';
 import { RootState, AppDispatch } from '../../../stores';
@@ -125,55 +125,58 @@ export function LogbookProductListScreen() {
             </Animated.View>
 
             <View className="flex-1">
-                <Animated.FlatList
-                    ref={flatListRef}
-                    data={(isLoading || isInitializing) ? [] : filteredList.slice(0, visibleCount)}
-                    keyExtractor={(item) => item.id_log_book}
-                    renderItem={({ item, index }) => <LogbookProductCard logbook={item} index={index} />}
-                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
-                    showsVerticalScrollIndicator={false}
-                    onEndReached={handleLoadMore}
-                    onEndReachedThreshold={0.5}
-                    refreshControl={
-                        <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
-                    }
-                    ListFooterComponent={() => {
-                        if (isLoadMore) {
-                            return (
-                                <View className="py-4 items-center justify-center">
-                                    <ActivityIndicator size="small" color={theme.colors.primary} />
-                                </View>
-                            );
-                        }
-                        return null;
-                    }}
-                    ListEmptyComponent={() => {
-                        if (error) {
-                            return (
-                                <ErrorState
-                                    title="Gagal Memuat Logbook"
-                                    message={error}
-                                    onRetry={loadData}
-                                    fullScreen={true}
-                                />
-                            );
-                        }
-                        if (isLoading || isInitializing) {
-                            return (
-                                <View style={{ marginHorizontal: -16 }}>
-                                    <LogbookProductListSkeleton />
-                                </View>
-                            );
-                        }
-                        return (
-                            <EmptyState
-                                title="Data Logbook Kosong"
-                                message="Tidak ada data logbook product yang ditemukan."
-                                fullScreen={true}
-                            />
-                        );
-                    }}
-                />
+                {error && <ErrorState onRetry={loadData} />}
+
+                {isLoading || isInitializing ? (
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                        <LogbookProductListSkeleton />
+                    </Animated.View>
+                ) : (
+                    <Animated.View key="content" entering={FadeIn.duration(600)} className="flex-1">
+                        <Animated.FlatList
+                            ref={flatListRef}
+                            data={filteredList.slice(0, visibleCount)}
+                            keyExtractor={(item) => item.id_log_book}
+                            renderItem={({ item, index }) => <LogbookProductCard logbook={item} index={index} />}
+                            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
+                            showsVerticalScrollIndicator={false}
+                            onEndReached={handleLoadMore}
+                            onEndReachedThreshold={0.5}
+                            refreshControl={
+                                <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
+                            }
+                            ListFooterComponent={() => {
+                                if (isLoadMore) {
+                                    return (
+                                        <View className="py-4 items-center justify-center">
+                                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                                        </View>
+                                    );
+                                }
+                                return null;
+                            }}
+                            ListEmptyComponent={() => {
+                                if (error) {
+                                    return (
+                                        <ErrorState
+                                            title="Gagal Memuat Logbook"
+                                            message={error}
+                                            onRetry={loadData}
+                                            fullScreen={true}
+                                        />
+                                    );
+                                }
+                                return (
+                                    <EmptyState
+                                        title="Data Logbook Kosong"
+                                        message="Tidak ada data logbook product yang ditemukan."
+                                        fullScreen={true}
+                                    />
+                                );
+                            }}
+                        />
+                    </Animated.View>
+                )}
             </View>
 
             {(!isLoading && !isInitializing) && !error && (
