@@ -83,7 +83,7 @@ export function UsersLogListScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-            <HeaderNavigator isLoading={isLoading} />
+            <HeaderNavigator isLoading={isLoading} title='USERS LOG' />
 
             <View className="px-4 pt-3 pb-1">
                 <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm mb-2">

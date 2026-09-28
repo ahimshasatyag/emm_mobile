@@ -46,7 +46,7 @@ export function InventoryTypeListScreen() {
             setToastType(params.toastType || 'success');
             setToastTitle(params.toastType === 'error' ? 'Gagal' : 'Sukses');
             setToastVisible(true);
-            
+
             navigation.setParams({ toastMessage: undefined, toastType: undefined });
         }
     }, [route.params]);
@@ -121,7 +121,7 @@ export function InventoryTypeListScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-            <HeaderNavigator isLoading={isLoading} />
+            <HeaderNavigator isLoading={isLoading} title='INVENTORY TYPE' />
 
             <Animated.View entering={FadeInUp.duration(400)} className="px-6 pt-6 pb-2">
                 <View className="bg-white flex-row items-center px-4 h-12 rounded-xl border border-gray-200 mb-2 shadow-sm">
