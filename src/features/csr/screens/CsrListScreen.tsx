@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, FlatList, RefreshControl, TouchableOpacity, TextInput, Text, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Search, Plus, Calendar, CheckSquare, Square } from 'lucide-react-native';
-import Animated, { FadeInDown, FadeOut, Layout } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOut, Layout, FadeIn } from 'react-native-reanimated';
 import { theme } from '../../../theme/theme';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -234,56 +234,58 @@ export function CsrListScreen() {
                 </View>
             </View>
 
-            <FlatList
-                className="flex-1"
-                data={isInitializing ? [] : displayedRequests}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={{ padding: 24, paddingTop: 8, paddingBottom: 100, flexGrow: 1 }}
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-                onEndReached={handleLoadMore}
-                onEndReachedThreshold={0.5}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={isLoading && !isInitializing}
-                        onRefresh={handleRefresh}
-                        colors={[theme.colors.primary]}
+            {isInitializing ? (
+                <Animated.View key="skeleton" exiting={FadeOut.duration(300)} className="px-6 flex-1 pt-2">
+                    <CsrListSkeleton />
+                </Animated.View>
+            ) : (
+                <Animated.View key="content" entering={FadeIn.duration(600)} className="flex-1">
+                    <FlatList
+                        className="flex-1"
+                        data={displayedRequests}
+                        keyExtractor={(item) => item.id}
+                        contentContainerStyle={{ padding: 24, paddingTop: 8, paddingBottom: 100, flexGrow: 1 }}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                        onEndReached={handleLoadMore}
+                        onEndReachedThreshold={0.5}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={isLoading && !isInitializing}
+                                onRefresh={handleRefresh}
+                                colors={[theme.colors.primary]}
+                            />
+                        }
+                        ListEmptyComponent={() => (
+                            <EmptyState 
+                                title="Data Kosong"
+                                message="Tidak ada data CSR yang ditemukan."
+                                fullScreen={false}
+                            />
+                        )}
+                        renderItem={({ item: request, index }) => (
+                            <Animated.View 
+                                entering={FadeInDown.delay((index % PAGE_SIZE) * 100).springify()}
+                                layout={Layout.springify()}
+                            >
+                                <TouchableOpacity 
+                                    activeOpacity={0.8}
+                                    onPress={() => navigation.navigate('CsrEditScreen', { id: request.id })}
+                                >
+                                    <CsrCard request={request} />
+                                </TouchableOpacity>
+                            </Animated.View>
+                        )}
+                        ListFooterComponent={() => (
+                            (!isInitializing && displayedRequests.length < filteredRequests.length) ? (
+                                <View className="py-4 items-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            ) : null
+                        )}
                     />
-                }
-                ListEmptyComponent={() => (
-                    isInitializing ? (
-                        <Animated.View exiting={FadeOut.duration(300)}>
-                            <CsrListSkeleton />
-                        </Animated.View>
-                    ) : (
-                        <EmptyState 
-                            title="Data Kosong"
-                            message="Tidak ada data CSR yang ditemukan."
-                            fullScreen={false}
-                        />
-                    )
-                )}
-                renderItem={({ item: request, index }) => (
-                    <Animated.View 
-                        entering={FadeInDown.delay((index % PAGE_SIZE) * 100).springify()}
-                        layout={Layout.springify()}
-                    >
-                        <TouchableOpacity 
-                            activeOpacity={0.8}
-                            onPress={() => navigation.navigate('CsrEditScreen', { id: request.id })}
-                        >
-                            <CsrCard request={request} />
-                        </TouchableOpacity>
-                    </Animated.View>
-                )}
-                ListFooterComponent={() => (
-                    (!isInitializing && displayedRequests.length < filteredRequests.length) ? (
-                        <View className="py-4 items-center">
-                            <ActivityIndicator size="small" color={theme.colors.primary} />
-                        </View>
-                    ) : null
-                )}
-            />
+                </Animated.View>
+            )}
 
             <ButtonAdd onPress={() => navigation.navigate('CsrFormScreen')} />
         </View>

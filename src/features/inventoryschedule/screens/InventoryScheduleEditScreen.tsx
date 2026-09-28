@@ -102,14 +102,7 @@ export function InventoryScheduleEditScreen() {
         });
     };
 
-    if (isLoadingData) {
-        return (
-            <View className="flex-1 bg-gray-50">
-                <HeaderNavigator title="MEMUAT DATA..." showBackButton={true} />
-                <InventoryScheduleEditSkeleton />
-            </View>
-        );
-    }
+
 
     const assetOptions = assets.map(a => ({ label: `${a.id}. ${a.name}`, value: a.id }));
 
@@ -134,20 +127,20 @@ export function InventoryScheduleEditScreen() {
                 isLoading={isSaving}
             />
 
-            <HeaderNavigator title={isRefreshing ? "MEMUAT DATA..." : (isEditMode ? "EDIT ASSET SCHEDULE" : "DETAIL ASSET SCHEDULE")} showBackButton={true} />
+            <HeaderNavigator title={(isRefreshing || isLoadingData) ? "MEMUAT DATA..." : (isEditMode ? "EDIT ASSET SCHEDULE" : "DETAIL ASSET SCHEDULE")} showBackButton={true} />
 
-            <ScrollView
-                className="flex-1 px-4 pt-4"
-                showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
-                }
-            >
-                {isRefreshing ? (
-                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)} className="-mx-4 -mt-4">
-                        <InventoryScheduleEditSkeleton />
-                    </Animated.View>
-                ) : (
+            {(isRefreshing || isLoadingData) ? (
+                <Animated.View key="skeleton" exiting={FadeOut.duration(300)} className="flex-1">
+                    <InventoryScheduleEditSkeleton />
+                </Animated.View>
+            ) : (
+                <ScrollView
+                    className="flex-1 px-4 pt-4"
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
+                    }
+                >
                     <Animated.View key="content" entering={FadeIn.duration(600)} className="flex-1">
                         <View className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
 
@@ -336,8 +329,8 @@ export function InventoryScheduleEditScreen() {
                             )}
                         </Animated.View>
                     </Animated.View>
-                )}
-            </ScrollView>
+                </ScrollView>
+            )}
         </View>
     );
 }

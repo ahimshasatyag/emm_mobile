@@ -3,7 +3,7 @@ import { View, Text, RefreshControl, TextInput, ActivityIndicator, FlatList } fr
 import { Dropdown } from 'react-native-element-dropdown';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, FadeOut, FadeIn } from 'react-native-reanimated';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { LeadsCard } from '../components/LeadsCard';
 import { LeadsSkeleton } from '../skeleton/LeadsSkeleton';
@@ -133,62 +133,61 @@ export function LeadsScreen() {
             </Animated.View>
 
             <View className="flex-1">
-                <Animated.View className="flex-1" entering={FadeInDown}>
-                    <FlatList
-                        data={(isLoadingList || isInitializing) ? [] : (displayItems || []).slice(0, visibleCount)}
-                    keyExtractor={(item) => item.id.toString()}
-                    renderItem={({ item, index }) => (
-                        <LeadsCard
-                            item={item}
-                            index={index}
-                            onPress={() => navigateToDetail(item.id)}
-                        />
-                    )}
-                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
-                    showsVerticalScrollIndicator={false}
-                    onEndReached={handleLoadMore}
-                    onEndReachedThreshold={0.5}
-                    refreshControl={
-                        <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
-                    }
-                    ListFooterComponent={() => {
-                        if (isLoadMore) {
-                            return (
-                                <View className="py-4 items-center justify-center">
-                                    <ActivityIndicator size="small" color={theme.colors.primary} />
-                                </View>
-                            );
-                        }
-                        return null;
-                    }}
-                    ListEmptyComponent={() => {
-                        if (error) {
-                            return (
-                                <ErrorState
-                                    title="Gagal Memuat Leads"
-                                    message={error}
-                                    onRetry={loadList}
-                                    fullScreen={true}
+                {(isLoadingList || isInitializing) ? (
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                        <LeadsSkeleton />
+                    </Animated.View>
+                ) : (
+                    <Animated.View key="content" className="flex-1" entering={FadeIn.duration(600)}>
+                        <FlatList
+                            data={(displayItems || []).slice(0, visibleCount)}
+                            keyExtractor={(item) => item.id.toString()}
+                            renderItem={({ item, index }) => (
+                                <LeadsCard
+                                    item={item}
+                                    index={index}
+                                    onPress={() => navigateToDetail(item.id)}
                                 />
-                            );
-                        }
-                        if (isLoadingList || isInitializing) {
-                            return (
-                                <View style={{ marginHorizontal: -16 }}>
-                                    <LeadsSkeleton />
-                                </View>
-                            );
-                        }
-                        return (
-                            <EmptyState
-                                title="Data Leads Kosong"
-                                message="Tidak ada leads yang ditemukan."
-                                fullScreen={true}
-                            />
-                        );
-                    }}
-                />
-                </Animated.View>
+                            )}
+                            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
+                            showsVerticalScrollIndicator={false}
+                            onEndReached={handleLoadMore}
+                            onEndReachedThreshold={0.5}
+                            refreshControl={
+                                <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
+                            }
+                            ListFooterComponent={() => {
+                                if (isLoadMore) {
+                                    return (
+                                        <View className="py-4 items-center justify-center">
+                                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                                        </View>
+                                    );
+                                }
+                                return null;
+                            }}
+                            ListEmptyComponent={() => {
+                                if (error) {
+                                    return (
+                                        <ErrorState
+                                            title="Gagal Memuat Leads"
+                                            message={error}
+                                            onRetry={loadList}
+                                            fullScreen={true}
+                                        />
+                                    );
+                                }
+                                return (
+                                    <EmptyState
+                                        title="Data Leads Kosong"
+                                        message="Tidak ada leads yang ditemukan."
+                                        fullScreen={true}
+                                    />
+                                );
+                            }}
+                        />
+                    </Animated.View>
+                )}
             </View>
 
             {(!isLoadingList && !isInitializing) && (

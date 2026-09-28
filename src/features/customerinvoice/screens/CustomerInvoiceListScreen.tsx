@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { View, Text, FlatList, RefreshControl, TextInput, ActivityIndicator } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
@@ -108,85 +108,87 @@ export const CustomerInvoiceListScreen = () => {
         <View className="flex-1 bg-gray-50">
             <HeaderNavigator title="CUSTOMER INVOICES" />
 
+            {/* Search and Filter */}
+            <Animated.View entering={FadeInUp.duration(400)} className="mb-4 px-4 pt-4">
+                <View className="flex-row items-center space-x-3">
+                    <View className="flex-1 flex-row items-center bg-white px-4 py-3.5 rounded-xl border border-gray-200 shadow-sm">
+                        <Search size={20} color="#9CA3AF" />
+                        <TextInput
+                            placeholder="Cari Invoice, Pelanggan, atau SO..."
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            className="flex-1 ml-3 text-sm text-gray-800 p-0"
+                            placeholderTextColor="#9CA3AF"
+                        />
+                    </View>
+                    <View className="w-32 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden justify-center">
+                        <Dropdown
+                            style={{ height: 48, paddingHorizontal: 12 }}
+                            placeholderStyle={{ fontSize: 14, color: '#6b7280' }}
+                            selectedTextStyle={{ fontSize: 14, color: '#111827', fontWeight: '500' }}
+                            data={statusOptions}
+                            labelField="label"
+                            valueField="value"
+                            placeholder="Status"
+                            value={statusFilter}
+                            onChange={(item) => {
+                                setStatusFilter(item.value);
+                                flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+                            }}
+                        />
+                    </View>
+                </View>
+            </Animated.View>
 
-            <FlatList
-                ref={flatListRef as any}
-                className="flex-1"
-                data={(loading || isInitializing || isRefreshing) ? [] : (filteredList.slice(0, visibleCount) ?? [])}
-                keyExtractor={(item: any) => item.id_invoice}
-                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, paddingTop: 16 }}
-                showsVerticalScrollIndicator={false}
-                onEndReached={handleLoadMore}
-                onEndReachedThreshold={0.5}
-                ListHeaderComponent={
-                    <Animated.View entering={FadeInUp.duration(400)} className="mb-4">
-                        <View className="flex-row items-center space-x-3">
-                            <View className="flex-1 flex-row items-center bg-white px-4 py-3.5 rounded-xl border border-gray-200 shadow-sm">
-                                <Search size={20} color="#9CA3AF" />
-                                <TextInput
-                                    placeholder="Cari Invoice, Pelanggan, atau SO..."
-                                    value={searchQuery}
-                                    onChangeText={setSearchQuery}
-                                    className="flex-1 ml-3 text-sm text-gray-800 p-0"
-                                    placeholderTextColor="#9CA3AF"
-                                />
-                            </View>
-                            <View className="w-32 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden justify-center">
-                                <Dropdown
-                                    style={{ height: 48, paddingHorizontal: 12 }}
-                                    placeholderStyle={{ fontSize: 14, color: '#6b7280' }}
-                                    selectedTextStyle={{ fontSize: 14, color: '#111827', fontWeight: '500' }}
-                                    data={statusOptions}
-                                    labelField="label"
-                                    valueField="value"
-                                    placeholder="Status"
-                                    value={statusFilter}
-                                    onChange={(item) => {
-                                        setStatusFilter(item.value);
-                                        flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-                                    }}
-                                />
-                            </View>
-                        </View>
+            <View className="flex-1">
+                {(loading || isInitializing || isRefreshing) ? (
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                        <CustomerInvoiceSkeleton />
                     </Animated.View>
-                }
-                refreshControl={
-                    <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={['#2563eb']} />
-                }
-                renderItem={({ item, index }) => (
-                    <CustomerInvoiceCard item={item} index={index} onPress={handleDetail} />
+                ) : (
+                    <Animated.View key="content" entering={FadeIn.duration(600)} className="flex-1">
+                        <FlatList
+                            ref={flatListRef as any}
+                            className="flex-1"
+                            data={filteredList.slice(0, visibleCount) ?? []}
+                            keyExtractor={(item: any) => item.id_invoice}
+                            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, paddingTop: 16 }}
+                            showsVerticalScrollIndicator={false}
+                            onEndReached={handleLoadMore}
+                            onEndReachedThreshold={0.5}
+                            refreshControl={
+                                <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={['#2563eb']} />
+                            }
+                            renderItem={({ item, index }) => (
+                                <CustomerInvoiceCard item={item} index={index} onPress={handleDetail} />
+                            )}
+                            ListEmptyComponent={() => {
+                                if (error) {
+                                    return (
+                                        <ErrorState
+                                            title="Gagal Memuat Invoice"
+                                            message={error}
+                                            onRetry={getList}
+                                            fullScreen={true}
+                                        />
+                                    );
+                                }
+                                return <EmptyState title="Tidak ada data" message="Belum ada Customer Invoice." fullScreen={true} />;
+                            }}
+                            ListFooterComponent={() => {
+                                if (isLoadMore) {
+                                    return (
+                                        <View className="py-4 items-center justify-center">
+                                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                                        </View>
+                                    );
+                                }
+                                return null;
+                            }}
+                        />
+                    </Animated.View>
                 )}
-                ListEmptyComponent={() => {
-                    if (error && !isInitializing) {
-                        return (
-                            <ErrorState
-                                title="Gagal Memuat Invoice"
-                                message={error}
-                                onRetry={getList}
-                                fullScreen={true}
-                            />
-                        );
-                    }
-                    if (loading || isInitializing || isRefreshing) {
-                        return (
-                            <View style={{ marginHorizontal: -16 }}>
-                                <CustomerInvoiceSkeleton />
-                            </View>
-                        );
-                    }
-                    return <EmptyState title="Tidak ada data" message="Belum ada Customer Invoice." fullScreen={true} />;
-                }}
-                ListFooterComponent={() => {
-                    if (isLoadMore) {
-                        return (
-                            <View className="py-4 items-center justify-center">
-                                <ActivityIndicator size="small" color={theme.colors.primary} />
-                            </View>
-                        );
-                    }
-                    return null;
-                }}
-            />
+            </View>
         </View>
     );
 };

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { View, FlatList, RefreshControl, TextInput, DeviceEventEmitter, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { useKasBankIn } from '../hooks/useKasBankIn';
 import { KasBankInCard } from '../components/KasBankInCard';
 import { KasBankInListSkeleton } from '../skeleton/KasBankInListSkeleton';
@@ -147,56 +147,57 @@ export const KasBankInListScreen = () => {
             </Animated.View>
 
             <View className="flex-1">
-                <FlatList
-                    ref={flatListRef}
-                    data={isLoading || isInitializing || isRefreshing ? [] : filteredList.slice(0, visibleCount)}
-                    keyExtractor={(item) => item.id_kb_masuk}
-                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 100, paddingHorizontal: 16 }}
-                    showsVerticalScrollIndicator={false}
-                    onEndReached={handleLoadMore}
-                    onEndReachedThreshold={0.5}
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={isRefreshing}
-                            onRefresh={handleRefresh}
-                            colors={[theme.colors.primary]}
-                        />
-                    }
-                    renderItem={({ item, index }) => (
-                        <KasBankInCard
-                            item={item}
-                            index={index}
-                            onPress={() => {
-                                // Add navigation if needed
+                {(isLoading || isInitializing || isRefreshing) ? (
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                        <View style={{ marginHorizontal: -16 }}>
+                            <KasBankInListSkeleton />
+                        </View>
+                    </Animated.View>
+                ) : (
+                    <Animated.View key="content" entering={FadeIn.duration(600)} className="flex-1">
+                        <FlatList
+                            ref={flatListRef}
+                            data={filteredList.slice(0, visibleCount)}
+                            keyExtractor={(item) => item.id_kb_masuk}
+                            contentContainerStyle={{ flexGrow: 1, paddingBottom: 100, paddingHorizontal: 16 }}
+                            showsVerticalScrollIndicator={false}
+                            onEndReached={handleLoadMore}
+                            onEndReachedThreshold={0.5}
+                            refreshControl={
+                                <RefreshControl
+                                    refreshing={isRefreshing}
+                                    onRefresh={handleRefresh}
+                                    colors={[theme.colors.primary]}
+                                />
+                            }
+                            renderItem={({ item, index }) => (
+                                <KasBankInCard
+                                    item={item}
+                                    index={index}
+                                    onPress={() => {
+                                        // Add navigation if needed
+                                    }}
+                                />
+                            )}
+                            ListFooterComponent={() => {
+                                if (isLoadMore) {
+                                    return (
+                                        <View className="py-4 items-center justify-center">
+                                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                                        </View>
+                                    );
+                                }
+                                return null;
                             }}
+                            ListEmptyComponent={() => (
+                                <EmptyState
+                                    title="Tidak ada Data"
+                                    description="Data Kas Bank Masuk yang Anda cari tidak ditemukan."
+                                />
+                            )}
                         />
-                    )}
-                    ListFooterComponent={() => {
-                        if (isLoadMore) {
-                            return (
-                                <View className="py-4 items-center justify-center">
-                                    <ActivityIndicator size="small" color={theme.colors.primary} />
-                                </View>
-                            );
-                        }
-                        return null;
-                    }}
-                    ListEmptyComponent={() => {
-                        if (isLoading || isInitializing || isRefreshing) {
-                            return (
-                                <View style={{ marginHorizontal: -16 }}>
-                                    <KasBankInListSkeleton />
-                                </View>
-                            );
-                        }
-                        return (
-                            <EmptyState
-                                title="Tidak ada Data"
-                                description="Data Kas Bank Masuk yang Anda cari tidak ditemukan."
-                            />
-                        );
-                    }}
-                />
+                    </Animated.View>
+                )}
             </View>
 
             <ButtonAdd onPress={() => navigation.navigate('KasBankInForm', { id: null })} />

@@ -4,7 +4,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { theme } from '../../../theme/theme';
 import { Search } from 'lucide-react-native';
-import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOut, FadeIn } from 'react-native-reanimated';
 import { useAssests } from '../hooks/useAssests';
 import { AssestListCard } from '../components/AssestListCard';
 import { AssestSkeleton } from '../skeleton/AssestSkeleton';
@@ -83,51 +83,52 @@ export function AssestsListScreen() {
             </View>
 
             <View className="flex-1">
-                <FlatList
-                    data={(isLoading || isInitializing || isRefreshing) ? [] : filteredData}
-                    keyExtractor={(item) => item.id}
-                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
-                    showsVerticalScrollIndicator={false}
-                    renderItem={({ item, index }) => (
-                        <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
-                            <AssestListCard
-                                item={item}
-                                onPress={() => navigateToDetail(item.id, item)}
-                            />
-                        </Animated.View>
-                    )}
-                    refreshControl={
-                        <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
-                    }
-                    ListEmptyComponent={() => {
-                        if (error) {
-                            return (
-                                <ErrorState
-                                    title="Gagal Memuat Data"
-                                    message={error}
-                                    onRetry={handleRefresh}
-                                    fullScreen={true}
-                                />
-                            );
-                        }
-                        if (isLoading || isInitializing || isRefreshing) {
-                            return (
-                                <View style={{ marginHorizontal: -16 }}>
-                                    <Animated.View exiting={FadeOut.duration(300)}>
-                                        <AssestSkeleton />
-                                    </Animated.View>
-                                </View>
-                            );
-                        }
-                        return (
-                            <EmptyState
-                                title="Data Kosong"
-                                message="Tidak ada asset yang ditemukan."
-                                fullScreen={true}
-                            />
-                        );
-                    }}
-                />
+                {(isLoading || isInitializing || isRefreshing) ? (
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                        <View style={{ marginHorizontal: -16 }}>
+                            <AssestSkeleton />
+                        </View>
+                    </Animated.View>
+                ) : (
+                    <Animated.View key="content" entering={FadeIn.duration(600)} className="flex-1">
+                        <FlatList
+                            data={filteredData}
+                            keyExtractor={(item) => item.id}
+                            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
+                            showsVerticalScrollIndicator={false}
+                            renderItem={({ item, index }) => (
+                                <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+                                    <AssestListCard
+                                        item={item}
+                                        onPress={() => navigateToDetail(item.id, item)}
+                                    />
+                                </Animated.View>
+                            )}
+                            refreshControl={
+                                <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
+                            }
+                            ListEmptyComponent={() => {
+                                if (error) {
+                                    return (
+                                        <ErrorState
+                                            title="Gagal Memuat Data"
+                                            message={error}
+                                            onRetry={handleRefresh}
+                                            fullScreen={true}
+                                        />
+                                    );
+                                }
+                                return (
+                                    <EmptyState
+                                        title="Data Kosong"
+                                        message="Tidak ada asset yang ditemukan."
+                                        fullScreen={true}
+                                    />
+                                );
+                            }}
+                        />
+                    </Animated.View>
+                )}
             </View>
 
             {(!isLoading && !isInitializing && !isRefreshing) && (

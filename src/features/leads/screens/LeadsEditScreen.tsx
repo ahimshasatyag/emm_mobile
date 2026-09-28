@@ -192,19 +192,19 @@ export function LeadsEditScreen() {
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 className="flex-1"
             >
-                <ScrollView
-                    className="flex-1"
-                    contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
-                    showsVerticalScrollIndicator={false}
-                    refreshControl={
-                        <RefreshControl refreshing={isLoadingDetail || isLoading} onRefresh={onRefresh} colors={[theme.colors.primary]} />
-                    }
-                >
-                    {isLoadingDetail || isLoading ? (
-                        <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
-                            <LeadsEditSkeleton />
-                        </Animated.View>
-                    ) : (
+                {isLoadingDetail || isLoading ? (
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)} className="flex-1">
+                        <LeadsEditSkeleton />
+                    </Animated.View>
+                ) : (
+                    <ScrollView
+                        className="flex-1"
+                        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+                        showsVerticalScrollIndicator={false}
+                        refreshControl={
+                            <RefreshControl refreshing={isLoadingDetail || isLoading} onRefresh={onRefresh} colors={[theme.colors.primary]} />
+                        }
+                    >
                         <Animated.View key="content" entering={FadeIn.duration(600)}>
 
                             <View className="bg-white rounded-3xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
@@ -386,8 +386,8 @@ export function LeadsEditScreen() {
                             </Animated.View>
 
                         </Animated.View>
-                    )}
-                </ScrollView>
+                    </ScrollView>
+                )}
             </KeyboardAvoidingView>
             <ProductModal
                 visible={isProductModalVisible}

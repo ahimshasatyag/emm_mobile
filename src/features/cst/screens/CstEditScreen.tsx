@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, ScrollView, Text, TouchableOpacity, Alert, RefreshControl, Image } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Undo2, XCircle, CheckCircle2, FileText, Image as ImageIcon, Plus } from 'lucide-react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOut, FadeIn } from 'react-native-reanimated';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useCst } from '../hooks/useCst';
 import { CstEditSkeleton } from '../skeleton/CstEditSkeleton';
@@ -184,9 +184,11 @@ export function CstEditScreen() {
                 }
             >
                 {isLoading || isRefreshing || !currentCst ? (
-                    <CstEditSkeleton />
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                        <CstEditSkeleton />
+                    </Animated.View>
                 ) : (
-                    <Animated.View entering={FadeInDown.springify()} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+                    <Animated.View key="content" entering={FadeIn.duration(600)} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
 
                         {/* Action Buttons */}
                         <View className="flex-row items-center mb-2 space-x-2">

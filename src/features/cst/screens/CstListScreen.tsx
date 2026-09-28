@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { View, FlatList, RefreshControl, TouchableOpacity, TextInput, Text, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Search, Plus, Calendar, CheckSquare, Square } from 'lucide-react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOut, FadeIn } from 'react-native-reanimated';
 import { theme } from '../../../theme/theme';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -228,38 +228,42 @@ export function CstListScreen() {
 
             <View className="flex-1">
                 {isInitializing ? (
-                    <View className="px-6 pt-2">
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)} className="px-6 pt-2 flex-1">
                         <CstListSkeleton />
-                    </View>
-                ) : filteredList.length > 0 ? (
-                    <FlatList
-                        data={paginatedList}
-                        keyExtractor={(item) => item.id_afs_cst.toString()}
-                        contentContainerStyle={{ padding: 24, paddingTop: 8, paddingBottom: 100 }}
-                        renderItem={({ item, index }) => (
-                            <Animated.View entering={FadeInDown.delay((index % ITEMS_PER_PAGE) * 100).springify()}>
-                                <CstCard cst={item} />
-                            </Animated.View>
-                        )}
-                        onEndReached={handleLoadMore}
-                        onEndReachedThreshold={0.5}
-                        ListFooterComponent={renderFooter}
-                        refreshControl={
-                            <RefreshControl
-                                refreshing={false}
-                                onRefresh={handleRefresh}
-                                colors={[theme.colors.primary]}
-                                tintColor={theme.colors.primary}
-                            />
-                        }
-                    />
+                    </Animated.View>
                 ) : (
-                    <View className="flex-1 px-6 pt-8">
-                        <EmptyState
-                            title="Tidak ada Data CST"
-                            description="Data CST yang Anda cari tidak ditemukan."
-                        />
-                    </View>
+                    <Animated.View key="content" entering={FadeIn.duration(600)} className="flex-1">
+                        {filteredList.length > 0 ? (
+                            <FlatList
+                                data={paginatedList}
+                                keyExtractor={(item) => item.id_afs_cst.toString()}
+                                contentContainerStyle={{ padding: 24, paddingTop: 8, paddingBottom: 100 }}
+                                renderItem={({ item, index }) => (
+                                    <Animated.View entering={FadeInDown.delay((index % ITEMS_PER_PAGE) * 100).springify()}>
+                                        <CstCard cst={item} />
+                                    </Animated.View>
+                                )}
+                                onEndReached={handleLoadMore}
+                                onEndReachedThreshold={0.5}
+                                ListFooterComponent={renderFooter}
+                                refreshControl={
+                                    <RefreshControl
+                                        refreshing={false}
+                                        onRefresh={handleRefresh}
+                                        colors={[theme.colors.primary]}
+                                        tintColor={theme.colors.primary}
+                                    />
+                                }
+                            />
+                        ) : (
+                            <View className="flex-1 px-6 pt-8">
+                                <EmptyState
+                                    title="Tidak ada Data CST"
+                                    description="Data CST yang Anda cari tidak ditemukan."
+                                />
+                            </View>
+                        )}
+                    </Animated.View>
                 )}
             </View>
         </View>

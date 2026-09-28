@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, ScrollView, TouchableOpacity, Keyboard, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
 import { Search, PackageSearch } from 'lucide-react-native';
-import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
+import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { theme } from '../../../theme/theme';
 import { useCekSerialNumber } from '../hooks/useCekSerialNumber';
@@ -106,7 +106,9 @@ export function CekSerialNumberScreen() {
                 }
             >
                 {isLoading ? (
-                    <CekSerialNumberSkeleton />
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                        <CekSerialNumberSkeleton />
+                    </Animated.View>
                 ) : (
                     hasSearched && (
                         productInfo ? (

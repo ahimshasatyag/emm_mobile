@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Printer, ChevronLeft, MapPin, Phone, Building2, Calendar, FileText, Download } from 'lucide-react-native';
-import Animated, { FadeInUp, FadeInDown, LinearTransition } from 'react-native-reanimated';
+import Animated, { FadeInUp, FadeInDown, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { useCustomerInvoice } from '../hooks/useCustomerInvoice';
 import { CustomerInvoiceEditSkeleton } from '../skeleton/CustomerInvoiceEditSkeleton';
@@ -100,11 +100,11 @@ export const CustomerInvoiceEditScreen = () => {
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={['#2563eb']} />}
             >
                 {loadingDetail || !detail ? (
-                    <Animated.View key="skeleton">
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
                         <CustomerInvoiceEditSkeleton />
                     </Animated.View>
                 ) : (
-                    <Animated.View key="content">
+                    <Animated.View key="content" entering={FadeIn.duration(600)}>
                         {/* Actions */}
                         <Animated.View entering={FadeInUp.duration(400)}>
                             <ScrollView

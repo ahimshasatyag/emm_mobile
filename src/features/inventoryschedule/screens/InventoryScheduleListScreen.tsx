@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { View, TextInput, FlatList, RefreshControl } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
-import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOut, FadeIn } from 'react-native-reanimated';
 import { theme } from '../../../theme/theme';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
@@ -92,51 +92,50 @@ export function InventoryScheduleListScreen() {
             </View>
 
             <View className="flex-1">
-                <FlatList
-                    data={(loading || isInitializing || isRefreshing) ? [] : filteredData}
-                    keyExtractor={(item) => item.id}
-                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
-                    showsVerticalScrollIndicator={false}
-                    renderItem={({ item, index }) => (
-                        <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
-                            <InventoryScheduleCard
-                                schedule={item}
-                                onPress={() => navigateToDetail(item.id)}
-                            />
-                        </Animated.View>
-                    )}
-                    refreshControl={
-                        <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
-                    }
-                    ListEmptyComponent={() => {
-                        if (error) {
-                            return (
-                                <ErrorState
-                                    title="Gagal Memuat Data"
-                                    message={error}
-                                    onRetry={loadData}
-                                    fullScreen={true}
-                                />
-                            );
-                        }
-                        if (loading || isInitializing || isRefreshing) {
-                            return (
-                                <View style={{ marginHorizontal: -16 }}>
-                                    <Animated.View exiting={FadeOut.duration(300)}>
-                                        <InventoryScheduleListSkeleton />
-                                    </Animated.View>
-                                </View>
-                            );
-                        }
-                        return (
-                            <EmptyState
-                                title="Data Kosong"
-                                message="Tidak ada jadwal yang ditemukan."
-                                fullScreen={true}
-                            />
-                        );
-                    }}
-                />
+                {(loading || isInitializing || isRefreshing) ? (
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                        <InventoryScheduleListSkeleton />
+                    </Animated.View>
+                ) : (
+                    <Animated.View key="content" entering={FadeIn.duration(600)} className="flex-1">
+                        <FlatList
+                            data={filteredData}
+                            keyExtractor={(item) => item.id}
+                            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
+                            showsVerticalScrollIndicator={false}
+                            renderItem={({ item, index }) => (
+                                <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+                                    <InventoryScheduleCard
+                                        schedule={item}
+                                        onPress={() => navigateToDetail(item.id)}
+                                    />
+                                </Animated.View>
+                            )}
+                            refreshControl={
+                                <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
+                            }
+                            ListEmptyComponent={() => {
+                                if (error) {
+                                    return (
+                                        <ErrorState
+                                            title="Gagal Memuat Data"
+                                            message={error}
+                                            onRetry={loadData}
+                                            fullScreen={true}
+                                        />
+                                    );
+                                }
+                                return (
+                                    <EmptyState
+                                        title="Data Kosong"
+                                        message="Tidak ada jadwal yang ditemukan."
+                                        fullScreen={true}
+                                    />
+                                );
+                            }}
+                        />
+                    </Animated.View>
+                )}
             </View>
 
             {(!loading && !isInitializing && !isRefreshing) && (
