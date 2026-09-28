@@ -1,10 +1,28 @@
-import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, ScrollView, Animated } from 'react-native';
 
 export function ProductPriceUploadSkeleton() {
+    const fadeAnim = useRef(new Animated.Value(0.4)).current;
+
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 800,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(fadeAnim, {
+                    toValue: 0.4,
+                    duration: 800,
+                    useNativeDriver: true,
+                }),
+            ])
+        ).start();
+    }, [fadeAnim]);
+
     return (
-        <Animated.View entering={FadeIn} exiting={FadeOut}>
+        <Animated.View style={{ opacity: fadeAnim }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="border border-gray-200 rounded-2xl bg-white">
                 <View>
                     {/* Table Header */}
@@ -23,28 +41,28 @@ export function ProductPriceUploadSkeleton() {
                     {[1, 2, 3, 4, 5, 6].map((item) => (
                         <View key={item} className="flex-row p-3 border-b border-gray-100 bg-white items-center">
                             <View className="w-10 items-center">
-                                <View className="w-4 h-4 bg-gray-200 rounded animate-pulse" />
+                                <View className="w-4 h-4 bg-gray-200 rounded" />
                             </View>
                             <View className="w-32 justify-center pr-2">
-                                <View className="w-full h-4 bg-gray-200 rounded animate-pulse" />
+                                <View className="w-full h-4 bg-gray-200 rounded" />
                             </View>
                             <View className="w-48 justify-center pr-2">
-                                <View className="w-full h-4 bg-gray-200 rounded animate-pulse" />
+                                <View className="w-full h-4 bg-gray-200 rounded" />
                             </View>
                             <View className="w-32 items-end pr-2">
-                                <View className="w-16 h-4 bg-gray-200 rounded animate-pulse" />
+                                <View className="w-16 h-4 bg-gray-200 rounded" />
                             </View>
                             <View className="w-32 items-end pr-2">
-                                <View className="w-16 h-4 bg-gray-200 rounded animate-pulse" />
+                                <View className="w-16 h-4 bg-gray-200 rounded" />
                             </View>
                             <View className="w-32 items-end pr-2">
-                                <View className="w-20 h-4 bg-gray-200 rounded animate-pulse" />
+                                <View className="w-20 h-4 bg-gray-200 rounded" />
                             </View>
                             <View className="w-40 items-end pr-2">
-                                <View className="w-24 h-4 bg-gray-200 rounded animate-pulse" />
+                                <View className="w-24 h-4 bg-gray-200 rounded" />
                             </View>
                             <View className="w-32 ml-4 justify-center">
-                                <View className="w-20 h-4 bg-gray-200 rounded animate-pulse" />
+                                <View className="w-20 h-4 bg-gray-200 rounded" />
                             </View>
                         </View>
                     ))}

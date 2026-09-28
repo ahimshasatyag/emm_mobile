@@ -1,46 +1,70 @@
-import React from 'react';
-import { View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Animated } from 'react-native';
+import { Card, useTheme } from 'react-native-paper';
 
 export function QuotationEditSkeleton() {
+    const theme = useTheme();
+    const colors = theme.colors as any;
+    const fadeAnim = useRef(new Animated.Value(0.4)).current;
+
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 800,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(fadeAnim, {
+                    toValue: 0.4,
+                    duration: 800,
+                    useNativeDriver: true,
+                }),
+            ])
+        ).start();
+    }, [fadeAnim]);
+
     return (
-        <View className="flex-1">
-            <View className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                <View className="h-4 w-32 bg-gray-200 rounded mb-6 animate-pulse" />
-                
-                {[1, 2, 3, 4, 5].map((item) => (
-                    <View key={item} className="mb-4">
-                        <View className="h-4 w-24 bg-gray-200 rounded mb-2 animate-pulse" />
-                        <View className="h-12 w-full bg-gray-200 rounded-lg animate-pulse" />
-                    </View>
-                ))}
-
-                <View className="h-4 w-32 bg-gray-200 rounded mb-6 mt-4 animate-pulse" />
-                
-                {[1, 2, 3].map((item) => (
-                    <View key={`radio-${item}`} className="mb-4">
-                        <View className="h-4 w-24 bg-gray-200 rounded mb-2 animate-pulse" />
-                        <View className="flex-row flex-wrap gap-2">
-                            <View className="h-10 w-24 bg-gray-200 rounded-lg animate-pulse" />
-                            <View className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse" />
-                            <View className="h-10 w-40 bg-gray-200 rounded-lg animate-pulse" />
+        <Animated.View style={{ opacity: fadeAnim }} className="flex-1">
+            <Card className="rounded-xl shadow-sm border border-gray-100" style={{ backgroundColor: colors.surface }}>
+                <Card.Content className="p-4">
+                    <View className="h-4 w-32 bg-gray-200 rounded mb-6" />
+                    
+                    {[1, 2, 3, 4, 5].map((item) => (
+                        <View key={item} className="mb-4">
+                            <View className="h-4 w-24 bg-gray-200 rounded mb-2" />
+                            <View className="h-12 w-full bg-gray-200 rounded-lg" />
                         </View>
+                    ))}
+
+                    <View className="h-4 w-32 bg-gray-200 rounded mb-6 mt-4" />
+                    
+                    {[1, 2, 3].map((item) => (
+                        <View key={`radio-${item}`} className="mb-4">
+                            <View className="h-4 w-24 bg-gray-200 rounded mb-2" />
+                            <View className="flex-row flex-wrap gap-2">
+                                <View className="h-10 w-24 bg-gray-200 rounded-lg" />
+                                <View className="h-10 w-32 bg-gray-200 rounded-lg" />
+                                <View className="h-10 w-40 bg-gray-200 rounded-lg" />
+                            </View>
+                        </View>
+                    ))}
+
+                    <View className="h-4 w-32 bg-gray-200 rounded mb-6 mt-4" />
+                    
+                    <View className="mb-4">
+                        <View className="h-4 w-24 bg-gray-200 rounded mb-2" />
+                        <View className="h-12 w-full bg-gray-200 rounded-lg" />
                     </View>
-                ))}
 
-                <View className="h-4 w-32 bg-gray-200 rounded mb-6 mt-4 animate-pulse" />
-                
-                <View className="mb-4">
-                    <View className="h-4 w-24 bg-gray-200 rounded mb-2 animate-pulse" />
-                    <View className="h-12 w-full bg-gray-200 rounded-lg animate-pulse" />
-                </View>
-
-                <View className="mt-4 mb-2 flex-row justify-end">
-                    <View className="h-9 w-24 bg-gray-200 rounded-lg animate-pulse" />
-                </View>
-                
-                <View className="h-10 w-full bg-gray-200 rounded-t-xl animate-pulse" />
-                <View className="h-16 w-full bg-gray-100 border-t border-white rounded-b-xl animate-pulse" />
-            </View>
-        </View>
+                    <View className="mt-4 mb-2 flex-row justify-end">
+                        <View className="h-9 w-24 bg-gray-200 rounded-lg" />
+                    </View>
+                    
+                    <View className="h-10 w-full bg-gray-200 rounded-t-xl" />
+                    <View className="h-16 w-full bg-gray-100 border-t border-white rounded-b-xl" />
+                </Card.Content>
+            </Card>
+        </Animated.View>
     );
 }

@@ -294,67 +294,68 @@ export const PaymentListScreen = () => {
             </Animated.View>
 
             <View className="flex-1">
-            <Animated.View entering={FadeInDown} className="flex-1">
-                <FlatList
-                    data={isLoading || isInitializing || isRefreshing ? [] : filteredPayments.slice(0, visibleCount)}
-                    keyExtractor={(item) => item.id_payment_schdl}
-                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 20, paddingHorizontal: 16 }}
-                    showsVerticalScrollIndicator={false}
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={isRefreshing}
-                            onRefresh={handleRefresh}
-                            colors={[theme.colors.primary]}
-                        />
-                    }
-                    onEndReached={handleLoadMore}
-                    onEndReachedThreshold={0.5}
-                    ListFooterComponent={() => {
-                        if (isLoadMore) {
-                            return (
-                                <View className="py-4 items-center justify-center">
-                                    <ActivityIndicator size="small" color={theme.colors.primary} />
-                                </View>
-                            );
-                        }
-                        return null;
-                    }}
-                    renderItem={({ item, index }) => (
-                        <PaymentCard
-                            payment={item}
-                            index={index}
-                            isSelected={selectedIds.includes(item.id_payment_schdl)}
-                            onPress={() => {
-                                if (selectedIds.length > 0) {
-                                    setSelectedIds(prev =>
-                                        prev.includes(item.id_payment_schdl)
-                                            ? prev.filter(id => id !== item.id_payment_schdl)
-                                            : [...prev, item.id_payment_schdl]
+                {(isLoading || isInitializing || isRefreshing) ? (
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)} className="flex-1 px-4">
+                        <PaymentListSkeleton />
+                    </Animated.View>
+                ) : (
+                    <Animated.View key="content" entering={FadeIn.duration(600)} className="flex-1">
+                        <FlatList
+                            data={filteredPayments.slice(0, visibleCount)}
+                            keyExtractor={(item) => item.id_payment_schdl}
+                            contentContainerStyle={{ flexGrow: 1, paddingBottom: 20, paddingHorizontal: 16 }}
+                            showsVerticalScrollIndicator={false}
+                            refreshControl={
+                                <RefreshControl
+                                    refreshing={isRefreshing}
+                                    onRefresh={handleRefresh}
+                                    colors={[theme.colors.primary]}
+                                />
+                            }
+                            onEndReached={handleLoadMore}
+                            onEndReachedThreshold={0.5}
+                            ListFooterComponent={() => {
+                                if (isLoadMore) {
+                                    return (
+                                        <View className="py-4 items-center justify-center">
+                                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                                        </View>
                                     );
-                                } else {
-                                    navigation.navigate('PaymentEdit', { id: item.id_payment_schdl });
                                 }
+                                return null;
                             }}
-                            onLongPress={() => {
-                                if (!selectedIds.includes(item.id_payment_schdl)) {
-                                    setSelectedIds(prev => [...prev, item.id_payment_schdl]);
-                                }
-                            }}
+                            renderItem={({ item, index }) => (
+                                <PaymentCard
+                                    payment={item}
+                                    index={index}
+                                    isSelected={selectedIds.includes(item.id_payment_schdl)}
+                                    onPress={() => {
+                                        if (selectedIds.length > 0) {
+                                            setSelectedIds(prev =>
+                                                prev.includes(item.id_payment_schdl)
+                                                    ? prev.filter(id => id !== item.id_payment_schdl)
+                                                    : [...prev, item.id_payment_schdl]
+                                            );
+                                        } else {
+                                            navigation.navigate('PaymentEdit', { id: item.id_payment_schdl });
+                                        }
+                                    }}
+                                    onLongPress={() => {
+                                        if (!selectedIds.includes(item.id_payment_schdl)) {
+                                            setSelectedIds(prev => [...prev, item.id_payment_schdl]);
+                                        }
+                                    }}
+                                />
+                            )}
+                            ListEmptyComponent={() => (
+                                <EmptyState
+                                    title="Tidak ada Data Payment"
+                                    description="Data Payment yang Anda cari tidak ditemukan."
+                                />
+                            )}
                         />
-                    )}
-                    ListEmptyComponent={() => {
-                        if (isLoading || isInitializing || isRefreshing) {
-                            return <PaymentListSkeleton />;
-                        }
-                        return (
-                            <EmptyState
-                                title="Tidak ada Data Payment"
-                                description="Data Payment yang Anda cari tidak ditemukan."
-                            />
-                        );
-                    }}
-                />
-            </Animated.View>
+                    </Animated.View>
+                )}
             </View>
 
             {/* Floating Action Button */}

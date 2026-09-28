@@ -3,6 +3,7 @@ import { View, Text, FlatList, TextInput, RefreshControl, KeyboardAvoidingView, 
 import { Dropdown } from 'react-native-element-dropdown';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useQuotations } from '../hooks/useQuotations';
 import { QuotationCard } from '../components/QuotationCard';
 import { QuotationListSkeleton } from '../skeleton/QuotationListSkeleton';
@@ -161,58 +162,61 @@ export function QuotationListScreen() {
                 </View>
             </View>
 
-            <FlatList
-                ref={flatListRef}
-                className="flex-1"
-                data={(isLoading || isInitializing) ? [] : filteredData.slice(0, visibleCount)}
-                keyExtractor={(item) => item.id_quotation}
-                renderItem={({ item, index }) => (
-                    <QuotationCard 
-                        item={item} 
-                        index={index} 
-                        onPress={() => handlePress(item.id_quotation)}
-                    />
-                )}
-                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
-                showsVerticalScrollIndicator={false}
-                onEndReached={handleLoadMore}
-                onEndReachedThreshold={0.5}
-                refreshControl={
-                    <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={refresh} colors={[theme.colors.primary]} />
-                }
-                ListFooterComponent={() => {
-                    if (isLoadMore) {
-                        return (
-                            <View className="py-4 items-center justify-center">
-                                <ActivityIndicator size="small" color={theme.colors.primary} />
-                            </View>
-                        );
-                    }
-                    return null;
-                }}
-                ListEmptyComponent={
-                    () => {
-                        if (error && !isInitializing) {
-                            return (
-                                <ErrorState
-                                    title="Gagal Memuat Quotation"
-                                    message={error}
-                                    onRetry={refresh}
-                                    fullScreen={true}
+            <View className="flex-1">
+                {(isLoading || isInitializing) ? (
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)} className="flex-1">
+                        <QuotationListSkeleton />
+                    </Animated.View>
+                ) : (
+                    <Animated.View key="content" entering={FadeIn.duration(600)} className="flex-1">
+                        <FlatList
+                            ref={flatListRef}
+                            className="flex-1"
+                            data={filteredData.slice(0, visibleCount)}
+                            keyExtractor={(item) => item.id_quotation}
+                            renderItem={({ item, index }) => (
+                                <QuotationCard 
+                                    item={item} 
+                                    index={index} 
+                                    onPress={() => handlePress(item.id_quotation)}
                                 />
-                            );
-                        }
-                        if (isLoading || isInitializing) {
-                            return (
-                                <View style={{ marginHorizontal: -16 }}>
-                                    <QuotationListSkeleton />
-                                </View>
-                            );
-                        }
-                        return <EmptyState title="Tidak ada data" message="Belum ada Quotation." fullScreen={true} />;
-                    }
-                }
-            />
+                            )}
+                            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+                            showsVerticalScrollIndicator={false}
+                            onEndReached={handleLoadMore}
+                            onEndReachedThreshold={0.5}
+                            refreshControl={
+                                <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={refresh} colors={[theme.colors.primary]} />
+                            }
+                            ListFooterComponent={() => {
+                                if (isLoadMore) {
+                                    return (
+                                        <View className="py-4 items-center justify-center">
+                                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                                        </View>
+                                    );
+                                }
+                                return null;
+                            }}
+                            ListEmptyComponent={
+                                () => {
+                                    if (error && !isInitializing) {
+                                        return (
+                                            <ErrorState
+                                                title="Gagal Memuat Quotation"
+                                                message={error}
+                                                onRetry={refresh}
+                                                fullScreen={true}
+                                            />
+                                        );
+                                    }
+                                    return <EmptyState title="Tidak ada data" message="Belum ada Quotation." fullScreen={true} />;
+                                }
+                            }
+                        />
+                    </Animated.View>
+                )}
+            </View>
 
             {(!isLoading && !isInitializing) && (
                 <ButtonAdd onPress={() => navigation.navigate('QuotationForm')} />

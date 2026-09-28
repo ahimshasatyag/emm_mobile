@@ -11,6 +11,7 @@ import { EmptyState } from '../../../components/shared/EmptyState';
 import { ErrorState } from '../../../components/shared/ErrorState';
 import { theme } from '../../../theme/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 type RootStackParamList = {
     SOEdit: { id: string };
@@ -151,58 +152,61 @@ export function SOListScreen() {
                 </View>
             </View>
 
-            <FlatList
-                ref={flatListRef}
-                className="flex-1"
-                data={(isLoading || isInitializing) ? [] : filteredData.slice(0, visibleCount)}
-                keyExtractor={(item) => item.id_so}
-                renderItem={({ item, index }) => (
-                    <SOCard
-                        item={item}
-                        index={index}
-                        onPress={() => handlePress(item.id_so)}
-                    />
-                )}
-                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
-                showsVerticalScrollIndicator={false}
-                onEndReached={handleLoadMore}
-                onEndReachedThreshold={0.5}
-                refreshControl={
-                    <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={loadList} colors={[theme.colors.primary]} />
-                }
-                ListFooterComponent={() => {
-                    if (isLoadMore) {
-                        return (
-                            <View className="py-4 items-center justify-center">
-                                <ActivityIndicator size="small" color={theme.colors.primary} />
-                            </View>
-                        );
-                    }
-                    return null;
-                }}
-                ListEmptyComponent={
-                    () => {
-                        if (error && !isInitializing) {
-                            return (
-                                <ErrorState
-                                    title="Gagal Memuat Sales Order"
-                                    message={error}
-                                    onRetry={loadList}
-                                    fullScreen={true}
+            <View className="flex-1">
+                {(isLoading || isInitializing) ? (
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)} className="flex-1">
+                        <SOListSkeleton />
+                    </Animated.View>
+                ) : (
+                    <Animated.View key="content" entering={FadeIn.duration(600)} className="flex-1">
+                        <FlatList
+                            ref={flatListRef}
+                            className="flex-1"
+                            data={filteredData.slice(0, visibleCount)}
+                            keyExtractor={(item) => item.id_so}
+                            renderItem={({ item, index }) => (
+                                <SOCard
+                                    item={item}
+                                    index={index}
+                                    onPress={() => handlePress(item.id_so)}
                                 />
-                            );
-                        }
-                        if (isLoading || isInitializing) {
-                            return (
-                                <View style={{ marginHorizontal: -16 }}>
-                                    <SOListSkeleton />
-                                </View>
-                            );
-                        }
-                        return <EmptyState title="Tidak ada data" message="Belum ada Sales Order." fullScreen={true} />;
-                    }
-                }
-            />
+                            )}
+                            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+                            showsVerticalScrollIndicator={false}
+                            onEndReached={handleLoadMore}
+                            onEndReachedThreshold={0.5}
+                            refreshControl={
+                                <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={loadList} colors={[theme.colors.primary]} />
+                            }
+                            ListFooterComponent={() => {
+                                if (isLoadMore) {
+                                    return (
+                                        <View className="py-4 items-center justify-center">
+                                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                                        </View>
+                                    );
+                                }
+                                return null;
+                            }}
+                            ListEmptyComponent={
+                                () => {
+                                    if (error && !isInitializing) {
+                                        return (
+                                            <ErrorState
+                                                title="Gagal Memuat Sales Order"
+                                                message={error}
+                                                onRetry={loadList}
+                                                fullScreen={true}
+                                            />
+                                        );
+                                    }
+                                    return <EmptyState title="Tidak ada data" message="Belum ada Sales Order." fullScreen={true} />;
+                                }
+                            }
+                        />
+                    </Animated.View>
+                )}
+            </View>
 
         </KeyboardAvoidingView>
     );

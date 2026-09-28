@@ -8,6 +8,7 @@ import { SalesContractListSOSkeleton } from '../skeleton/SalesContractListSOSkel
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { theme } from '../../../theme/theme';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 type RootStackParamList = {
     SalesContractForm: { id_so: string };
@@ -103,50 +104,53 @@ export function SalesContractListSOScreen() {
                 </View>
             </View>
 
-            <FlatList
-                data={(isLoading || isInitializing) ? [] : filteredData.slice(0, visibleCount)}
-                keyExtractor={(item) => item.id_so}
-                renderItem={({ item, index }) => (
-                    <SOWithoutContractCard 
-                        item={item} 
-                        index={index} 
-                        onPress={() => handlePress(item.id_so)}
-                    />
+            <View className="flex-1">
+                {(isLoading || isInitializing) ? (
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)} className="flex-1">
+                        <SalesContractListSOSkeleton />
+                    </Animated.View>
+                ) : (
+                    <Animated.View key="content" entering={FadeIn.duration(600)} className="flex-1">
+                        <FlatList
+                            data={filteredData.slice(0, visibleCount)}
+                            keyExtractor={(item) => item.id_so}
+                            renderItem={({ item, index }) => (
+                                <SOWithoutContractCard 
+                                    item={item} 
+                                    index={index} 
+                                    onPress={() => handlePress(item.id_so)}
+                                />
+                            )}
+                            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
+                            showsVerticalScrollIndicator={false}
+                            onEndReached={handleLoadMore}
+                            onEndReachedThreshold={0.5}
+                            refreshControl={
+                                <RefreshControl refreshing={isLoading} onRefresh={loadSOWithoutContract} colors={[theme.colors.primary]} />
+                            }
+                            ListFooterComponent={() => {
+                                if (isLoadMore) {
+                                    return (
+                                        <View className="py-4 items-center justify-center">
+                                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                                        </View>
+                                    );
+                                }
+                                return null;
+                            }}
+                            ListEmptyComponent={
+                                () => {
+                                    return (
+                                        <View className="flex-1 justify-center items-center pt-20">
+                                            <Text className="text-gray-500 font-medium">Data tidak ditemukan</Text>
+                                        </View>
+                                    );
+                                }
+                            }
+                        />
+                    </Animated.View>
                 )}
-                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
-                showsVerticalScrollIndicator={false}
-                onEndReached={handleLoadMore}
-                onEndReachedThreshold={0.5}
-                refreshControl={
-                    <RefreshControl refreshing={isLoading} onRefresh={loadSOWithoutContract} colors={[theme.colors.primary]} />
-                }
-                ListFooterComponent={() => {
-                    if (isLoadMore) {
-                        return (
-                            <View className="py-4 items-center justify-center">
-                                <ActivityIndicator size="small" color={theme.colors.primary} />
-                            </View>
-                        );
-                    }
-                    return null;
-                }}
-                ListEmptyComponent={
-                    () => {
-                        if (isLoading || isInitializing) {
-                            return (
-                                <View style={{ marginHorizontal: -16 }}>
-                                    <SalesContractListSOSkeleton />
-                                </View>
-                            );
-                        }
-                        return (
-                            <View className="flex-1 justify-center items-center pt-20">
-                                <Text className="text-gray-500 font-medium">Data tidak ditemukan</Text>
-                            </View>
-                        );
-                    }
-                }
-            />
+            </View>
         </KeyboardAvoidingView>
     );
 }
