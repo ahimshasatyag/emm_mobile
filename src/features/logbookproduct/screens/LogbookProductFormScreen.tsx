@@ -195,7 +195,7 @@ export function LogbookProductFormScreen() {
                                 </Button>
                             </Animated.View>
 
-                        </View>
+                        </Animated.View>
                     )}
                 </ScrollView>
             </View>

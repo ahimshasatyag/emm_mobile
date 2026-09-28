@@ -190,7 +190,7 @@ export function LogbookCustomersFormScreen() {
                                 </Button>
                             </Animated.View>
 
-                        </View>
+                        </Animated.View>
                     )}
                 </ScrollView>
             </View>

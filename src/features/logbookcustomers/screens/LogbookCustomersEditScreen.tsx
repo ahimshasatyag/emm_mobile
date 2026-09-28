@@ -280,7 +280,7 @@ export function LogbookCustomersEditScreen() {
                                 )}
                             </Animated.View>
 
-                        </View>
+                        </Animated.View>
                     )}
                 </ScrollView>
             </View>
