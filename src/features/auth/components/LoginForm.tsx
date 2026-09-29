@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, Plat
 import { useLogin } from '../hooks/useLogin';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import * as Location from 'expo-location';
+import * as Device from 'expo-device';
 import { theme } from '../../../theme/theme';
 
 export function LoginForm() {
@@ -11,40 +12,64 @@ export function LoginForm() {
     const { login, loading, error } = useLogin();
     const dispatch = useAppDispatch();
 
-    const handleSubmit = async () => {
-        if (!username || !password) return;
-        const success = await login({ username, password });
+    const [isLocating, setIsLocating] = useState(false);
 
-        if (success) {
-            const proceedWithLogin = async () => {
-                try {
-                    if (Platform.OS !== 'web') {
-                        let { status } = await Location.requestForegroundPermissionsAsync();
-                        if (status !== 'granted') {
-                            Alert.alert("Info", "Login berhasil, namun hak akses lokasi tidak diberikan.");
-                        }
-                    }
-                } catch (e) {
-                    console.log("Location permission error:", e);
-                }
-            };
+    const proceedWithLogin = async () => {
+        setIsLocating(true);
+        let latitude: number | undefined;
+        let longitude: number | undefined;
+        let device_name: string | undefined;
 
-            if (Platform.OS === 'web') {
-                // Alert.alert with custom buttons might not work correctly on some web setups
-                const confirm = window.confirm("Aplikasi membutuhkan izin untuk mengakses lokasi Anda demi keperluan keamanan dan pencatatan operasional. Lanjutkan?");
-                if (confirm) {
-                    await proceedWithLogin();
-                }
+        try {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status === 'granted') {
+                // Gunakan akurasi Balanced agar lebih cepat merespons di Emulator/Web
+                const location = await Location.getCurrentPositionAsync({
+                    accuracy: Location.Accuracy.Balanced,
+                });
+                latitude = location.coords.latitude;
+                longitude = location.coords.longitude;
             } else {
-                Alert.alert(
-                    "Pengecekan Status & Hak Akses",
-                    "Aplikasi membutuhkan izin untuk mengakses lokasi Anda demi keperluan keamanan dan pencatatan operasional.",
-                    [
-                        { text: "Batal", style: "cancel" },
-                        { text: "OK", onPress: proceedWithLogin }
-                    ]
-                );
+                Alert.alert("Izin Ditolak", "Login dilanjutkan tanpa merekam lokasi Anda.");
             }
+            
+            // Dapatkan nama merk dan model device (contoh: Apple iPhone 14 atau Samsung SM-G998B)
+            if (Platform.OS === 'web') {
+                device_name = 'Web Browser';
+            } else {
+                const brand = Device.brand ? `${Device.brand} ` : '';
+                const model = Device.modelName || 'Unknown Device';
+                device_name = `${brand}${model}`.trim();
+            }
+        } catch (e) {
+            console.log("Location fetch error:", e);
+        } finally {
+            setIsLocating(false);
+        }
+
+        console.log("Payload Login:", { username, latitude, longitude, device_name });
+
+        // Jalankan login API beserta data lokasi (opsional)
+        await login({ username, password, latitude, longitude, device_name });
+    };
+
+    const handleSubmit = () => {
+        if (!username || !password) return;
+        
+        if (Platform.OS === 'web') {
+            const confirm = window.confirm("Aplikasi membutuhkan izin untuk mengakses lokasi Anda demi keperluan keamanan dan pencatatan operasional. Lanjutkan?");
+            if (confirm) {
+                proceedWithLogin();
+            }
+        } else {
+            Alert.alert(
+                "Pengecekan Status & Hak Akses",
+                "Aplikasi membutuhkan izin untuk mengakses lokasi Anda demi keperluan keamanan dan pencatatan operasional.",
+                [
+                    { text: "Batal", style: "cancel" },
+                    { text: "OK", onPress: proceedWithLogin }
+                ]
+            );
         }
     };
 
@@ -83,17 +108,17 @@ export function LoginForm() {
 
             <TouchableOpacity
                 onPress={handleSubmit}
-                disabled={loading || !username || !password}
+                disabled={loading || isLocating || !username || !password}
                 style={{ backgroundColor: theme.colors.primary }}
-                className={`h-12 rounded-lg items-center justify-center flex-row ${loading || !username || !password ? 'opacity-60' : 'opacity-100'
+                className={`h-12 rounded-lg items-center justify-center flex-row ${loading || isLocating || !username || !password ? 'opacity-60' : 'opacity-100'
                     }`}
                 activeOpacity={0.8}
             >
-                {loading ? (
+                {(loading || isLocating) ? (
                     <ActivityIndicator color="white" style={{ marginRight: 8 }} />
                 ) : null}
                 <Text className="text-white font-bold text-base">
-                    {loading ? 'Logging in...' : 'Login'}
+                    {isLocating ? 'Mencari Lokasi...' : loading ? 'Logging in...' : 'Login'}
                 </Text>
             </TouchableOpacity>
         </View>

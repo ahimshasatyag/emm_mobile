@@ -11,6 +11,9 @@ export interface User {
 export interface LoginRequest {
     username: string;
     password?: string;
+    latitude?: number;
+    longitude?: number;
+    device_name?: string;
 }
 
 export interface LoginResponse {
