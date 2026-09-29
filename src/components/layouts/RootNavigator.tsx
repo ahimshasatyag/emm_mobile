@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { AuthNavigator } from './AuthNavigator';
@@ -8,6 +9,7 @@ import { removeSecureItemAsync } from '../../services/storage/secureStorage';
 import { Loading } from '../shared/Loading';
 
 export function RootNavigator() {
+    const { t } = useTranslation();
     const user = useAppSelector((state) => state.auth.user);
     const dispatch = useAppDispatch();
     const [isChecking, setIsChecking] = useState(true);
@@ -30,7 +32,7 @@ export function RootNavigator() {
     }, [dispatch]);
 
     if (isChecking) {
-        return <Loading fullScreen message="Memeriksa sesi Anda..." />;
+        return <Loading fullScreen message={t('loading.session')} />;
     }
 
     return user ? (

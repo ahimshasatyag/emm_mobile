@@ -1,0 +1,24 @@
+{
+  "welcome": "Welcome",
+  "login": "Login",
+  "logout": "Logout",
+  "loading": {
+    "app": "Loading app...",
+    "session": "Checking your session...",
+    "data": "Loading data..."
+  },
+  "empty_state": {
+    "title": "Empty Data",
+    "message": "No data available to display here."
+  },
+  "error": {
+    "default_title": "An Error Occurred",
+    "default_message": "The system cannot load data at this time.",
+    "app_crash_title": "Application Crashed",
+    "app_crash_msg": "Sorry, an unexpected error occurred in the application. Please try reloading.",
+    "device_not_secure": "Insecure Device",
+    "device_not_secure_msg": "This application cannot run on a rooted device for security reasons.",
+    "exit": "Exit",
+    "try_again": "Try Again"
+  }
+}

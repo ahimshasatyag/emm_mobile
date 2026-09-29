@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { FileQuestion } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
+import { useTranslation } from 'react-i18next';
 
 interface EmptyStateProps {
   title?: string;
@@ -11,11 +12,12 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({
-  title = 'Data Kosong',
-  message = 'Belum ada data yang dapat ditampilkan di sini.',
+  title,
+  message,
   icon,
   fullScreen = false,
 }: EmptyStateProps) {
+  const { t } = useTranslation();
   return (
     <View
       style={{
@@ -36,7 +38,7 @@ export function EmptyState({
           textAlign: 'center',
         }}
       >
-        {title}
+        {title || t('empty_state.title')}
       </Text>
       <Text
         style={{
@@ -46,7 +48,7 @@ export function EmptyState({
           textAlign: 'center',
         }}
       >
-        {message}
+        {message || t('empty_state.message')}
       </Text>
     </View>
   );

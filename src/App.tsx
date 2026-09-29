@@ -9,6 +9,8 @@ import { Loading } from './components/shared/Loading';
 import { Provider } from 'react-redux';
 import { store } from './stores';
 import { Platform } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import i18n from './localization/i18n';
 
 if (Platform.OS === 'web') {
     try {
@@ -52,8 +54,8 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                 <SafeAreaProvider>
                     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
                         <ErrorState
-                            title="Aplikasi Bermasalah"
-                            message="Maaf, terjadi kesalahan yang tidak terduga pada aplikasi. Silakan coba muat ulang."
+                            title={i18n.t('error.app_crash_title')}
+                            message={i18n.t('error.app_crash_msg')}
                             onRetry={this.handleRetry}
                             fullScreen
                         />
@@ -66,11 +68,12 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 }
 
 export default function App() {
+    const { t } = useTranslation();
     return (
         <Provider store={store}>
             <ErrorBoundary>
                 <SafeAreaProvider>
-                    <NavigationContainer theme={theme} fallback={<Loading fullScreen message="Memuat aplikasi..." />}>
+                    <NavigationContainer theme={theme} fallback={<Loading fullScreen message={t('loading.app')} />}>
                         <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
                         <RootNavigator />
                     </NavigationContainer>

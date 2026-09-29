@@ -1,0 +1,24 @@
+{
+  "welcome": "Selamat Datang",
+  "login": "Masuk",
+  "logout": "Keluar",
+  "loading": {
+    "app": "Memuat aplikasi...",
+    "session": "Memeriksa sesi Anda...",
+    "data": "Memuat data..."
+  },
+  "empty_state": {
+    "title": "Data Kosong",
+    "message": "Belum ada data yang dapat ditampilkan di sini."
+  },
+  "error": {
+    "default_title": "Terjadi Kesalahan",
+    "default_message": "Sistem tidak dapat memuat data saat ini.",
+    "app_crash_title": "Aplikasi Bermasalah",
+    "app_crash_msg": "Maaf, terjadi kesalahan yang tidak terduga pada aplikasi. Silakan coba muat ulang.",
+    "device_not_secure": "Perangkat Tidak Aman",
+    "device_not_secure_msg": "Aplikasi ini tidak dapat berjalan di perangkat yang telah di-root karena alasan keamanan.",
+    "exit": "Keluar",
+    "try_again": "Coba Lagi"
+  }
+}

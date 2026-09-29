@@ -2,20 +2,29 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { AlertCircle } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
+import { useTranslation } from 'react-i18next';
 
 interface ErrorStateProps {
   title?: string;
   message?: string;
   onRetry?: () => void;
   fullScreen?: boolean;
+  buttonText?: string;
 }
 
 export function ErrorState({
-  title = 'Terjadi Kesalahan',
-  message = 'Sistem tidak dapat memuat data saat ini.',
+  title,
+  message,
   onRetry,
   fullScreen = false,
+  buttonText,
 }: ErrorStateProps) {
+  const { t } = useTranslation();
+
+  const displayTitle = title ?? t('error.default_title');
+  const displayMessage = message ?? t('error.default_message');
+  const displayButtonText = buttonText ?? t('error.try_again');
+
   return (
     <View
       style={{
@@ -36,7 +45,7 @@ export function ErrorState({
           textAlign: 'center',
         }}
       >
-        {title}
+        {displayTitle}
       </Text>
       <Text
         style={{
@@ -46,7 +55,7 @@ export function ErrorState({
           textAlign: 'center',
         }}
       >
-        {message}
+        {displayMessage}
       </Text>
       {onRetry && (
         <TouchableOpacity
@@ -61,7 +70,7 @@ export function ErrorState({
           activeOpacity={0.8}
         >
           <Text style={{ color: theme.colors.onPrimary, fontWeight: 'bold' }}>
-            Coba Lagi
+            {displayButtonText}
           </Text>
         </TouchableOpacity>
       )}
