@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { loginApi } from '../api/login.api';
 import { LoginRequest } from '../types/auth.types';
-import { setUser } from '../store/authSlice';
+import { setUser, setToken } from '../store/authSlice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const useLogin = () => {
     const [loading, setLoading] = useState(false);
@@ -15,12 +16,19 @@ export const useLogin = () => {
 
         try {
             const response = await loginApi(data);
-            
-            // Set token here if needed (e.g. AsyncStorage / SecureStore)
-            // Save user to redux state
+
+            // Set token to AsyncStorage
+            if (response.token) {
+                await AsyncStorage.setItem('userToken', response.token);
+            }
+            if (response.user) {
+                await AsyncStorage.setItem('userData', JSON.stringify(response.user));
+            }
+            // Save user and token to redux state
             dispatch(setUser(response.user));
-            
-            return true; 
+            dispatch(setToken(response.token ?? null));
+
+            return true;
         } catch (err: any) {
             const message = err.response?.data?.message || err.message || 'Login gagal, silakan periksa kembali username dan password Anda.';
             setError(message);

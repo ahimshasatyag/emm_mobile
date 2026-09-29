@@ -11,6 +11,7 @@ import { BottomBarNavigator } from './BottomBarNavigator';
 import { theme } from '../../theme/theme';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { logout as logoutAction } from '../../features/auth/store/authSlice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getMyMenusApi } from '../../features/auth/api/menu.api';
 import { UserListScreen } from '../../features/users/screens/UserListScreen';
 import { UsersLogListScreen } from '../../features/userslog/screens/UsersLogListScreen';
@@ -213,7 +214,11 @@ function CustomExpandableMenu({ id, title, icon, subMenus, isExpanded, activeSub
 }
 function CustomDrawerContent(props: DrawerContentComponentProps) {
     const dispatch = useAppDispatch();
-    const logout = () => dispatch(logoutAction());
+    const logout = async () => {
+        await AsyncStorage.removeItem('userToken');
+        await AsyncStorage.removeItem('userData');
+        dispatch(logoutAction());
+    };
     const currentRouteName = props.state.routeNames[props.state.index];
     const isDashboardActive = currentRouteName === 'MainTabs';
 
