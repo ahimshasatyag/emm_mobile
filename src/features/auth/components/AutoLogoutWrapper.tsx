@@ -2,7 +2,7 @@ import React, { ReactNode, useEffect, useRef } from 'react';
 import { View, PanResponder, AppState, AppStateStatus } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { logout } from '../store/authSlice';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { removeSecureItemAsync } from '../../../services/storage/secureStorage';
 
 interface AutoLogoutWrapperProps {
     children: ReactNode;
@@ -16,8 +16,8 @@ export const AutoLogoutWrapper: React.FC<AutoLogoutWrapperProps> = ({ children }
     const LOGOUT_TIME_MS = 15 * 60 * 1000; // 15 minutes
 
     const handleLogout = async () => {
-        await AsyncStorage.removeItem('userToken');
-        await AsyncStorage.removeItem('userData');
+        await removeSecureItemAsync('userToken');
+        await removeSecureItemAsync('userData');
         dispatch(logout());
     };
 

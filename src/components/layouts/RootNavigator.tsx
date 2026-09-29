@@ -4,7 +4,7 @@ import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { AuthNavigator } from './AuthNavigator';
 import { MainNavigator } from './MainNavigator';
 import { AutoLogoutWrapper } from '../../features/auth/components/AutoLogoutWrapper';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { removeSecureItemAsync } from '../../services/storage/secureStorage';
 import { Loading } from '../shared/Loading';
 
 export function RootNavigator() {
@@ -17,8 +17,8 @@ export function RootNavigator() {
             try {
                 // Aplikasi ditutup total lalu dibuka (fresh start), maka kita hapus token
                 // sehingga user dipaksa login kembali.
-                await AsyncStorage.removeItem('userToken');
-                await AsyncStorage.removeItem('userData');
+                await removeSecureItemAsync('userToken');
+                await removeSecureItemAsync('userData');
             } catch (e) {
                 console.error('Gagal membersihkan sesi sebelumnya', e);
             } finally {
