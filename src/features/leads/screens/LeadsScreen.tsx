@@ -134,7 +134,7 @@ export function LeadsScreen() {
 
             <View className="flex-1">
                 {(isLoadingList || isInitializing) ? (
-                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)} className="flex-1">
                         <LeadsSkeleton />
                     </Animated.View>
                 ) : (

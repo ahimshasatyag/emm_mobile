@@ -1,17 +1,16 @@
 import React from 'react';
 import { View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { theme } from '../../../../theme/theme';
 
 export function PurchaseRequisitionSkeleton() {
     return (
-        <Animated.View 
-            entering={FadeIn} 
+        <Animated.View
+            entering={FadeIn}
             exiting={FadeOut}
             className="flex-1"
         >
             {[1, 2, 3, 4, 5].map((item) => (
-                <View 
+                <View
                     key={item}
                     className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-3 mx-4"
                 >

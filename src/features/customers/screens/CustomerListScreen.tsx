@@ -27,6 +27,7 @@ export function CustomerListScreen() {
     const [isLoadMore, setIsLoadMore] = useState(false);
 
     const filteredData = useMemo(() => {
+        if (!customers) return [];
         if (!searchQuery) return customers;
         const query = searchQuery.toLowerCase();
         return customers.filter(item =>
@@ -80,14 +81,15 @@ export function CustomerListScreen() {
     };
 
     const handleLoadMore = useCallback(() => {
-        if (visibleCount < filteredData.length && !isLoadMore) {
+        const dataLength = filteredData ? filteredData.length : 0;
+        if (visibleCount < dataLength && !isLoadMore) {
             setIsLoadMore(true);
             setTimeout(() => {
                 setVisibleCount(prev => prev + 10);
                 setIsLoadMore(false);
             }, 600);
         }
-    }, [visibleCount, filteredData.length, isLoadMore]);
+    }, [visibleCount, filteredData, isLoadMore]);
 
     return (
         <View className="flex-1 bg-gray-50">

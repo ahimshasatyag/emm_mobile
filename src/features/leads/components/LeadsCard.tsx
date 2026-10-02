@@ -27,7 +27,7 @@ export function LeadsCard({ item, index, onPress }: Props) {
     const statusStyle = getStatusColor(item.status);
 
     return (
-        <Animated.View entering={FadeInUp.delay(index * 100)}>
+        <Animated.View entering={FadeInUp.delay(index * 100).duration(400)}>
             <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={onPress}

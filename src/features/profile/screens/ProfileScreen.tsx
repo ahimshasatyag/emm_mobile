@@ -10,6 +10,7 @@ import { fetchProfileDataApi } from '../api/profile.api';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { ProfileTopCard } from '../components/ProfileTopCard';
 import { ProfileInfoCard } from '../components/ProfileInfoCard';
+import { ProfileLocationCard } from '../components/ProfileLocationCard';
 import { ProfileSkeleton } from '../skeleton/ProfileSkeleton';
 import { ErrorState } from '../../../components/shared/ErrorState';
 import { EmptyState } from '../../../components/shared/EmptyState';
@@ -107,6 +108,7 @@ export function ProfileScreen() {
                         <View className="pb-10">
                             <ProfileTopCard data={data} />
                             <ProfileInfoCard data={data} />
+                            <ProfileLocationCard locations={data.locations} />
                         </View>
                     )}
                 </Animated.View>

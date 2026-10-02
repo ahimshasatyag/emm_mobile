@@ -58,9 +58,9 @@ export const SopDivisionScreen = () => {
                                 </Text>
                             </View>
                         </View>
-                        {divisions.map((item) => (
+                        {divisions.map((item, index) => (
                             <SopDivisionCard
-                                key={item.id_karyawan_divisi}
+                                key={`${item.id_karyawan_divisi}-${index}`}
                                 data={item}
                                 onPress={() => navigation.navigate('SopListScreen', { 
                                     divisiId: item.id_karyawan_divisi.toString(),

@@ -73,7 +73,7 @@ export function ProductPriceMktListScreen() {
     };
 
     const filteredProducts = useMemo(() => {
-        return products.filter(p =>
+        return (products || []).filter(p =>
             p.nm_product.toLowerCase().includes(searchQuery.toLowerCase()) ||
             p.code_product.toLowerCase().includes(searchQuery.toLowerCase())
         );
@@ -148,13 +148,13 @@ export function ProductPriceMktListScreen() {
                         <Animated.View
                             entering={FadeIn.duration(200)}
                             exiting={FadeOut.duration(150)}
-                            className="absolute top-14 left-0 right-0 bg-white rounded-2xl border border-gray-200 z-50"
+                            className="bg-white rounded-2xl border border-gray-200 mt-2 z-50"
                             style={{
                                 shadowColor: '#000',
                                 shadowOffset: { width: 0, height: 4 },
                                 shadowOpacity: 0.12,
                                 shadowRadius: 12,
-                                elevation: 10,
+                                elevation: 4,
                                 maxHeight: 280,
                             }}
                         >
@@ -171,45 +171,46 @@ export function ProductPriceMktListScreen() {
                                 />
                             </View>
                             {/* Options */}
-                            <View style={{ maxHeight: 210 }}>
-                                {isInitializing ? (
-                                    <ActivityIndicator size="small" color={theme.colors.primary} style={{ margin: 16 }} />
-                                ) : filteredProducts.length === 0 ? (
-                                    <Text className="text-center text-gray-400 text-sm py-4">Produk tidak ditemukan</Text>
-                                ) : (
-                                    <FlatList
-                                        data={filteredProducts.slice(0, visibleCount)}
-                                        keyExtractor={(item) => item.id_product}
-                                        renderItem={({ item, index }) => (
-                                            <TouchableOpacity
-                                                onPress={() => handleSelectProduct(item)}
-                                                activeOpacity={0.7}
-                                                className={`px-4 py-3 ${index < Math.min(filteredProducts.length, visibleCount) - 1 ? 'border-b border-gray-50' : ''}`}
-                                            >
-                                                <Text className="text-sm font-semibold text-gray-800" numberOfLines={1}>
-                                                    {item.code_product}
-                                                </Text>
-                                                <Text className="text-xs text-gray-500 mt-0.5" numberOfLines={1}>
-                                                    {item.nm_product}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        )}
-                                        showsVerticalScrollIndicator={false}
-                                        onEndReached={handleLoadMore}
-                                        onEndReachedThreshold={0.5}
-                                        ListFooterComponent={() => {
-                                            if (isLoadMore) {
-                                                return (
-                                                    <View className="py-2 items-center justify-center">
-                                                        <ActivityIndicator size="small" color={theme.colors.primary} />
-                                                    </View>
-                                                );
-                                            }
-                                            return null;
-                                        }}
-                                    />
-                                )}
-                            </View>
+                            {isInitializing ? (
+                                <ActivityIndicator size="small" color={theme.colors.primary} style={{ margin: 16 }} />
+                            ) : filteredProducts.length === 0 ? (
+                                <Text className="text-center text-gray-400 text-sm py-4">Produk tidak ditemukan</Text>
+                            ) : (
+                                <FlatList
+                                    style={{ maxHeight: 210 }}
+                                    data={filteredProducts.slice(0, visibleCount)}
+                                    keyExtractor={(item) => item.id_product}
+                                    nestedScrollEnabled={true}
+                                    keyboardShouldPersistTaps="handled"
+                                    renderItem={({ item, index }) => (
+                                        <TouchableOpacity
+                                            onPress={() => handleSelectProduct(item)}
+                                            activeOpacity={0.7}
+                                            className={`px-4 py-3 ${index < Math.min(filteredProducts.length, visibleCount) - 1 ? 'border-b border-gray-50' : ''}`}
+                                        >
+                                            <Text className="text-sm font-semibold text-gray-800" numberOfLines={1}>
+                                                {item.code_product}
+                                            </Text>
+                                            <Text className="text-xs text-gray-500 mt-0.5" numberOfLines={1}>
+                                                {item.nm_product}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )}
+                                    showsVerticalScrollIndicator={true}
+                                    onEndReached={handleLoadMore}
+                                    onEndReachedThreshold={0.5}
+                                    ListFooterComponent={() => {
+                                        if (isLoadMore) {
+                                            return (
+                                                <View className="py-2 items-center justify-center">
+                                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                                </View>
+                                            );
+                                        }
+                                        return null;
+                                    }}
+                                />
+                            )}
                         </Animated.View>
                     )}
                 </View>

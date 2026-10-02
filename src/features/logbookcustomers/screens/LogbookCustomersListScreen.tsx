@@ -131,7 +131,7 @@ export function LogbookCustomersListScreen() {
                 {error && <ErrorState onRetry={loadData} />}
 
                 {isLoading || isInitializing ? (
-                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)} className="flex-1">
                         <LogbookCustomersListSkeleton />
                     </Animated.View>
                 ) : (

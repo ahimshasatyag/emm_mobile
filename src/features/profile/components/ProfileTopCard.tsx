@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Image } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Mail, Briefcase } from 'lucide-react-native';
-import { ProfileData } from '../../types/profile.types';
+import { ProfileData } from '../types/profile.types';
 import { theme } from '../../../theme/theme';
 
 interface ProfileTopCardProps {
@@ -11,10 +11,10 @@ interface ProfileTopCardProps {
 
 export function ProfileTopCard({ data }: ProfileTopCardProps) {
     return (
-        <Animated.View 
+        <Animated.View
             entering={FadeInDown.delay(400).duration(600).springify()}
             className="mx-6 mt-6 bg-white rounded-3xl p-6 border border-gray-100 items-center relative"
-            style={{ 
+            style={{
                 elevation: 10,
                 shadowColor: theme.colors.primary,
                 shadowOffset: { width: 0, height: 10 },
@@ -23,13 +23,13 @@ export function ProfileTopCard({ data }: ProfileTopCardProps) {
             }}
         >
             {/* Background Accent (Glassmorphism hint) */}
-            <View 
+            <View
                 className="absolute top-0 left-0 right-0 h-24 rounded-t-3xl opacity-10"
                 style={{ backgroundColor: theme.colors.primary }}
             />
 
             {/* Avatar */}
-            <View 
+            <View
                 className="w-24 h-24 rounded-full bg-white p-1 mb-4 mt-2"
                 style={{
                     elevation: 5,
@@ -39,8 +39,8 @@ export function ProfileTopCard({ data }: ProfileTopCardProps) {
                     shadowRadius: 10,
                 }}
             >
-                <Image 
-                    source={{ uri: data.avatarUrl }} 
+                <Image
+                    source={{ uri: data.avatarUrl }}
                     className="w-full h-full rounded-full"
                     resizeMode="cover"
                 />

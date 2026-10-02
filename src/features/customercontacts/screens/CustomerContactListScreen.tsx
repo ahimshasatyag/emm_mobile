@@ -69,14 +69,14 @@ export function CustomerContactListScreen() {
     };
 
     const handleLoadMore = useCallback(() => {
-        if (visibleCount < customerContacts.length && !isLoadMore) {
+        if (customerContacts && visibleCount < customerContacts.length && !isLoadMore) {
             setIsLoadMore(true);
             setTimeout(() => {
                 setVisibleCount(prev => prev + 10);
                 setIsLoadMore(false);
             }, 600);
         }
-    }, [visibleCount, customerContacts.length, isLoadMore]);
+    }, [visibleCount, customerContacts?.length, isLoadMore]);
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -97,7 +97,7 @@ export function CustomerContactListScreen() {
 
             <View className="flex-1">
                 <FlatList
-                    data={(isLoading || isInitializing) ? [] : customerContacts.slice(0, visibleCount)}
+                    data={(isLoading || isInitializing || !customerContacts) ? [] : customerContacts.slice(0, visibleCount)}
                     keyExtractor={(item) => item.id_customers_contact}
                     renderItem={({ item, index }) => (
                         <CustomerContactCard item={item} index={index} onPress={onItemPress} />

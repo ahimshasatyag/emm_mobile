@@ -29,7 +29,7 @@ export function QuotationsAPCard({ item, index, onPress }: QuotationsAPCardProps
 
     return (
         <Animated.View
-            entering={FadeInUp.delay(index * 100).springify()}
+            entering={FadeInUp.delay(index * 100).duration(400)}
             className="mb-4"
         >
             <TouchableOpacity

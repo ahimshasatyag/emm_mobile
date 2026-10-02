@@ -16,8 +16,8 @@ export function ProductPriceLogSkeleton() {
     }));
 
     return (
-        <View className="flex-1 pb-4">
-            {[1, 2, 3, 4, 5].map((item) => (
+        <Animated.View className="flex-1 pb-4">
+            {[1, 2, 3, 4, 5, 6].map((item) => (
                 <Animated.View 
                     key={item} 
                     style={[animatedStyle, {
@@ -29,15 +29,27 @@ export function ProductPriceLogSkeleton() {
                     }]}
                     className="bg-white rounded-2xl p-4 mb-4 border border-gray-100"
                 >
-                    <View className="flex-row justify-between items-start">
-                        <View className="flex-1">
-                            <View className="h-5 w-32 bg-gray-200 rounded mb-2" />
-                            <View className="h-4 w-24 bg-gray-100 rounded" />
+                    <View className="flex-row justify-between items-start mb-3">
+                        <View className="flex-1 pr-3">
+                            <View className="h-5 bg-gray-200 rounded mb-2 w-3/4" />
+                            <View className="h-5 bg-gray-200 rounded mb-2 w-1/2" />
+                            <View className="flex-row items-center mb-1">
+                                <View className="h-4 w-4 bg-gray-200 rounded-full mr-1.5" />
+                                <View className="h-4 bg-gray-200 rounded w-1/3" />
+                            </View>
+                            <View className="flex-row items-center mt-1">
+                                <View className="h-3 w-3 bg-gray-200 rounded-full mr-1" />
+                                <View className="h-3 bg-gray-100 rounded w-1/2" />
+                            </View>
                         </View>
-                        <View className="h-8 w-24 bg-indigo-50 rounded-lg border border-indigo-50" />
+
+                        <View className="bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-50 flex-row items-center">
+                            <View className="h-3 w-3 bg-indigo-100 rounded-full mr-1" />
+                            <View className="h-4 w-12 bg-indigo-100 rounded" />
+                        </View>
                     </View>
                 </Animated.View>
             ))}
-        </View>
+        </Animated.View>
     );
 }

@@ -13,7 +13,7 @@ interface Props {
 export function ProductPriceLogCard({ log, index }: Props) {
     return (
         <Animated.View
-            entering={FadeInDown.delay(index < 10 ? index * 100 : 0).springify()}
+            entering={FadeInDown.delay(index < 10 ? index * 100 : 0).duration(400)}
             className="bg-white rounded-2xl p-4 mb-4 border border-gray-100"
             style={{
                 shadowColor: theme.colors.primary,

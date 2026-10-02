@@ -13,6 +13,7 @@ import { ModalConfirm } from '../../../components/ui/ModalConfirm';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { notificationService } from '../../../services/notification/notificationService';
+import { UserLocationHistoryCard } from '../components/UserLocationHistoryCard';
 
 export function UserEditScreen() {
     const route = useRoute<any>();
@@ -29,6 +30,7 @@ export function UserEditScreen() {
 
     const {
         formData,
+        locations,
         isFetching,
         isSaving,
         error,
@@ -241,6 +243,13 @@ export function UserEditScreen() {
                                 </>
                             )}
                         </Animated.View>
+
+                        {/* Location History - Only visible to Admins */}
+                        {(authUser?.id_users_level === 1 || authUser?.id_users_level === '1') && (
+                            <Animated.View entering={FadeInUp.delay(700)}>
+                                <UserLocationHistoryCard locations={locations} />
+                            </Animated.View>
+                        )}
                     </Animated.View>
                 )}
             </ScrollView>

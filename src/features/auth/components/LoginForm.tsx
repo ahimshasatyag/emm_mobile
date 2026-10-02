@@ -32,7 +32,7 @@ export function LoginForm() {
             } else {
                 Alert.alert("Izin Ditolak", "Login dilanjutkan tanpa merekam lokasi Anda.");
             }
-            
+
             // Dapatkan nama merk dan model device (contoh: Apple iPhone 14 atau Samsung SM-G998B)
             if (Platform.OS === 'web') {
                 device_name = 'Web Browser';
@@ -42,12 +42,12 @@ export function LoginForm() {
                 device_name = `${brand}${model}`.trim();
             }
         } catch (e) {
-            console.log("Location fetch error:", e);
+            // console.log("Location fetch error:", e);
         } finally {
             setIsLocating(false);
         }
 
-        console.log("Payload Login:", { username, latitude, longitude, device_name });
+        // console.log("Payload Login:", { username, latitude, longitude, device_name });
 
         // Jalankan login API beserta data lokasi (opsional)
         await login({ username, password, latitude, longitude, device_name });
@@ -55,7 +55,7 @@ export function LoginForm() {
 
     const handleSubmit = () => {
         if (!username || !password) return;
-        
+
         if (Platform.OS === 'web') {
             const confirm = window.confirm("Aplikasi membutuhkan izin untuk mengakses lokasi Anda demi keperluan keamanan dan pencatatan operasional. Lanjutkan?");
             if (confirm) {

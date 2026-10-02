@@ -24,13 +24,15 @@ export function LktListScreen() {
     const [endDate, setEndDate] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [isAll, setIsAll] = useState(false);
-    const [page, setPage] = useState(1);
+    
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
     const [showStartDatePicker, setShowStartDatePicker] = useState(false);
     const [showEndDatePicker, setShowEndDatePicker] = useState(false);
 
     const handleApplyFilter = () => {
-        setPage(1);
+        setVisibleCount(10);
         updateFilter({
             startDate,
             endDate,
@@ -53,7 +55,7 @@ export function LktListScreen() {
 
             const initialize = async () => {
                 setIsInitializing(true);
-                setPage(1);
+                setVisibleCount(10);
                 try {
                     await Promise.all([
                         loadLkts(filter),
@@ -75,7 +77,7 @@ export function LktListScreen() {
 
     const handleRefresh = async () => {
         setIsInitializing(true);
-        setPage(1);
+        setVisibleCount(10);
         try {
             await Promise.all([
                 loadLkts(filter),
@@ -87,25 +89,17 @@ export function LktListScreen() {
     };
 
     const filteredItems = applyFilter(filter);
-    const paginatedItems = filteredItems.slice(0, page * ITEMS_PER_PAGE);
+    const paginatedItems = filteredItems.slice(0, visibleCount);
 
-    const handleLoadMore = () => {
-        if (paginatedItems.length < filteredItems.length) {
-            setPage(prev => prev + 1);
+    const handleLoadMore = useCallback(() => {
+        if (items && visibleCount < filteredItems.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
         }
-    };
-
-    const renderFooter = () => {
-        if (paginatedItems.length < filteredItems.length) {
-            return (
-                <View className="py-4 items-center justify-center">
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
-                    <Text className="text-xs text-gray-400 mt-1">Memuat lebih banyak...</Text>
-                </View>
-            );
-        }
-        return null;
-    };
+    }, [visibleCount, filteredItems.length, isLoadMore, items]);
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -227,41 +221,53 @@ export function LktListScreen() {
                 </View>
             </View>
 
-            {isInitializing ? (
-                <View className="flex-1 px-6">
-                    <LktListSkeleton />
-                </View>
-            ) : filteredItems.length > 0 ? (
+            <View className="flex-1">
                 <FlatList
-                    data={paginatedItems}
+                    data={(isLoading || isInitializing || !items) ? [] : paginatedItems}
                     keyExtractor={(item, index) => `${item.id_afs_lkt}_${index}`}
                     renderItem={({ item, index }) => (
-                        <Animated.View
-                            entering={FadeInDown.delay(index * 60).springify()}
-                        >
-                            <LktCard lkt={item as any} />
-                        </Animated.View>
+                        <LktCard lkt={item as any} />
                     )}
-                    contentContainerStyle={{ padding: 24, paddingTop: 8, paddingBottom: 100 }}
+                    contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100, flexGrow: 1 }}
                     showsVerticalScrollIndicator={false}
                     onEndReached={handleLoadMore}
-                    onEndReachedThreshold={0.3}
-                    ListFooterComponent={renderFooter}
+                    onEndReachedThreshold={0.5}
                     refreshControl={
                         <RefreshControl
-                            refreshing={false}
+                            refreshing={isLoading && !isInitializing}
                             onRefresh={handleRefresh}
                             colors={[theme.colors.primary]}
                             tintColor={theme.colors.primary}
                         />
                     }
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
+                    ListEmptyComponent={() => {
+                        if (isLoading || isInitializing) {
+                            return (
+                                <View style={{ marginHorizontal: -24 }}>
+                                    <LktListSkeleton />
+                                </View>
+                            );
+                        }
+                        return (
+                            <EmptyState
+                                title="Tidak ada Data LKT"
+                                message="Data LKT yang Anda cari tidak ditemukan."
+                                fullScreen={true}
+                            />
+                        );
+                    }}
                 />
-            ) : (
-                <EmptyState
-                    title="Tidak ada Data LKT"
-                    description="Data LKT yang Anda cari tidak ditemukan."
-                />
-            )}
+            </View>
         </View>
     );
 }

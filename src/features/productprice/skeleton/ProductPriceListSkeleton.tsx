@@ -1,33 +1,34 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Animated } from 'react-native';
+import React from 'react';
+import { View } from 'react-native';
 import { Card, useTheme } from 'react-native-paper';
+import Animated, { withRepeat, withSequence, withTiming, useAnimatedStyle } from 'react-native-reanimated';
 
 export function ProductPriceListSkeleton() {
     const theme = useTheme();
     const colors = theme.colors as any;
-    const fadeAnim = useRef(new Animated.Value(0.4)).current;
 
-    useEffect(() => {
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(fadeAnim, {
-                    toValue: 1,
-                    duration: 800,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(fadeAnim, {
-                    toValue: 0.4,
-                    duration: 800,
-                    useNativeDriver: true,
-                }),
-            ])
-        ).start();
-    }, [fadeAnim]);
+    const pulseStyle = useAnimatedStyle(() => ({
+        opacity: withRepeat(
+            withSequence(
+                withTiming(0.4, { duration: 800 }),
+                withTiming(1, { duration: 800 })
+            ),
+            -1,
+            true
+        ),
+    }));
 
     return (
-        <Animated.View style={{ opacity: fadeAnim }}>
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Card key={i} className="rounded-2xl mb-4 border border-gray-100 shadow-sm" style={{ backgroundColor: colors.surface }}>
+        <View className="px-6 pb-20 pt-6">
+            {[...Array(6)].map((_, i) => (
+                <Animated.View 
+                    key={i} 
+                    style={[
+                        pulseStyle,
+                        { elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 }
+                    ]}
+                    className="bg-white rounded-2xl mb-4 border border-gray-100 shadow-sm"
+                >
                     <Card.Content className="p-4">
                         {/* Top Section */}
                         <View className="flex-row items-start mb-3">
@@ -54,8 +55,8 @@ export function ProductPriceListSkeleton() {
                             </View>
                         </View>
                     </Card.Content>
-                </Card>
+                </Animated.View>
             ))}
-        </Animated.View>
+        </View>
     );
 }

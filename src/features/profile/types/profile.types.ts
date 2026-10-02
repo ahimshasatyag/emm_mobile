@@ -1,3 +1,11 @@
+export interface UserLocation {
+    id: number;
+    latitude: number;
+    longitude: number;
+    deviceName?: string;
+    createdAt?: string;
+}
+
 export interface ProfileData {
     name: string;
     email: string;
@@ -9,4 +17,5 @@ export interface ProfileData {
     employeeId: string;
     division: string;
     officeLocation: string;
+    locations?: UserLocation[];
 }

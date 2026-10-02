@@ -69,57 +69,68 @@ export const PaymentEditScreen = () => {
     const totalPayment = paymentDetails.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
     const sisaTagihan = (parseFloat(jumlahInvoice) || 0) - totalPayment;
 
-    const loadData = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const supportData = await loadSupportData();
-            setCustomerOptions(supportData.data_customers_invoice.map((c: any) => ({ label: c.nm_customers, value: c.id_customers })));
-            setInvoiceOptions(supportData.data_invoice.map((i: any) => ({ label: i.code_invoice, value: i.id_invoice })));
-            setBankOptions(supportData.data_bank.map((b: any) => ({ label: `${b.code_bank} | ${b.nm_bank}`, value: b.id_bank })));
+    useEffect(() => {
+        let isActive = true;
 
-            if (isEdit && id) {
-                const payment = await fetchPaymentDetail(id);
-                if (payment) {
-                    setCustomer(payment.id_customers || '');
-                    setInvoice(payment.id_invoice || '');
-                    setBankTujuan(payment.id_bank || '');
+        const loadData = async () => {
+            setIsLoading(true);
+            try {
+                const supportData = await loadSupportData();
+                if (!isActive) return;
+                
+                setCustomerOptions(supportData.data_customers_invoice.map((c: any) => ({ label: c.nm_customers, value: c.id_customers })));
+                setInvoiceOptions(supportData.data_invoice.map((i: any) => ({ label: i.code_invoice, value: i.id_invoice })));
+                setBankOptions(supportData.data_bank.map((b: any) => ({ label: `${b.code_bank} | ${b.nm_bank}`, value: b.id_bank })));
 
-                    if (payment.id_invoice) {
-                        const invDetail = await fetchCustomerDetailByInvoice(payment.id_invoice);
-                        if (invDetail && invDetail.length > 0) {
-                            setJumlahInvoice(invDetail[0].ntot_balance?.toString() || '0');
+                if (isEdit && id) {
+                    const payment = await fetchPaymentDetail(id);
+                    if (!isActive) return;
+                    
+                    if (payment) {
+                        setCustomer(payment.id_customers || '');
+                        setInvoice(payment.id_invoice || '');
+                        setBankTujuan(payment.id_bank || '');
+
+                        if (payment.id_invoice) {
+                            const invDetail = await fetchCustomerDetailByInvoice(payment.id_invoice);
+                            if (isActive && invDetail && invDetail.length > 0) {
+                                setJumlahInvoice(invDetail[0].ntot_balance?.toString() || '0');
+                            }
+                        }
+
+                        let pmMethod = 'TUNAI';
+                        if (payment.id_payment_method === '2') pmMethod = 'GIRO';
+                        if (payment.id_payment_method === '3') pmMethod = 'TRANSFER';
+
+                        if (isActive) {
+                            setPaymentDetails([{
+                                id: payment.id_payment_schdl?.toString() || '1',
+                                paymentMethod: pmMethod,
+                                noGiro: payment.no_giro || '',
+                                bankName: payment.id_bank || '',
+                                date: payment.date_payment || new Date().toISOString().slice(0, 10),
+                                amount: payment.v_amount?.toString() || '0',
+                                keterangan: payment.payment_ref || '',
+                                dp: payment.f_dp === '1'
+                            }]);
                         }
                     }
-
-                    // Backend currently returns a single payment or list of payments under an ID?
-                    // According to our interface, Payment is one object
-                    let pmMethod = 'TUNAI';
-                    if (payment.id_payment_method === '2') pmMethod = 'GIRO';
-                    if (payment.id_payment_method === '3') pmMethod = 'TRANSFER';
-
-                    setPaymentDetails([{
-                        id: payment.id_payment_schdl?.toString() || '1',
-                        paymentMethod: pmMethod,
-                        noGiro: payment.no_giro || '',
-                        bankName: payment.id_bank || '',
-                        date: payment.date_payment || new Date().toISOString().slice(0, 10),
-                        amount: payment.v_amount?.toString() || '0',
-                        keterangan: payment.payment_ref || '',
-                        dp: payment.f_dp === '1'
-                    }]);
                 }
+            } catch (error) {
+                console.error(error);
+                if (isActive) setToast({ visible: true, message: 'Failed to load data', type: 'error' });
+            } finally {
+                if (isActive) setIsLoading(false);
             }
-        } catch (error) {
-            console.error(error);
-            setToast({ visible: true, message: 'Failed to load data', type: 'error' });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [id, isEdit, loadSupportData, fetchPaymentDetail, fetchCustomerDetailByInvoice]);
+        };
 
-    useEffect(() => {
         loadData();
-    }, [loadData]);
+
+        return () => {
+            isActive = false;
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id, isEdit]);
 
     const handleAddDetail = (detail: any) => {
         if (editingDetail) {

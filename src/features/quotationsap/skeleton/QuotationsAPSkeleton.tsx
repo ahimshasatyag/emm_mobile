@@ -1,95 +1,39 @@
 import React from 'react';
 import { View } from 'react-native';
-import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withTiming,
-    withSequence,
-    withDelay
-} from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 
 export function QuotationsAPSkeleton() {
-    const opacity = useSharedValue(0.3);
-
-    React.useEffect(() => {
-        opacity.value = withRepeat(
+    const animatedStyle = useAnimatedStyle(() => ({
+        opacity: withRepeat(
             withSequence(
-                withTiming(0.7, { duration: 800 }),
-                withTiming(0.3, { duration: 800 })
+                withTiming(0.5, { duration: 800 }),
+                withTiming(1, { duration: 800 })
             ),
             -1,
             true
-        );
-    }, []);
-
-    const animatedStyle = useAnimatedStyle(() => ({
-        opacity: opacity.value,
+        ),
     }));
 
-    const renderCard = (key: string, index: number) => {
-        const itemOpacity = useSharedValue(0);
-
-        React.useEffect(() => {
-            itemOpacity.value = withDelay(
-                index * 100,
-                withTiming(1, { duration: 400 })
-            );
-        }, []);
-
-        const fadeStyle = useAnimatedStyle(() => ({
-            opacity: itemOpacity.value,
-            transform: [
-                {
-                    translateY: withTiming(itemOpacity.value === 1 ? 0 : 20, { duration: 400 })
-                }
-            ]
-        }));
-
-        return (
-            <Animated.View key={key} style={[fadeStyle]} className="mb-4 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                {/* Header: ID & Status */}
-                <View className="flex-row justify-between items-center mb-3">
-                    <Animated.View style={animatedStyle} className="h-4 w-32 bg-gray-200 rounded-md" />
-                    <Animated.View style={animatedStyle} className="h-6 w-24 bg-gray-200 rounded-full" />
-                </View>
-
-                {/* Divider */}
-                <View className="h-[1px] bg-gray-100 w-full mb-3" />
-
-                {/* Content */}
-                <View className="space-y-3">
-                    <View className="flex-row items-center">
-                        <Animated.View style={animatedStyle} className="h-8 w-8 bg-gray-200 rounded-full mr-3" />
-                        <View className="flex-1">
-                            <Animated.View style={animatedStyle} className="h-3 w-20 bg-gray-200 rounded mb-1" />
-                            <Animated.View style={animatedStyle} className="h-4 w-40 bg-gray-200 rounded" />
-                        </View>
-                    </View>
-
-                    <View className="flex-row items-center">
-                        <Animated.View style={animatedStyle} className="h-8 w-8 bg-gray-200 rounded-full mr-3" />
-                        <View className="flex-1">
-                            <Animated.View style={animatedStyle} className="h-3 w-20 bg-gray-200 rounded mb-1" />
-                            <Animated.View style={animatedStyle} className="h-4 w-40 bg-gray-200 rounded" />
-                        </View>
-                    </View>
-
-                    <View className="flex-row items-center">
-                        <Animated.View style={animatedStyle} className="h-8 w-8 bg-gray-200 rounded-full mr-3" />
-                        <View className="flex-1">
-                            <Animated.View style={animatedStyle} className="h-3 w-24 bg-gray-200 rounded mb-1" />
-                            <Animated.View style={animatedStyle} className="h-4 w-32 bg-gray-200 rounded" />
-                        </View>
-                    </View>
-                </View>
-            </Animated.View>
-        );
-    };
-
     return (
-        <View className="flex-1 w-full p-4">
-            {[1, 2, 3].map((item, index) => renderCard(item.toString(), index))}
+        <View className="px-4">
+            {[1, 2, 3, 4, 5, 6].map((item) => (
+                <Animated.View 
+                    key={item} 
+                    style={[animatedStyle]}
+                    className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4"
+                >
+                    <View className="flex-row justify-between items-start">
+                        <View className="flex-1 mr-3">
+                            <View className="h-4 bg-gray-200 rounded w-2/3 mb-2" />
+                            <View className="flex-row items-center mt-1">
+                                <View className="w-3.5 h-3.5 rounded bg-gray-200 mr-1.5" />
+                                <View className="h-3 bg-gray-200 rounded w-24" />
+                            </View>
+                        </View>
+                        <View className="h-7 w-24 bg-gray-100 rounded-full" />
+                    </View>
+                </Animated.View>
+            ))}
         </View>
     );
 }

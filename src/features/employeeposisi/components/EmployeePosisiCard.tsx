@@ -14,7 +14,7 @@ interface EmployeePosisiCardProps {
 export function EmployeePosisiCard({ item, index, onPress }: EmployeePosisiCardProps) {
     return (
         <Animated.View
-            entering={FadeInDown.delay(index * 100).springify().damping(12)}
+            entering={FadeInDown.delay((index % 10) * 100).duration(400)}
             className="mb-4"
         >
             <TouchableOpacity

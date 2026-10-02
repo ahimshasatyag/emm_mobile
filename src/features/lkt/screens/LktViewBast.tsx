@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-nativ
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Check, CornerDownLeft, Calendar } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { HeaderNavigator } from '../../../components/layouts/HeaderNavigator';
 import { ToastMessages, ToastType } from '../../../components/ui/ToastMessages';
 import { ModalConfirm } from '../../../components/ui/ModalConfirm';
@@ -21,14 +21,33 @@ export function LktViewBast() {
     const [noBast, setNoBast] = useState('');
     const [tglBast, setTglBast] = useState('');
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [isInitializing, setIsInitializing] = useState(true);
 
     const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
     const [toast, setToast] = useState<{ visible: boolean; type: ToastType; message: string }>({ visible: false, type: 'success', message: '' });
 
     useEffect(() => {
-        if (lktCode) {
-            loadLktDetail(lktCode);
-        }
+        let isActive = true;
+
+        const initialize = async () => {
+            setIsInitializing(true);
+            try {
+                if (lktCode) {
+                    await Promise.all([
+                        loadLktDetail(lktCode),
+                        new Promise(resolve => setTimeout(resolve, 600))
+                    ]);
+                }
+            } finally {
+                if (isActive) setIsInitializing(false);
+            }
+        };
+
+        initialize();
+
+        return () => {
+            isActive = false;
+        };
     }, [lktCode]);
 
     useEffect(() => {
@@ -90,11 +109,15 @@ export function LktViewBast() {
                 onBackPress={() => navigation.goBack()}
             />
 
-            {isLoading ? (
-                <LktViewBastSkeleton />
+            {isInitializing || isLoading ? (
+                <View className="flex-1">
+                    <Animated.View exiting={FadeOut.duration(300)} className="flex-1">
+                        <LktViewBastSkeleton />
+                    </Animated.View>
+                </View>
             ) : (
             <ScrollView className="flex-1" contentContainerStyle={{ padding: 12, paddingBottom: 100 }}>
-                <Animated.View entering={FadeInDown.springify()} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                <Animated.View entering={FadeInDown.duration(400)} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
 
                     <View className="mb-6 flex-row gap-2">
                         <TouchableOpacity

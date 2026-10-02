@@ -9,7 +9,7 @@ import { EmptyState } from '../../../components/shared/EmptyState';
 import { ButtonAdd } from '../../../components/ui/buttonAdd';
 import { theme } from '../../../theme/theme';
 import { Search } from 'lucide-react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { EmployeePosisi } from '../types/employeeposisi.types';
@@ -127,56 +127,57 @@ export function EmployeePosisiScreen() {
             </Animated.View>
 
             <View className="flex-1">
-                <FlatList
-                    data={(isLoading || isInitializing) ? [] : filteredData.slice(0, visibleCount)}
-                    keyExtractor={(item) => item.id_karyawan_posisi.toString()}
-                    renderItem={({ item, index }) => (
-                        <EmployeePosisiCard item={item} index={index} onPress={handlePressCard} />
-                    )}
-                    contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100, flexGrow: 1 }}
-                    showsVerticalScrollIndicator={false}
-                    onEndReached={handleLoadMore}
-                    onEndReachedThreshold={0.5}
-                    refreshControl={
-                        <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={refetch} colors={[theme.colors.primary]} />
-                    }
-                    ListFooterComponent={() => {
-                        if (isLoadMore) {
-                            return (
-                                <View className="py-4 items-center justify-center">
-                                    <ActivityIndicator size="small" color={theme.colors.primary} />
-                                </View>
-                            );
-                        }
-                        return null;
-                    }}
-                    ListEmptyComponent={() => {
-                        if (error) {
-                            return (
-                                <ErrorState
-                                    title="Gagal Memuat Data"
-                                    message={typeof error === 'string' ? error : 'Terjadi kesalahan'}
-                                    onRetry={refetch}
-                                    fullScreen={true}
-                                />
-                            );
-                        }
-                        if (isLoading || isInitializing) {
-                            return (
-                                <View style={{ marginHorizontal: -24 }}>
-                                    <EmployeePosisiListSkeleton />
-                                </View>
-                            );
-                        }
-                        return (
-                            <EmptyState
-                                title="Data Kosong"
-                                message="Belum ada posisi yang terdaftar."
-                                fullScreen={true}
-                            />
-                        );
-                    }}
-                />
+                {(isLoading || isInitializing) ? (
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                        <EmployeePosisiListSkeleton />
+                    </Animated.View>
+                ) : (
+                    <Animated.View key="content" entering={FadeIn.duration(600)} className="flex-1">
+                        <FlatList
+                            data={filteredData.slice(0, visibleCount)}
+                            keyExtractor={(item) => item.id_karyawan_posisi.toString()}
+                            renderItem={({ item, index }) => (
+                                <EmployeePosisiCard item={item} index={index} onPress={handlePressCard} />
+                            )}
+                            contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100, flexGrow: 1 }}
+                            showsVerticalScrollIndicator={false}
+                            onEndReached={handleLoadMore}
+                            onEndReachedThreshold={0.5}
+                            refreshControl={
+                                <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={refetch} colors={[theme.colors.primary]} />
+                            }
+                            ListFooterComponent={() => {
+                                if (isLoadMore) {
+                                    return (
+                                        <View className="py-4 items-center justify-center">
+                                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                                        </View>
+                                    );
+                                }
+                                return null;
+                            }}
+                            ListEmptyComponent={() => {
+                                if (error) {
+                                    return (
+                                        <ErrorState
+                                            title="Gagal Memuat Data"
+                                            message={typeof error === 'string' ? error : 'Terjadi kesalahan'}
+                                            onRetry={refetch}
+                                            fullScreen={true}
+                                        />
+                                    );
+                                }
+                                return (
+                                    <EmptyState
+                                        title="Data Kosong"
+                                        message="Belum ada posisi yang terdaftar."
+                                        fullScreen={true}
+                                    />
+                                );
+                            }}
+                        />
+                    </Animated.View>
+                )}
             </View>
 
             {(!isLoading && !isInitializing) && !error && (

@@ -55,7 +55,7 @@ export function ProductListScreen() {
     );
     const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
 
-    const firstSelectedProduct = products.find(p => p.id_product === selectedProductIds[0]);
+    const firstSelectedProduct = products?.find(p => p.id_product === selectedProductIds[0]);
 
     const [isModalConfirmVisible, setIsModalConfirmVisible] = useState(false);
     const [modalActionWord, setModalActionWord] = useState('');
@@ -81,7 +81,7 @@ export function ProductListScreen() {
         try {
             await Promise.all(
                 selectedProductIds.map(id => {
-                    const product = products.find(p => p.id_product === id);
+                    const product = products?.find(p => p.id_product === id);
                     if (product) {
                         const updatePayload: any = {
                             code_product: product.code_product,
@@ -127,14 +127,14 @@ export function ProductListScreen() {
     };
 
     const handleLoadMore = useCallback(() => {
-        if (visibleCount < products.length && !isLoadMore) {
+        if (products && visibleCount < products.length && !isLoadMore) {
             setIsLoadMore(true);
             setTimeout(() => {
                 setVisibleCount(prev => prev + 10);
                 setIsLoadMore(false);
             }, 600);
         }
-    }, [visibleCount, products.length, isLoadMore]);
+    }, [visibleCount, products?.length, isLoadMore]);
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -185,7 +185,7 @@ export function ProductListScreen() {
 
             <View className="flex-1">
                 <FlatList
-                    data={(isInitializing || (isLoading && products.length === 0)) ? [] : products.slice(0, visibleCount)}
+                    data={(isInitializing || !products || (isLoading && products?.length === 0)) ? [] : products.slice(0, visibleCount)}
                     keyExtractor={(item) => item.id_product}
                     renderItem={({ item, index }) => (
                         <ProductCard
@@ -244,7 +244,7 @@ export function ProductListScreen() {
                                 />
                             );
                         }
-                        if (isInitializing || (isLoading && products.length === 0)) {
+                        if (isInitializing || !products || (isLoading && products?.length === 0)) {
                             return (
                                 <View style={{ marginHorizontal: -16 }}>
                                     <ProductListSkeleton />

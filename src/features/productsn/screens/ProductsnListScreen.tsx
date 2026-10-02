@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, RefreshControl, ScrollView, TextInput } from 'react-native';
+import { View, Text, RefreshControl, FlatList, TextInput, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
 import Animated, { FadeIn, FadeOut, FadeInUp, LinearTransition } from 'react-native-reanimated';
@@ -9,40 +9,46 @@ import { useProductsn } from '../hooks/useProductsn';
 import { ProductsnCard } from '../components/ProductsnCard';
 import { ProductsnListSkeleton } from '../skeleton/ProductsnListSkeleton';
 import { ButtonAdd } from '../../../components/ui/buttonAdd';
+import { ErrorState } from '../../../components/shared/ErrorState';
+import { EmptyState } from '../../../components/shared/EmptyState';
 
 export function ProductsnListScreen() {
     const navigation = useNavigation<any>();
-    const { productSns, isLoading, fetchInitialData, fetchProductSns } = useProductsn();
+    const { productSns, isLoading, error, fetchInitialData } = useProductsn();
 
     const [searchQuery, setSearchQuery] = useState('');
-    const [isRefreshing, setIsRefreshing] = useState(false);
     const [isInitializing, setIsInitializing] = useState(true);
 
-    const initialize = async () => {
-        setIsInitializing(true);
-        await fetchInitialData();
-        setIsInitializing(false);
-    };
-
-    useEffect(() => {
-        initialize();
-    }, []);
+    const [visibleCount, setVisibleCount] = useState(10);
+    const [isLoadMore, setIsLoadMore] = useState(false);
 
     useFocusEffect(
         useCallback(() => {
-            if (!isInitializing) {
-                fetchProductSns();
-            }
-        }, [isInitializing])
+            let isActive = true;
+
+            const initialize = async () => {
+                setIsInitializing(true);
+                try {
+                    await fetchInitialData();
+                } catch (error) {
+                    // console.error("Failed to load:", error);
+                } finally {
+                    if (isActive) {
+                        setIsInitializing(false);
+                    }
+                }
+            };
+
+            initialize();
+
+            return () => {
+                isActive = false;
+                setIsInitializing(true);
+            };
+        }, [])
     );
 
-    const onRefresh = async () => {
-        setIsRefreshing(true);
-        await fetchInitialData();
-        setIsRefreshing(false);
-    };
-
-    const filteredProductSns = productSns.filter(item => {
+    const filteredProductSns = (productSns || []).filter(item => {
         const productName = item.product?.nm_product?.toLowerCase() || '';
         const productCode = item.product?.code_product?.toLowerCase() || '';
         const sn = item.sn?.toLowerCase() || '';
@@ -50,6 +56,20 @@ export function ProductsnListScreen() {
 
         return productName.includes(search) || productCode.includes(search) || sn.includes(search);
     });
+
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [searchQuery, productSns]);
+
+    const handleLoadMore = useCallback(() => {
+        if (productSns && visibleCount < filteredProductSns.length && !isLoadMore) {
+            setIsLoadMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + 10);
+                setIsLoadMore(false);
+            }, 600);
+        }
+    }, [visibleCount, filteredProductSns.length, isLoadMore, productSns]);
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -70,45 +90,64 @@ export function ProductsnListScreen() {
                 </View>
             </Animated.View>
 
-            <ScrollView
-                className="flex-1"
-                contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
-                showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
-                }
-            >
-                {(isInitializing || (isLoading && productSns.length === 0)) ? (
-                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
-                        <ProductsnListSkeleton />
-                    </Animated.View>
-                ) : (
-                    <Animated.View layout={LinearTransition.springify()}>
-                        {filteredProductSns.length > 0 ? (
-                            filteredProductSns.map((item, index) => (
-                                <ProductsnCard
-                                    key={item.id_product_sn}
-                                    item={item}
-                                    index={index}
-                                    onPress={() => navigation.navigate('InventoryEdit', { id: item.id_product_sn })}
-                                />
-                            ))
-                        ) : (
-                            <Animated.View entering={FadeIn.delay(200)} className="items-center justify-center mt-20">
-                                <View className="w-24 h-24 bg-gray-100 rounded-full items-center justify-center mb-4">
-                                    <Search color="#9CA3AF" size={40} />
+            <View className="flex-1">
+                <FlatList
+                    data={(isLoading || isInitializing || !productSns) ? [] : filteredProductSns.slice(0, visibleCount)}
+                    keyExtractor={(item) => String(item.id_product_sn)}
+                    renderItem={({ item, index }) => (
+                        <ProductsnCard
+                            item={item}
+                            index={index}
+                            onPress={() => navigation.navigate('InventoryEdit', { id: item.id_product_sn })}
+                        />
+                    )}
+                    contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100, flexGrow: 1 }}
+                    showsVerticalScrollIndicator={false}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
+                    refreshControl={
+                        <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={fetchInitialData} colors={[theme.colors.primary]} />
+                    }
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
                                 </View>
-                                <Text className="text-lg font-bold text-gray-800 mb-2">Data Tidak Ditemukan</Text>
-                                <Text className="text-sm text-gray-500 text-center px-10">
-                                    {searchQuery ? `Tidak ada Product SN yang cocok dengan "${searchQuery}"` : "Belum ada data Product SN."}
-                                </Text>
-                            </Animated.View>
-                        )}
-                    </Animated.View>
-                )}
-            </ScrollView>
+                            );
+                        }
+                        return null;
+                    }}
+                    ListEmptyComponent={() => {
+                        if (error) {
+                            return (
+                                <ErrorState
+                                    title="Gagal Memuat Product SN"
+                                    message={error}
+                                    onRetry={fetchInitialData}
+                                    fullScreen={true}
+                                />
+                            );
+                        }
+                        if (isLoading || isInitializing) {
+                            return (
+                                <View style={{ marginHorizontal: -24 }}>
+                                    <ProductsnListSkeleton />
+                                </View>
+                            );
+                        }
+                        return (
+                            <EmptyState
+                                title="Data Tidak Ditemukan"
+                                message={searchQuery ? `Tidak ada Product SN yang cocok dengan "${searchQuery}"` : "Belum ada data Product SN."}
+                                fullScreen={true}
+                            />
+                        );
+                    }}
+                />
+            </View>
 
-            {!isInitializing && (
+            {(!isLoading && !isInitializing) && !error && (
                 <ButtonAdd onPress={() => navigation.navigate('InventoryForm')} />
             )}
         </View>

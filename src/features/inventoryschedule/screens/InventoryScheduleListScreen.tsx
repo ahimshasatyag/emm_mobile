@@ -93,7 +93,7 @@ export function InventoryScheduleListScreen() {
 
             <View className="flex-1">
                 {(loading || isInitializing || isRefreshing) ? (
-                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)}>
+                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)} className="flex-1">
                         <InventoryScheduleListSkeleton />
                     </Animated.View>
                 ) : (

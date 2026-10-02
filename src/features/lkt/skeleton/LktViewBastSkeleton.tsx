@@ -1,83 +1,86 @@
-import React, { useEffect, useRef } from 'react';
-import { View, ScrollView, Animated } from 'react-native';
-import { Card } from 'react-native-paper';
+import React from 'react';
+import { View, ScrollView } from 'react-native';
+import Animated, { useAnimatedStyle, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 
 export function LktViewBastSkeleton() {
-    const fadeAnim = useRef(new Animated.Value(0.4)).current;
-
-    useEffect(() => {
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(fadeAnim, {
-                    toValue: 1,
-                    duration: 1000,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(fadeAnim, {
-                    toValue: 0.4,
-                    duration: 1000,
-                    useNativeDriver: true,
-                })
-            ])
-        ).start();
-    }, [fadeAnim]);
+    const animatedStyle = useAnimatedStyle(() => ({
+        opacity: withRepeat(
+            withSequence(
+                withTiming(0.5, { duration: 800 }),
+                withTiming(1, { duration: 800 })
+            ),
+            -1,
+            true
+        ),
+    }));
 
     return (
-        <View className="flex-1 bg-gray-50">
-            <ScrollView className="flex-1 p-4">
-                <Card style={{ backgroundColor: '#ffffff', borderRadius: 16, borderWidth: 1, borderColor: '#f3f4f6' }} elevation={0}>
-                    <Card.Content>
-                        <Animated.View style={{ opacity: fadeAnim }}>
-                            <View className="items-center mb-6">
-                                <View className="bg-gray-200 h-16 w-16 rounded-full mb-3" />
-                                <View className="bg-gray-200 h-5 w-48 rounded mb-2" />
-                                <View className="bg-gray-200 h-4 w-32 rounded" />
+        <ScrollView className="flex-1" contentContainerStyle={{ padding: 12, paddingBottom: 100 }}>
+            <Animated.View 
+                style={[animatedStyle, {
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 4,
+                    elevation: 2,
+                }]} 
+                className="bg-white rounded-xl border border-gray-200 p-5"
+            >
+                <View className="mb-6 flex-row gap-2">
+                    <View className="bg-emerald-100 rounded-lg h-[34px] w-[80px]" />
+                </View>
+
+                <View className="flex-col md:flex-row gap-4">
+                    <View className="flex-1 bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        {/* No BAST */}
+                        <View className="mb-4 flex-row items-center">
+                            <View className="w-[100px]">
+                                <View className="h-3 bg-gray-200 rounded w-16" />
                             </View>
-
-                            <View className="space-y-4">
-                                {/* Info LKT */}
-                                <View className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                    <View className="flex-row items-center mb-3">
-                                        <View className="bg-gray-200 h-5 w-5 rounded-full mr-2" />
-                                        <View className="bg-gray-200 h-4 w-24 rounded" />
-                                    </View>
-
-                                    <View className="space-y-3">
-                                        <View className="flex-row justify-between">
-                                            <View className="bg-gray-200 h-4 w-20 rounded" />
-                                            <View className="bg-gray-200 h-4 w-32 rounded" />
-                                        </View>
-                                        <View className="flex-row justify-between">
-                                            <View className="bg-gray-200 h-4 w-24 rounded" />
-                                            <View className="bg-gray-200 h-4 w-28 rounded" />
-                                        </View>
-                                    </View>
-                                </View>
-
-                                {/* Input Fields */}
-                                <View className="mt-4">
-                                    <View className="bg-gray-200 h-4 w-20 rounded mb-2" />
-                                    <View className="bg-gray-200 h-12 rounded-lg mb-4" />
-
-                                    <View className="bg-gray-200 h-4 w-24 rounded mb-2" />
-                                    <View className="bg-gray-200 h-12 rounded-lg" />
-                                </View>
-
-                                {/* Image Viewer */}
-                                <View className="mt-6">
-                                    <View className="bg-gray-200 h-4 w-32 rounded mb-2" />
-                                    <View className="h-64 bg-gray-200 rounded-xl" />
-                                </View>
+                            <View className="w-2 mx-2" />
+                            <View className="flex-1">
+                                <View className="h-[46px] bg-white border border-gray-200 rounded-lg" />
                             </View>
-                        </Animated.View>
-                    </Card.Content>
-                </Card>
-            </ScrollView>
+                        </View>
 
-            <View className="p-4 bg-white border-t border-gray-100 flex-row space-x-3">
-                <View className="bg-gray-300 h-12 rounded-xl flex-1" />
-                <View className="bg-gray-300 h-12 rounded-xl flex-1" />
-            </View>
-        </View>
+                        {/* Tanggal BAST */}
+                        <View className="flex-row items-center">
+                            <View className="w-[100px]">
+                                <View className="h-3 bg-gray-200 rounded w-20" />
+                            </View>
+                            <View className="w-2 mx-2" />
+                            <View className="flex-1">
+                                <View className="h-[42px] bg-white border border-gray-200 rounded-lg" />
+                            </View>
+                        </View>
+                    </View>
+
+                    <View className="flex-1 bg-gray-50 rounded-lg p-4 border border-gray-200 mt-4 md:mt-0">
+                        {/* Nama Perusahaan */}
+                        <View className="mb-4 flex-row">
+                            <View className="w-[120px] mt-1">
+                                <View className="h-3 bg-gray-200 rounded w-24" />
+                            </View>
+                            <View className="w-2 mx-2" />
+                            <View className="flex-1">
+                                <View className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+                                <View className="h-3 bg-gray-200 rounded w-full" />
+                            </View>
+                        </View>
+
+                        {/* Produk */}
+                        <View className="flex-row">
+                            <View className="w-[120px] mt-1">
+                                <View className="h-3 bg-gray-200 rounded w-16" />
+                            </View>
+                            <View className="w-2 mx-2" />
+                            <View className="flex-1">
+                                <View className="h-4 bg-gray-200 rounded w-5/6" />
+                            </View>
+                        </View>
+                    </View>
+                </View>
+            </Animated.View>
+        </ScrollView>
     );
 }

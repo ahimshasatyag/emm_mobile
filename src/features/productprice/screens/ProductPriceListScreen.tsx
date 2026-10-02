@@ -91,14 +91,14 @@ export function ProductPriceListScreen() {
     }, [searchQuery, prices]);
 
     const handleLoadMore = useCallback(() => {
-        if (visibleCount < filteredPrices.length && !isLoadMore) {
+        if (prices && visibleCount < filteredPrices.length && !isLoadMore) {
             setIsLoadMore(true);
             setTimeout(() => {
                 setVisibleCount(prev => prev + 10);
                 setIsLoadMore(false);
             }, 600);
         }
-    }, [visibleCount, filteredPrices.length, isLoadMore]);
+    }, [visibleCount, filteredPrices.length, isLoadMore, prices]);
 
     const handleRefresh = async () => {
         setVisibleCount(10);
@@ -151,77 +151,76 @@ export function ProductPriceListScreen() {
             </Animated.View>
 
             <View className="flex-1">
-                {(isLoading || isInitializing) ? (
-                    <Animated.View key="skeleton" exiting={FadeOut.duration(300)} className="flex-1 px-4">
-                        <ProductPriceListSkeleton />
-                    </Animated.View>
-                ) : (
-                    <Animated.View key="content" entering={FadeIn.duration(600)} className="flex-1">
-                        <FlatList
-                            data={filteredPrices.slice(0, visibleCount)}
-                            keyExtractor={(item) => item.id_product}
-                            renderItem={({ item, index }) => (
-                                <ProductPriceCard
-                                    item={item}
-                                    index={index}
-                                    isSelected={selectedIds.includes(item.id_product)}
-                                    onPress={() => {
-                                        if (selectedIds.length > 0) {
-                                            setSelectedIds(prev =>
-                                                prev.includes(item.id_product)
-                                                    ? prev.filter(id => id !== item.id_product)
-                                                    : [...prev, item.id_product]
-                                            );
-                                        } else {
-                                            navigation.navigate('ProductPriceEdit', { id: item.id_product });
-                                        }
-                                    }}
-                                    onLongPress={() => {
-                                        if (!selectedIds.includes(item.id_product)) {
-                                            setSelectedIds(prev => [...prev, item.id_product]);
-                                        }
-                                    }}
-                                />
-                            )}
-                            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, flexGrow: 1 }}
-                            showsVerticalScrollIndicator={false}
-                            refreshControl={
-                                <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
-                            }
-                            onEndReached={handleLoadMore}
-                            onEndReachedThreshold={0.5}
-                            ListFooterComponent={() => {
-                                if (isLoadMore) {
-                                    return (
-                                        <View className="py-4 items-center justify-center">
-                                            <ActivityIndicator size="small" color={theme.colors.primary} />
-                                        </View>
+                <FlatList
+                    data={(isLoading || isInitializing || !prices) ? [] : filteredPrices.slice(0, visibleCount)}
+                    keyExtractor={(item) => item.id_product}
+                    renderItem={({ item, index }) => (
+                        <ProductPriceCard
+                            item={item}
+                            index={index}
+                            isSelected={selectedIds.includes(item.id_product)}
+                            onPress={() => {
+                                if (selectedIds.length > 0) {
+                                    setSelectedIds(prev =>
+                                        prev.includes(item.id_product)
+                                            ? prev.filter(id => id !== item.id_product)
+                                            : [...prev, item.id_product]
                                     );
+                                } else {
+                                    navigation.navigate('ProductPriceEdit', { id: item.id_product });
                                 }
-                                return null;
                             }}
-                            ListEmptyComponent={() => {
-                                if (error) {
-                                    return (
-                                        <ErrorState
-                                            title="Gagal Memuat Data"
-                                            message={error}
-                                            onRetry={handleRefresh}
-                                            fullScreen={true}
-                                        />
-                                    );
+                            onLongPress={() => {
+                                if (!selectedIds.includes(item.id_product)) {
+                                    setSelectedIds(prev => [...prev, item.id_product]);
                                 }
-                                return (
-                                    <EmptyState
-                                        title="Data Harga Kosong"
-                                        message="Tidak ada data harga produk yang ditemukan."
-                                        fullScreen={true}
-                                    />
-                                );
                             }}
                         />
-                    </Animated.View>
-                )}
+                    )}
+                    contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100, flexGrow: 1 }}
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl refreshing={isLoading && !isInitializing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
+                    }
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={() => {
+                        if (isLoadMore) {
+                            return (
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
+                    ListEmptyComponent={() => {
+                        if (error) {
+                            return (
+                                <ErrorState
+                                    title="Gagal Memuat Data"
+                                    message={error}
+                                    onRetry={handleRefresh}
+                                    fullScreen={true}
+                                />
+                            );
+                        }
+                        if (isLoading || isInitializing) {
+                            return (
+                                <View style={{ marginHorizontal: -24 }}>
+                                    <ProductPriceListSkeleton />
+                                </View>
+                            );
+                        }
+                        return (
+                            <EmptyState
+                                title="Data Harga Kosong"
+                                message={searchQuery ? `Tidak ada data harga yang cocok dengan "${searchQuery}"` : "Tidak ada data harga produk yang ditemukan."}
+                                fullScreen={true}
+                            />
+                        );
+                    }}
+                />
             </View>
 
             {(!isLoading && !isInitializing) && !error && (

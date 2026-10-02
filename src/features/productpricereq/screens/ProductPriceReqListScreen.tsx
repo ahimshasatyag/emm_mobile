@@ -99,8 +99,8 @@ export function ProductPriceReqListScreen() {
             </View>
 
             {isInitializing ? (
-                <View style={{ padding: 24, paddingTop: 8 }}>
-                    <Animated.View exiting={FadeOut.duration(300)}>
+                <View style={{ padding: 24, paddingTop: 8 }} className="flex-1">
+                    <Animated.View exiting={FadeOut.duration(300)} className="flex-1">
                         <ProductPriceReqListSkeleton />
                     </Animated.View>
                 </View>
@@ -129,8 +129,7 @@ export function ProductPriceReqListScreen() {
                     }
                     renderItem={({ item: request, index }) => (
                         <Animated.View 
-                            entering={FadeInDown.delay((index % 10) * 100).springify()}
-                            layout={Layout.springify()}
+                            entering={FadeInDown.delay((index % 10) * 100).duration(400)}
                         >
                             <TouchableOpacity 
                                 activeOpacity={0.8}

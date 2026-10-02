@@ -129,9 +129,9 @@ export function ProductPriceLogListScreen() {
                         }
                         if (isShowSkeleton) {
                             return (
-                                <View className="mt-4">
+                                <Animated.View entering={FadeInUp.duration(200)} className="flex-1 mt-4">
                                     <ProductPriceLogSkeleton />
-                                </View>
+                                </Animated.View>
                             );
                         }
                         return (

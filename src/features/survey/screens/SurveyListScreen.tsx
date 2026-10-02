@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { View, FlatList, RefreshControl, TextInput, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, FadeOut } from 'react-native-reanimated';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSurvey } from '../hooks/useSurvey';
 import { SurveyCard } from '../components/SurveyCard';
@@ -70,7 +70,7 @@ export function SurveyListScreen() {
     };
 
     const filteredSurveys = useMemo(() => {
-        return surveys.filter(s =>
+        return (surveys || []).filter(s =>
             s.code_survey?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             (s.nm_customers || '').toLowerCase().includes(searchQuery.toLowerCase())
         );
@@ -109,7 +109,7 @@ export function SurveyListScreen() {
             </Animated.View>
 
             <View className="flex-1">
-                {(isLoading || isInitializing || isRefreshing) && filteredSurveys.length === 0 ? (
+                {isInitializing || isRefreshing || (isLoading && filteredSurveys.length === 0) ? (
                     <Animated.View key="skeleton" exiting={FadeOut.duration(300)} className="flex-1 mt-2">
                         <SurveyListSkeleton />
                     </Animated.View>

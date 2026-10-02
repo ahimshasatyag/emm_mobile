@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Payment } from '../types/payment';
 import { theme } from '../../../theme/theme';
+import { formatRp, formatUsd } from '../../../utils/helpers/money';
 
 interface PaymentCardProps {
     payment: Payment;
@@ -20,10 +21,6 @@ const getStatusColor = (status: string) => {
         case 'BATAL': return 'bg-gray-800 text-white border-gray-900';
         case 'DRAFT': default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
-};
-
-const formatCurrency = (amount: number, currency: string = 'IDR') => {
-    return `${currency} ${amount.toString().replace(/\\B(?=(\\d{3})+(?!\\d))/g, ".")}`;
 };
 
 export const PaymentCard: React.FC<PaymentCardProps> = ({ payment, onPress, onLongPress, isSelected, index }) => {
@@ -57,10 +54,14 @@ export const PaymentCard: React.FC<PaymentCardProps> = ({ payment, onPress, onLo
                     </View>
                     <View className="items-end">
                         <Text className="text-gray-500 text-xs mb-1">Amount ({payment.date_payment})</Text>
-                        <Text className="text-gray-900 font-bold">{formatCurrency(payment.v_amount, payment.vcurrency)}</Text>
+                        <Text className="text-gray-900 font-bold">
+                            {payment.vcurrency === 'USD' ? formatUsd(payment.v_amount) : formatRp(payment.v_amount)}
+                        </Text>
                     </View>
                 </View>
             </TouchableOpacity>
         </Animated.View>
     );
 };
+
+

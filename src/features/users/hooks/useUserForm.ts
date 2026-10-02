@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { UserFormData } from '../types/users.types';
 import { createUserApi, updateUserApi, fetchUserByIdApi, fetchUsersApi } from '../api/users.api';
+import { fetchProfileDataApi } from '../../profile/api/profile.api';
+import { UserLocation } from '../../profile/types/profile.types';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { setData } from '../store/usersSlice';
@@ -9,6 +11,7 @@ export function useUserForm(userId?: string) {
     const isEditMode = !!userId;
     const dispatch = useAppDispatch();
     const usersList = useAppSelector((state) => state.users.data);
+    const authUser = useAppSelector((state) => state.auth.user);
 
     const [formData, setFormData] = useState<UserFormData>({
         username: '',
@@ -18,6 +21,7 @@ export function useUserForm(userId?: string) {
         is_active: '',
     });
 
+    const [locations, setLocations] = useState<UserLocation[]>([]);
     const [isFetching, setIsFetching] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -40,6 +44,18 @@ export function useUserForm(userId?: string) {
                 id_users_level: user.id_users_level?.toString() || '',
                 is_active: user.is_active?.toString() || '',
             });
+            
+            // Only attempt to load locations if current logged-in user is admin (level 1)
+            // or we just try and set to empty if it fails.
+            if (authUser?.id_users_level === 1 || authUser?.id_users_level === '1') {
+                try {
+                    const profile = await fetchProfileDataApi(user.username);
+                    if (profile.locations) setLocations(profile.locations);
+                } catch (locErr) {
+                    // Ignore location fetch error (might not exist yet)
+                    console.log('Failed to fetch location history:', locErr);
+                }
+            }
         } catch (err: any) {
             setError(err.message || 'Gagal memuat data pengguna');
         } finally {
@@ -104,6 +120,7 @@ export function useUserForm(userId?: string) {
 
     return {
         formData,
+        locations,
         isEditMode,
         isFetching,
         isSaving,

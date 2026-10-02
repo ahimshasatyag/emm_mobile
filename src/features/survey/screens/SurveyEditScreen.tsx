@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Text, TouchableOpacity, Alert, TextInput, KeyboardAvoidingView, Platform, RefreshControl, ActivityIndicator } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { CornerDownLeft, CheckCircle, XCircle, Edit, Save, Plus, Trash2, Calendar } from 'lucide-react-native';
-import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp, FadeOut } from 'react-native-reanimated';
 import { Dropdown, MultiSelect } from 'react-native-element-dropdown';
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useSurvey } from '../hooks/useSurvey';
@@ -283,8 +283,8 @@ export function SurveyEditScreen() {
     };
 
     const survey = currentSurvey?.data_header || currentSurvey;
-    const detail_pelaksana = currentSurvey.data_detail_pelaksana || [];
-    const detail_biaya = currentSurvey.data_detail_biaya || [];
+    const detail_pelaksana = currentSurvey?.data_detail_pelaksana || [];
+    const detail_biaya = currentSurvey?.data_detail_biaya || [];
     // Prepare dropdown options
     const soOptions = soList?.map(so => ({ label: `${so.code_so} - ${so.nm_customers}`, value: so.id_so })) || [];
     const karyawanOptions = supportData?.data_karyawan?.map((k: any) => ({ label: k.nm_karyawan, value: k.id_karyawan.toString() })) || [];
